@@ -1,0 +1,683 @@
+/* Organic composition: glass stays on small controls, illustrations lead. */
+.organic-experience .masthead {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  padding-bottom: 56px;
+}
+.organic-experience .masthead::before {
+  content: '';
+  position: absolute;
+  width: 68%;
+  height: 95%;
+  right: -12%;
+  top: 0;
+  z-index: -1;
+  border-radius: 46% 54% 67% 33% / 37% 44% 56% 63%;
+  background: radial-gradient(
+    ellipse at 40% 45%,
+    #c3ecfa8a,
+    #d1f4e978 45%,
+    #e6f5ff00 72%
+  );
+  transform: rotate(-12deg);
+}
+.organic-experience .hello-badge {
+  padding-left: 0;
+  background: none;
+  box-shadow: none;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.organic-experience .world-orbit {
+  border: none;
+}
+.organic-experience .glass-bubble {
+  opacity: 0.45;
+}
+.organic-experience .note-top {
+  top: 25px;
+  left: -5px;
+  border-radius: 46% 54% 45% 55% / 55% 47% 53% 45%;
+  padding: 19px;
+}
+.organic-experience .note-bottom {
+  bottom: 2px;
+  right: 0;
+  border-radius: 27px 30px 10px 30px;
+}
+.organic-experience .travel-postcard {
+  border-radius: 48% 52% 43% 57% / 38% 45% 55% 62%;
+  width: 132px;
+  padding: 8px;
+  bottom: -13px;
+  left: 7px;
+}
+.organic-experience .travel-postcard > img {
+  border-radius: inherit;
+  height: 123px;
+}
+.organic-experience .travel-postcard > span {
+  display: none;
+}
+.neon-logo {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  isolation: isolate;
+}
+.neon-logo img {
+  position: absolute;
+  z-index: 2;
+  width: 94%;
+  height: auto;
+  left: 4%;
+  top: 0;
+  filter: url('#cuty-white-key') drop-shadow(0 12px 12px #3e92c91a);
+  transform: rotate(-9deg);
+}
+.neon-aura {
+  position: absolute;
+  z-index: -2;
+  width: 76%;
+  height: 72%;
+  left: 15%;
+  top: 20%;
+  border-radius: 47% 53% 61% 39% / 47% 37% 63% 53%;
+  background: conic-gradient(
+    from 50deg,
+    #84e9e8a0,
+    #a9adff66,
+    #8dd6ff88,
+    #b4f5d9a8,
+    #84e9e8a0
+  );
+  filter: blur(34px);
+  opacity: 0.8;
+}
+.neon-ring {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: -1;
+}
+.neon-ring-one {
+  width: 85%;
+  height: 62%;
+  left: 9%;
+  top: 26%;
+  border: 1.5px solid #9eeaffb0;
+  box-shadow:
+    0 0 9px #8ecfff77,
+    inset 0 0 10px #b8edff70;
+  transform: rotate(-32deg);
+}
+.neon-ring-two {
+  width: 77%;
+  height: 68%;
+  left: 15%;
+  top: 21%;
+  border: 1px solid #9ef4de70;
+  box-shadow: 0 0 13px #a6f7df60;
+  transform: rotate(35deg);
+}
+.neon-star {
+  position: absolute;
+  z-index: 3;
+  font-size: 22px;
+  color: #6eb9e2;
+  text-shadow: 0 0 15px #a8e7ff;
+}
+.star-left {
+  left: 8%;
+  top: 57%;
+  color: #79c9b4;
+}
+.star-right {
+  right: 2%;
+  top: 18%;
+  font-size: 34px;
+}
+.organic-experience .discovery-bar {
+  max-width: 1050px;
+  border-radius: 60px;
+  padding: 20px 25px;
+}
+.organic-experience .themes-section {
+  padding-top: 70px;
+  padding-bottom: 65px;
+}
+.theme-trail {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 30px;
+  padding: 10px 25px 40px;
+}
+.theme-trail-line {
+  position: absolute;
+  width: 90%;
+  height: 180px;
+  top: 35px;
+  left: 5%;
+  fill: none;
+  stroke: #bfd8e5;
+  stroke-width: 1.25;
+  stroke-dasharray: 4 9;
+  pointer-events: none;
+}
+.theme-choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: none;
+  color: var(--ink);
+  padding: 10px 10px 14px;
+  border-radius: 32px;
+  transition: transform 0.25s;
+}
+.theme-choice:nth-of-type(even) {
+  top: 28px;
+}
+.theme-shape {
+  position: relative;
+  display: block;
+  width: 156px;
+  height: 151px;
+  margin-bottom: 21px;
+  background: linear-gradient(140deg, #ffffffc4, var(--shape-tint));
+  border: 1px solid #ffffffce;
+  box-shadow:
+    inset 0 3px 3px #ffffffdc,
+    inset 0 -3px 5px #7292b016,
+    0 10px 28px #7e9eba10;
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+.theme-choice-romance {
+  --shape-tint: #fbe2efb0;
+}
+.theme-choice-healing {
+  --shape-tint: #d1f4e8a8;
+}
+.theme-choice-golf {
+  --shape-tint: #e8f2c8b8;
+}
+.theme-choice-outdoor {
+  --shape-tint: #d8eafbba;
+}
+.theme-choice-romance .theme-shape {
+  border-radius: 44% 56% 46% 54% / 49% 39% 61% 51%;
+  transform: rotate(-9deg);
+}
+.theme-choice-healing .theme-shape {
+  border-radius: 63% 37% 58% 42% / 40% 56% 44% 60%;
+  transform: rotate(8deg);
+}
+.theme-choice-golf .theme-shape {
+  border-radius: 45% 55% 65% 35% / 61% 43% 57% 39%;
+  transform: rotate(-6deg);
+}
+.theme-choice-outdoor .theme-shape {
+  border-radius: 54% 46% 36% 64% / 50% 65% 35% 50%;
+  transform: rotate(9deg);
+}
+.theme-illustration {
+  width: 145px;
+  height: 145px;
+  margin: 2px auto;
+  transition: transform 0.25s;
+}
+.theme-choice-romance .theme-illustration {
+  transform: rotate(9deg);
+}
+.theme-choice-healing .theme-illustration {
+  transform: rotate(-8deg);
+}
+.theme-choice-outdoor .theme-illustration {
+  transform: rotate(-9deg);
+}
+.theme-choice .theme-text {
+  gap: 6px;
+  align-items: center;
+}
+.theme-choice .theme-english {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  color: #7094ad;
+}
+.theme-choice .theme-text strong {
+  font-size: 17px;
+}
+.theme-choice .theme-description {
+  font-size: 11px;
+  white-space: normal;
+  color: #687e91;
+}
+.theme-choice > svg {
+  display: none;
+}
+.theme-chosen {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #3884bb;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  box-shadow: 0 3px 8px #528fb72a;
+}
+.theme-choice.is-active .theme-chosen {
+  opacity: 1;
+}
+.theme-choice.is-active .theme-shape {
+  box-shadow:
+    inset 0 2px 3px white,
+    0 0 0 2px #92c8e8,
+    0 9px 30px #79b9dc25;
+}
+@media (hover: hover) {
+  .theme-choice:hover {
+    transform: translateY(-7px);
+  }
+  .theme-choice:hover .theme-illustration {
+    transform: rotate(0deg) scale(1.06);
+  }
+}
+.organic-experience .journeys-section {
+  padding-bottom: 35px;
+}
+.organic-experience .tour-grid {
+  gap: 24px;
+  align-items: start;
+}
+.organic-experience .tour-card {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+}
+.organic-experience .tour-card:nth-child(even) {
+  margin-top: 38px;
+}
+.organic-experience .tour-photo {
+  height: 288px;
+  border-radius: 45% 45% 15% 15% / 35% 35% 13% 13%;
+  overflow: visible;
+  background: none;
+}
+.organic-experience .tour-card:nth-child(2) .tour-photo {
+  border-radius: 48% 52% 46% 54% / 44% 32% 68% 56%;
+}
+.organic-experience .tour-card:nth-child(3) .tour-photo {
+  border-radius: 48% 48% 22% 22% / 25% 25% 19% 19%;
+}
+.organic-experience .tour-card:nth-child(4) .tour-photo {
+  border-radius: 36% 64% 51% 49% / 56% 41% 59% 44%;
+}
+.organic-experience .photo-button {
+  overflow: hidden;
+  border-radius: inherit;
+  box-shadow: 0 9px 23px #648da81b;
+}
+.organic-experience .photo-tag {
+  top: auto;
+  bottom: 18px;
+  left: 16px;
+  padding: 7px 10px;
+  transform: rotate(-4deg);
+}
+.organic-experience .save-button {
+  top: 14px;
+  right: 7px;
+  width: 40px;
+  height: 40px;
+}
+.organic-experience .tour-card > .location {
+  margin-top: 21px;
+}
+.organic-experience .price {
+  margin-top: 13px;
+}
+.brand-moment {
+  max-width: 1184px;
+  margin: 55px auto 10px;
+  padding: 30px 35px 30px 0;
+  min-height: 450px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 60px;
+  position: relative;
+}
+.brand-moment::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at 27% 50%, #b9e5ff24, transparent 60%);
+}
+.brand-moment-art {
+  height: 425px;
+  position: relative;
+}
+.neon-logo-compact img {
+  width: 92%;
+  left: 5%;
+  top: -2%;
+  transform: rotate(-10deg);
+}
+.neon-logo-compact .neon-aura {
+  opacity: 0.85;
+  filter: blur(35px);
+  background: conic-gradient(
+    from -50deg,
+    #91d5ff90,
+    #aa9ffd68,
+    #9df5e9a0,
+    #9fdcf5b0,
+    #91d5ff90
+  );
+}
+.moment-orbit-note {
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #6a97b3;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1.7px;
+  transform: rotate(-5deg);
+}
+.brand-moment-copy .eyebrow {
+  font-size: 9px;
+}
+.brand-moment-copy h2 {
+  font-size: 35px;
+  font-weight: 650;
+  letter-spacing: -1.5px;
+  line-height: 1.5;
+}
+.brand-moment-copy h2 span {
+  color: #428cc3;
+}
+.brand-moment-copy > p:not(.eyebrow) {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #667f92;
+  line-height: 1.9;
+}
+.brand-moment-copy .banner-cta {
+  margin: 25px 0 0;
+}
+.organic-experience .how-it-works {
+  border-top: 1px dashed #c4dfed;
+  padding-top: 35px;
+}
+.organic-experience .how-it-works > div > span {
+  padding: 14px;
+  border-radius: 44% 56% 51% 49% / 43% 47% 53% 57%;
+  background: #deeffa78;
+  box-shadow: inset 0 2px 3px white;
+}
+@media (max-width: 1280px) {
+  .organic-experience .discovery-bar {
+    margin-left: 48px;
+    margin-right: 48px;
+  }
+  .brand-moment {
+    margin-left: 48px;
+    margin-right: 48px;
+    gap: 30px;
+  }
+  .theme-trail {
+    gap: 15px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+@media (max-width: 1000px) {
+  .theme-shape {
+    width: 132px;
+    height: 132px;
+  }
+  .theme-illustration {
+    width: 125px;
+    height: 125px;
+  }
+  .theme-choice .theme-text strong {
+    font-size: 15px;
+  }
+  .theme-choice .theme-english {
+    font-size: 10px;
+  }
+  .organic-experience .tour-photo {
+    height: 340px;
+  }
+  .brand-moment {
+    gap: 18px;
+    margin-left: 32px;
+    margin-right: 32px;
+    padding-right: 0;
+  }
+  .brand-moment-art {
+    height: 350px;
+  }
+  .brand-moment-copy h2 {
+    font-size: 29px;
+  }
+}
+@media (max-width: 760px) {
+  .organic-experience .brand-world {
+    height: 330px;
+  }
+  .neon-logo img {
+    width: 96%;
+    top: 0;
+  }
+  .neon-logo-compact img {
+    width: 86%;
+    left: 7%;
+  }
+  .organic-experience .masthead {
+    padding-bottom: 65px;
+  }
+  .organic-experience .masthead::before {
+    width: 110%;
+    height: 55%;
+    top: 43%;
+    right: -10%;
+  }
+  .organic-experience .travel-postcard {
+    width: 92px;
+    bottom: -15px;
+  }
+  .organic-experience .travel-postcard > img {
+    height: 83px;
+  }
+  .organic-experience .note-top {
+    top: 7px;
+    padding: 14px;
+  }
+  .theme-trail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px 15px;
+    padding-bottom: 25px;
+  }
+  .theme-trail-line {
+    display: none;
+  }
+  .theme-shape {
+    width: 144px;
+    height: 140px;
+  }
+  .theme-illustration {
+    width: 137px;
+    height: 137px;
+  }
+  .theme-choice:nth-of-type(even) {
+    top: 22px;
+  }
+  .theme-choice .theme-english {
+    font-size: 11px;
+  }
+  .brand-moment {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    padding-top: 0;
+    margin-top: 35px;
+  }
+  .brand-moment-art {
+    width: min(100%, 390px);
+    height: 350px;
+    margin: auto;
+  }
+  .brand-moment-copy {
+    text-align: center;
+  }
+  .brand-moment-copy h2 {
+    font-size: 31px;
+  }
+  .brand-moment-copy > p:not(.eyebrow) {
+    font-size: 13px;
+  }
+  .organic-experience .how-it-works {
+    margin-top: 50px;
+  }
+}
+@media (max-width: 640px) {
+  .organic-experience .masthead {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .organic-experience .discovery-bar {
+    margin-left: 22px;
+    margin-right: 22px;
+    padding: 19px;
+    border-radius: 34px 34px 34px 13px;
+  }
+  .organic-experience .themes-section {
+    padding-top: 50px;
+    padding-bottom: 45px;
+  }
+  .theme-trail {
+    gap: 20px 5px;
+  }
+  .theme-choice {
+    padding: 10px 0;
+  }
+  .theme-shape {
+    width: 126px;
+    height: 127px;
+    margin-bottom: 16px;
+  }
+  .theme-illustration {
+    width: 122px;
+    height: 122px;
+  }
+  .theme-choice .theme-english {
+    font-size: 10px;
+  }
+  .theme-choice .theme-description {
+    font-size: 10px;
+  }
+  .theme-choice .theme-text strong {
+    font-size: 15px;
+  }
+  .organic-experience .tour-grid {
+    gap: 25px 15px;
+  }
+  .organic-experience .journeys-section .section-heading {
+    flex-wrap: wrap;
+  }
+  .organic-experience .sample-label {
+    white-space: nowrap;
+  }
+  .organic-experience .tour-photo {
+    height: 205px;
+  }
+  .organic-experience .tour-card:nth-child(even) {
+    margin-top: 27px;
+  }
+  .organic-experience .photo-tag {
+    font-size: 6px;
+    bottom: 16px;
+    left: 8px;
+    padding: 5px 7px;
+    max-width: none;
+  }
+  .organic-experience .save-button {
+    width: 34px;
+    height: 34px;
+    top: 5px;
+    right: 0;
+  }
+  .organic-experience .tour-card > .location {
+    margin-top: 16px;
+  }
+  .organic-experience .tour-title {
+    min-height: 49px;
+  }
+  .brand-moment {
+    margin-left: 22px;
+    margin-right: 22px;
+  }
+  .brand-moment-art {
+    height: 320px;
+  }
+  .moment-orbit-note {
+    left: 13%;
+    bottom: 2px;
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+}
+@media (max-width: 370px) {
+  .theme-shape {
+    width: 112px;
+    height: 115px;
+  }
+  .theme-illustration {
+    width: 109px;
+    height: 109px;
+  }
+  .theme-choice .theme-english {
+    font-size: 9px;
+  }
+  .organic-experience .tour-card:nth-child(even) {
+    margin-top: 0;
+  }
+  .organic-experience .tour-photo {
+    height: 300px;
+  }
+  .brand-moment-art {
+    height: 280px;
+  }
+  .brand-moment-copy h2 {
+    font-size: 27px;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .theme-shape {
+    background: #f0f7fb;
+  }
+  .neon-aura {
+    opacity: 0.35;
+  }
+}
