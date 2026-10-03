@@ -1,0 +1,570 @@
+@font-face {
+  font-family: 'Fredoka';
+  src: url('/fonts/fredoka-variable.ttf') format('truetype');
+  font-weight: 300 700;
+  font-stretch: 75% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --glass-fill: linear-gradient(135deg, #ffffffb8, #ffffff4a 47%, #e9f7ff75);
+  --glass-border: #ffffffd9;
+  --glass-shadow:
+    inset 0 2px 2px #ffffffee, inset 0 -2px 3px #739db72b,
+    inset 2px 0 3px #ffffffa0, 0 8px 26px #46799913, 0 1px 2px #548dad20;
+  --glass-blur: blur(18px) saturate(155%);
+}
+body {
+  background:
+    radial-gradient(ellipse 750px 440px at 92% 9%, #b9e8e87a, transparent),
+    radial-gradient(ellipse 650px 500px at 5% 33%, #cce7ff70, transparent),
+    radial-gradient(ellipse 580px 470px at 96% 63%, #c8f1e965, transparent),
+    #f5faff;
+}
+/* One optical baseline: the supplied C replaces the typed c. */
+.brand {
+  flex-shrink: 0;
+}
+.brand-lockup {
+  --mark-height: 65px;
+  display: inline-flex;
+  align-items: flex-end;
+  height: var(--mark-height);
+  mix-blend-mode: multiply;
+  position: relative;
+  white-space: nowrap;
+}
+.brand-c {
+  position: relative;
+  display: inline-block;
+  width: calc(var(--mark-height) * 0.94);
+  height: var(--mark-height);
+  overflow: hidden;
+  flex-shrink: 0;
+  mix-blend-mode: multiply;
+}
+.brand-c img {
+  position: absolute;
+  width: calc(var(--mark-height) * 1.14);
+  height: calc(var(--mark-height) * 1.14);
+  max-width: none;
+  left: calc(var(--mark-height) * -0.16);
+  top: calc(var(--mark-height) * -0.015);
+  mix-blend-mode: multiply;
+}
+.brand-uty {
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 600;
+  font-variation-settings: 'wdth' 108;
+  font-size: calc(var(--mark-height) * 0.89);
+  line-height: 1.13;
+  letter-spacing: calc(var(--mark-height) * -0.048);
+  padding-right: 0.04em;
+  margin-left: calc(var(--mark-height) * -0.055);
+  padding-bottom: calc(var(--mark-height) * 0.005);
+  color: #459ae2;
+  background: linear-gradient(
+    180deg,
+    #eaf9ff 5%,
+    #a5d9ff 24%,
+    #5aa6f0 44%,
+    #3a8ddc 67%,
+    #94d4f2 92%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.55px #6eafeb;
+  filter: drop-shadow(0 1px 0 #ffffff) drop-shadow(0 2px 1px #337ac024);
+}
+.site-header {
+  height: 104px;
+}
+.site-header nav {
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 40px;
+  background: var(--glass-fill);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.site-header nav button {
+  padding: 12px 22px;
+}
+.site-header nav button.nav-active {
+  background: linear-gradient(#ffffffed, #e0f2ffc7);
+  box-shadow:
+    inset 0 1px 2px #ffffff,
+    0 3px 9px #4c89bc20;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+:is(
+  .header-save,
+  .hello-badge,
+  .floating-note,
+  .discovery-bar,
+  .tour-card,
+  .personal-banner,
+  .travel-postcard,
+  .banner-cta,
+  .save-button
+) {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-fill);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.masthead {
+  min-height: 565px;
+  padding-top: 52px;
+  background:
+    radial-gradient(ellipse at 83% 80%, #a6e7d888, transparent 40%),
+    radial-gradient(ellipse at 80% 8%, #a5d7ff9c, transparent 53%),
+    linear-gradient(125deg, #eff8ffbb, #dcefff60);
+  border: 1px solid #ffffffef;
+  box-shadow:
+    inset 0 2px 3px #fff,
+    inset 0 -3px 5px #699cbd24,
+    0 12px 35px #7eafcf12;
+}
+.masthead h1 {
+  font-weight: 650;
+}
+.masthead-copy {
+  z-index: 3;
+}
+.sky-cloud {
+  opacity: 0.8;
+  filter: blur(2px);
+}
+.brand-world {
+  isolation: isolate;
+}
+.glass-brand-stage {
+  position: absolute;
+  left: 0;
+  right: -10px;
+  top: 92px;
+  height: 230px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffffb8;
+  border-radius: 66px;
+  background: linear-gradient(125deg, #ffffff80, #ffffff12 48%, #efffff54);
+  box-shadow:
+    inset 0 3px 4px #ffffffed,
+    inset 0 -4px 6px #7fbcd54d,
+    inset 3px 0 4px #ffffffcf,
+    inset -2px 0 5px #89b9e83b,
+    0 20px 40px #6c9db720;
+  -webkit-backdrop-filter: blur(4px) saturate(145%);
+  backdrop-filter: blur(4px) saturate(145%);
+  transform: rotate(-5deg);
+}
+.glass-brand-stage::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: inherit;
+  border: 1px solid #ffffff73;
+  background: linear-gradient(
+    155deg,
+    #ffffff60 0%,
+    transparent 33%,
+    transparent 73%,
+    #ffffff48 100%
+  );
+  pointer-events: none;
+}
+.brand-lockup-large {
+  --mark-height: clamp(125px, 12vw, 175px);
+}
+.brand-tagline {
+  font-family: 'Fredoka', ui-rounded, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 4px;
+  color: #527f9f;
+  margin-top: 2px;
+  padding-bottom: 9px;
+}
+.glass-bubble {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  border: 1px solid #ffffffb0;
+  background: radial-gradient(
+    circle at 30% 22%,
+    #ffffffef,
+    #ffffff15 28%,
+    #89c5ef20 55%,
+    #76b9dc68 89%,
+    #e5fffa90
+  );
+  box-shadow:
+    inset 3px 4px 9px #ffffffd1,
+    inset -5px -6px 10px #549dc82b,
+    0 15px 28px #6d9db922;
+}
+.bubble-one {
+  width: 176px;
+  height: 176px;
+  right: -15px;
+  top: 3px;
+}
+.bubble-two {
+  width: 107px;
+  height: 107px;
+  left: 14px;
+  bottom: 16px;
+  background-color: #c5f4df70;
+}
+.world-orbit {
+  inset: 8px -10px -10px;
+  opacity: 0.65;
+}
+.note-top {
+  top: 25px;
+  left: -4px;
+}
+.note-bottom {
+  bottom: 8px;
+  right: -8px;
+}
+.travel-postcard {
+  width: 134px;
+  bottom: -20px;
+  left: 22px;
+}
+.travel-postcard > img {
+  height: 86px;
+}
+.masthead-signoff {
+  color: #567d97;
+}
+.masthead-cta,
+.button.primary {
+  color: #fff;
+  background: linear-gradient(180deg, #62b0eeeb, #2878cbdc 58%, #428ccfdc);
+  border: 1px solid #96cff7;
+  box-shadow:
+    inset 0 2px 2px #e6f7ffb8,
+    inset 0 -2px 2px #17548b36,
+    0 7px 20px #468bc12c;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.masthead-cta:hover,
+.button.primary:hover {
+  background: linear-gradient(#4198df, #226bbc);
+}
+.discovery-bar {
+  border-radius: 30px;
+}
+.search-field {
+  background: #ffffff55;
+  border-color: #ffffffdd;
+  box-shadow:
+    inset 0 2px 5px #6085a112,
+    0 1px 0 #ffffff;
+}
+.theme-card:nth-child(n) {
+  position: relative;
+  background: linear-gradient(135deg, #ffffffa8, var(--theme-tint));
+  border: 1px solid #ffffffdf;
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(15px) saturate(140%);
+  backdrop-filter: blur(15px) saturate(140%);
+}
+.theme-card:nth-child(1) {
+  --theme-tint: #f6cee55e;
+}
+.theme-card:nth-child(2) {
+  --theme-tint: #bceadf65;
+}
+.theme-card:nth-child(3) {
+  --theme-tint: #d5e7b965;
+}
+.theme-card:nth-child(4) {
+  --theme-tint: #bcd5fa65;
+}
+.theme-card::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 20px;
+  border-top: 1px solid #ffffffd0;
+  border-bottom: 1px solid #ffffff90;
+  pointer-events: none;
+}
+.theme-icon {
+  border: 1px solid #ffffffc0;
+  box-shadow:
+    inset 0 2px 3px white,
+    inset 0 -2px 3px #698ba321,
+    0 5px 10px #6b97b118;
+}
+.filters button {
+  background: #ffffff64;
+  border-color: #ffffffd0;
+  box-shadow:
+    inset 0 1px 1px white,
+    0 2px 5px #5284a00d;
+}
+.filters button.active {
+  background: linear-gradient(#5ba2dcc9, #2d78b9e8);
+  border-color: #8abde8;
+  box-shadow: inset 0 1px 2px #d9edff;
+}
+.photo-tag {
+  color: #244e70;
+  background: #ffffffb8;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.save-button {
+  background: linear-gradient(#ffffffad, #ffffff40);
+  color: #2a5981;
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+}
+.save-button.saved {
+  background: #fff0f6d9;
+}
+.tour-description,
+.location {
+  color: #536e84;
+}
+.personal-banner {
+  background: linear-gradient(110deg, #e5f4ff8c, #ffffff77, #d4f4e994);
+}
+.site-footer {
+  border-top-color: #d9e8f4;
+}
+.site-footer .brand-lockup {
+  --mark-height: 54px;
+}
+.builder {
+  border: 1px solid #ffffffe6;
+  background: linear-gradient(135deg, #f6fbfff5, #e6f4fbef);
+  box-shadow:
+    inset 0 2px 2px white,
+    0 25px 90px #19477235;
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+.builder::backdrop {
+  background: #244e6955;
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+.builder-options label {
+  background: #ffffff77;
+  border-color: #ffffff;
+  box-shadow:
+    inset 0 1px 2px white,
+    0 2px 5px #6088a210;
+}
+.builder-options label.selected {
+  background: #cceaff88;
+  border-color: #78b5e6;
+}
+/* Readable fallback where backdrop filtering or transparency is unavailable. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .site-header nav,
+  .header-save,
+  .hello-badge,
+  .floating-note,
+  .discovery-bar,
+  .tour-card,
+  .theme-card:nth-child(n),
+  .personal-banner,
+  .save-button,
+  .banner-cta,
+  .glass-brand-stage,
+  .builder {
+    background-color: #f4faff;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-header nav,
+  .header-save,
+  .hello-badge,
+  .floating-note,
+  .discovery-bar,
+  .tour-card,
+  .theme-card:nth-child(n),
+  .personal-banner,
+  .save-button,
+  .banner-cta,
+  .glass-brand-stage,
+  .builder {
+    background: #f4faff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (max-width: 1100px) {
+  .site-header nav button,
+  .site-header nav button.nav-active {
+    padding: 12px 16px;
+  }
+  .glass-brand-stage {
+    left: 0;
+    right: -5px;
+    top: 95px;
+    height: 190px;
+    border-radius: 50px;
+  }
+  .brand-lockup-large {
+    --mark-height: 125px;
+  }
+  .brand-tagline {
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+}
+@media (max-width: 760px) {
+  .site-header nav {
+    gap: 3px;
+    padding: 4px;
+  }
+  .site-header nav button,
+  .site-header nav button.nav-active {
+    padding: 10px 13px;
+  }
+  .brand-world {
+    height: 300px;
+    margin-top: 25px;
+  }
+  .glass-brand-stage {
+    top: 55px;
+    left: -4px;
+    right: -4px;
+    height: 180px;
+    border-radius: 45px;
+  }
+  .brand-lockup-large {
+    --mark-height: 121px;
+  }
+  .note-top {
+    top: 2px;
+    left: 2px;
+  }
+  .note-bottom {
+    bottom: -4px;
+    right: -6px;
+  }
+  .bubble-one {
+    width: 126px;
+    height: 126px;
+    top: 1px;
+    right: -6px;
+  }
+  .bubble-two {
+    width: 76px;
+    height: 76px;
+    left: -10px;
+    bottom: 2px;
+  }
+  .travel-postcard {
+    width: 96px;
+    bottom: -10px;
+    left: 5px;
+  }
+  .travel-postcard > img {
+    height: 58px;
+  }
+  .masthead {
+    padding-top: 36px;
+    padding-bottom: 55px;
+  }
+}
+@media (max-width: 640px) {
+  .site-header {
+    height: 86px;
+    gap: 5px;
+  }
+  .brand-lockup {
+    --mark-height: 49px;
+  }
+  .brand-lockup-large {
+    --mark-height: 121px;
+  }
+  .site-header nav {
+    margin-left: auto;
+    gap: 0;
+  }
+  .site-header nav button,
+  .site-header nav button.nav-active {
+    padding: 10px;
+    font-size: 10px;
+  }
+  .site-header .header-save {
+    padding: 10px 8px;
+  }
+  .site-header .count {
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+  .site-footer .brand-lockup {
+    --mark-height: 45px;
+  }
+}
+@media (max-width: 370px) {
+  .site-header .brand-lockup {
+    --mark-height: 43px;
+  }
+  .site-header nav button,
+  .site-header nav button.nav-active {
+    padding: 8px;
+  }
+  .site-header .header-save {
+    padding: 9px 7px;
+  }
+  .brand-lockup-large {
+    --mark-height: 103px;
+  }
+  .brand-tagline {
+    letter-spacing: 2px;
+  }
+}
+
+/* Keep backdrop filtering on its own layer so the original white-backed C
+   can multiply into the glass without a white compositing rectangle. */
+.glass-brand-stage {
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.glass-brand-stage::before {
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(125deg, #ffffff80, #ffffff12 48%, #efffff54);
+  -webkit-backdrop-filter: blur(4px) saturate(145%);
+  backdrop-filter: blur(4px) saturate(145%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-brand-stage::before {
+    background: #f4faff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.brand-filter-definitions {
+  position: absolute;
+  pointer-events: none;
+}
+.brand-c img {
+  filter: url('#cuty-white-key');
+}
