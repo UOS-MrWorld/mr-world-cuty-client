@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { BrandMark } from '../components/BrandMark'
+import { NeonLogo } from '../components/NeonLogo'
+import { ThemeIllustration } from '../components/ThemeIllustration'
 import { TourCard } from '../components/TourCard'
 import { TripBuilder } from '../components/TripBuilder'
 import { heroImage, themes, tours } from '../data/travel'
@@ -112,7 +114,7 @@ export default function ExplorePage() {
           <span className="count">{savedIds.length}</span>
         </button>
       </header>
-      <main>
+      <main className="organic-experience">
         <section className="masthead" aria-labelledby="hero-title">
           <div className="sky-cloud cloud-one" aria-hidden="true" />
           <div className="sky-cloud cloud-two" aria-hidden="true" />
@@ -150,10 +152,7 @@ export default function ExplorePage() {
             <span className="glass-bubble bubble-one" aria-hidden="true" />
             <span className="glass-bubble bubble-two" aria-hidden="true" />
             <span className="world-orbit" aria-hidden="true" />
-            <div className="glass-brand-stage">
-              <BrandMark large />
-              <span className="brand-tagline">curate your travel</span>
-            </div>
+            <NeonLogo />
             <span className="floating-note note-top">
               <Icon name="heart" size={17} /> 취향대로 떠나요
             </span>
@@ -223,18 +222,31 @@ export default function ExplorePage() {
             </div>
             <p>마음이 콕! 가는 테마를 골라보세요.</p>
           </div>
-          <div className="theme-grid">
+          <div className="theme-trail">
+            <svg
+              className="theme-trail-line"
+              viewBox="0 0 1000 180"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path d="M65 75C215-15 245 200 400 110S635 5 710 90 870 170 940 65" />
+            </svg>
             {themes
               .filter((item) => item.id !== 'all')
-              .map((item, index) => (
+              .map((item) => (
                 <button
-                  className={`theme-card ${theme === item.id ? 'is-active' : ''}`}
+                  className={`theme-choice theme-choice-${item.id} ${theme === item.id ? 'is-active' : ''}`}
                   key={item.id}
                   onClick={() => selectTheme(item.id)}
                   aria-pressed={theme === item.id}
                 >
-                  <span className={`theme-icon theme-icon-${index}`}>
-                    <Icon name={item.icon} size={26} />
+                  <span className="theme-shape">
+                    <ThemeIllustration
+                      theme={item.id as Exclude<ThemeId, 'all'>}
+                    />
+                    <span className="theme-chosen">
+                      <Icon name="check" size={15} />
+                    </span>
                   </span>
                   <span className="theme-text">
                     <span className="theme-english">{item.english}</span>
@@ -351,30 +363,33 @@ export default function ExplorePage() {
             </p>
           )}
         </section>
-        <section className="personal-banner">
-          <div className="banner-illustration" aria-hidden="true">
-            <img
-              src="/brand/cuty-icon.png"
-              alt=""
-              width="126"
-              height="126"
-              loading="lazy"
-            />
+        <section className="brand-moment" aria-labelledby="brand-moment-title">
+          <div className="brand-moment-art">
+            <NeonLogo compact />
+            <span className="moment-orbit-note">
+              <Icon name="sparkles" size={15} /> A LITTLE MAGIC, JUST FOR YOU
+            </span>
           </div>
-          <div>
-            <p className="eyebrow">MADE WITH A LITTLE LOVE</p>
-            <h2>내 취향을 담아, 나만의 여행 완성!</h2>
+          <div className="brand-moment-copy">
+            <p className="eyebrow">MAKE ROOM FOR YOUR NEXT MEMORY</p>
+            <h2 id="brand-moment-title">
+              여행의 모양은 달라도,
+              <br />
+              <span>주인공은 언제나 나.</span>
+            </h2>
             <p>
-              테마는 시작일 뿐. 호텔, 이동, 식사까지 내 취향으로 완성하세요.
+              좋아하는 것들을 하나씩 모아보세요.
+              <br />
+              호텔부터 한 끼까지, 나만의 여행이 완성돼요.
             </p>
+            <button
+              className="button banner-cta"
+              onClick={() => setActiveTour(tours[0])}
+            >
+              나만의 여행 만들기
+              <Icon name="arrow" size={19} />
+            </button>
           </div>
-          <button
-            className="button banner-cta"
-            onClick={() => setActiveTour(tours[0])}
-          >
-            나만의 여행 만들기
-            <Icon name="arrow" size={19} />
-          </button>
         </section>
         <section
           className="how-it-works page-section"
@@ -382,20 +397,25 @@ export default function ExplorePage() {
         >
           {[
             {
+              icon: 'compass' as const,
               title: '마음이 가는 테마를 고르고',
               text: '누구와, 무엇을 하고 싶은지 생각해 보세요.',
             },
             {
+              icon: 'sparkles' as const,
               title: '나에게 맞게 여행을 구성하고',
               text: '호텔부터 식사까지, 원하는 대로 골라보세요.',
             },
             {
+              icon: 'heart' as const,
               title: '설레는 여행을 내 리스트에',
               text: '완성한 여행을 저장하고 천천히 준비하세요.',
             },
-          ].map((step, index) => (
+          ].map((step) => (
             <div key={step.title}>
-              <span>0{index + 1}</span>
+              <span>
+                <Icon name={step.icon} size={23} />
+              </span>
               <div>
                 <h3>{step.title}</h3>
                 <p>{step.text}</p>
