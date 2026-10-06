@@ -53,14 +53,6 @@ npm run dev
 
 검증: `npm run build`, `npm run lint`. 실제 API를 연결할 때는 `.env.example`을 참고해 `VITE_API_BASE_URL`을 설정한다. 현재 초안은 서버 없이 실행된다.
 
-## FE 작업 기준
-
-- [디자인 방향과 템플릿 선정](DESIGN.md): Airbnb 탐색 패턴 + C 로고와 둥근 `uty` 워드마크, 비정형 테마 아이콘과 사진, C 단독 로고의 네온 후광, 하늘색·민트색 liquid glass 스타일.
-- [단계별 제작 계획](docs/frontend-plan.md): 초안 → 명세 확정 → API 연동 → 신청/사용자 영역.
-- [에이전트 작업 가이드](AGENTS.md): 이후 작업에도 적용할 프로젝트 규칙.
-
-찜과 여행 구성은 현재 브라우저에만 저장된다. 사진은 외부 Unsplash 참고 이미지이므로 운영 전 실제 상품 이미지로 교체해야 한다.
-
 ### api/
 
 `api/` 안의 파일은 [서버 저장소](https://github.com/UOS-MrWorld/mr-world-cuty-server)의 패키지와 1:1로 대응한다. 서버 쪽에 새 도메인이 생기면 여기도 같은 이름으로 파일을 추가해야 한다.
