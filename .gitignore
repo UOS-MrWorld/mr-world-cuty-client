@@ -25,3 +25,6 @@ dist-ssr
 # Env
 .env
 .env.local
+
+# Temporary output
+/tmp/

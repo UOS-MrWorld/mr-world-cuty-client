@@ -9,37 +9,37 @@ export const themes: {
 }[] = [
   {
     id: 'all',
-    label: '모든 여행',
+    label: '전체 여행',
     english: 'All journeys',
-    description: '새로운 취향을 발견하는 순간',
+    description: '전체 테마 상품',
     icon: 'sparkles',
   },
   {
     id: 'romance',
-    label: '둘만의 로맨스',
+    label: '허니문',
     english: 'Honeymoon Romance',
-    description: '우리의 가장 빛나는 시작',
+    description: '2인 전용 여행',
     icon: 'heart',
   },
   {
     id: 'healing',
-    label: '부모님과 쉼',
+    label: '효도여행',
     english: 'Parents Healing',
-    description: '고마운 마음을 담은 느린 여행',
+    description: '부모님 동반 여행',
     icon: 'leaf',
   },
   {
     id: 'golf',
-    label: '그린 위의 여유',
+    label: '골프여행',
     english: 'Golf Challenge',
-    description: '좋아하는 일로 채우는 하루',
+    description: '골프 리조트 여행',
     icon: 'flag',
   },
   {
     id: 'outdoor',
-    label: '자연 속 모험',
+    label: '트레킹',
     english: 'Outdoor Trekking',
-    description: '일상 밖으로 내딛는 한 걸음',
+    description: '트레킹·산악 여행',
     icon: 'mountain',
   },
 ]
@@ -51,9 +51,9 @@ export const tours: Tour[] = [
   {
     id: 'bali',
     theme: 'romance',
-    title: '둘만의 속도로, 발리',
+    title: '발리 허니문 5박 7일',
     location: '인도네시아 · 발리',
-    description: '초록빛 우붓부터 고요한 해변까지, 우리에게 집중하는 시간.',
+    description: '2인 전용 차량과 로맨틱 룸 장식이 포함된 허니문 상품입니다.',
     duration: '5박 7일',
     price: 1890000,
     image:
@@ -64,9 +64,9 @@ export const tours: Tour[] = [
   {
     id: 'kyoto',
     theme: 'healing',
-    title: '마음을 쉬어가는, 교토',
+    title: '교토 효도여행 3박 4일',
     location: '일본 · 교토',
-    description: '작은 정원과 따뜻한 차 한 잔. 부모님과 천천히 걷는 여행.',
+    description: '안마·지압 서비스와 인삼 기념품이 포함된 부모님 동반 여행입니다.',
     duration: '3박 4일',
     price: 1290000,
     image:
@@ -77,9 +77,9 @@ export const tours: Tour[] = [
   {
     id: 'swiss',
     theme: 'outdoor',
-    title: '초록의 끝에서, 스위스',
+    title: '스위스 인터라켄 트레킹 6박 8일',
     location: '스위스 · 인터라켄',
-    description: '알프스의 산길과 에메랄드빛 호수 사이, 자연을 가까이.',
+    description: '트레킹·산악 테마로 구성한 인터라켄 여행 상품입니다.',
     duration: '6박 8일',
     price: 3490000,
     image:
@@ -90,9 +90,9 @@ export const tours: Tour[] = [
   {
     id: 'golf',
     theme: 'golf',
-    title: '라운드 너머의 풍경, 제주',
+    title: '제주 골프 리조트 2박 3일',
     location: '대한민국 · 제주',
-    description: '탁 트인 그린과 제주의 바람. 라운드가 끝나도 이어지는 여유.',
+    description: '골프 리조트 테마와 골프 액세서리·골프공이 포함된 여행입니다.',
     duration: '2박 3일',
     price: 890000,
     image:

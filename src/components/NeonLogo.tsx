@@ -7,7 +7,7 @@ export function NeonLogo({ compact = false }: { compact?: boolean }) {
       <span className="neon-ring neon-ring-two" aria-hidden="true" />
       <img
         src="/brand/cuty-icon.png"
-        alt="구름과 비행기를 품은 CUTY C 로고"
+        alt="CUTY C 로고"
         width="1254"
         height="1254"
         loading={compact ? 'lazy' : 'eager'}
