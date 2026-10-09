@@ -1,4 +1,4 @@
-/** The supplied C icon and rounded `uty` form a single CUTY wordmark. */
+/** Display the complete transparent wordmark without cropping or aspect-ratio distortion. */
 export function BrandMark({ large = false }: { large?: boolean }) {
   return (
     <span
@@ -6,12 +6,7 @@ export function BrandMark({ large = false }: { large?: boolean }) {
       role="img"
       aria-label="CUTY"
     >
-      <span className="brand-c" aria-hidden="true">
-        <img src="/brand/cuty-icon.png" alt="" width="1254" height="1254" />
-      </span>
-      <span className="brand-uty" aria-hidden="true">
-        uty
-      </span>
+      <img src="/brand/cuty-wordmark-transparent.png" alt="" width="1678" height="937" aria-hidden="true" />
     </span>
   )
 }

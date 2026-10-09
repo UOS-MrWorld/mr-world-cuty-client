@@ -15,8 +15,17 @@ export interface Tour {
 
 export interface TravelDraft {
   tourId: string
-  grade: string
-  hotel: string
-  transport: string
-  meal: string
+  grade: TravelGrade
+  hotel: HotelGrade
+  transport: TravelTransport
+  meal: TravelMeal
+  date: string
+  travelers: number
+  champagne: boolean
+  coffee: boolean
 }
+
+export type TravelGrade = 'classic' | 'grand' | 'premium'
+export type HotelGrade = '3' | '4' | '5'
+export type TravelTransport = 'private' | 'van'
+export type TravelMeal = 'lunch' | 'local' | 'steak'
