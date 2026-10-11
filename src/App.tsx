@@ -7,7 +7,7 @@ import { createDraft, isValidTravelDate, normalizeDraft } from './data/configura
 import { themes, tours } from './data/travel'
 import { themeLabels } from './data/catalogue'
 import { useLocalStorage } from './hooks/useLocalStorage'
-import { navigate, useRoute } from './hooks/useRoute'
+import { navigate, useRoute, useRouteTransitioning } from './hooks/useRoute'
 import ExplorePage from './pages/ExplorePage'
 import TourDetailPage from './pages/TourDetailPage'
 import { ConfigurePage } from './pages/ConfigurePage'
@@ -58,6 +58,7 @@ export default function App() {
 function CutyApp() {
   const { session, bookings, exitDemo } = useDemoSession()
   const route = useRoute()
+  const routeTransitioning = useRouteTransitioning()
   const pathname = route.split('?')[0].replace(/\/$/, '') || '/'
   const search = window.location.search
   const match = pathname.match(/^\/tours\/([^/]+)(?:\/(configure|checkout|preview))?$/)
@@ -90,6 +91,7 @@ function CutyApp() {
   const [storedDrafts, saveDrafts, draftsError] = useLocalStorage('cuty:drafts:v1', [], isStoredDraftArray)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const previousPath = useRef<string | null>(null)
   const drafts = tours.flatMap((item) => {
     const stored = storedDrafts.find((draft) => draft.tourId === item.id)
@@ -123,6 +125,11 @@ function CutyApp() {
 
   function toggleCart(id: string) {
     saveCartIds(cartIds.includes(id) ? cartIds.filter((item) => item !== id) : [...cartIds, id])
+  }
+
+  function closeVoice() {
+    setVoiceOpen(false)
+    window.requestAnimationFrame(() => voiceTriggerRef.current?.focus())
   }
 
   function renderPage() {
@@ -217,14 +224,14 @@ function CutyApp() {
   return (
     <>
       <a className="skip-link" href="#page-content">본문으로 건너뛰기</a>
-      <div className={`site-globe-backdrop${isLanding ? ' is-landing' : ''}`} aria-hidden="true"><div className="site-globe-dome-window"><Suspense fallback={null}><SnowGlobe mood={backdropMood} paused={false} reducedMotion={reducedMotion} /></Suspense></div></div>
+      <div className={`site-globe-backdrop${isLanding ? ' is-landing' : ''}`} aria-hidden="true"><div className="site-globe-dome-window"><Suspense fallback={null}><SnowGlobe mood={backdropMood} paused={routeTransitioning} reducedMotion={reducedMotion} /></Suspense></div></div>
       <header className={`site-header app-header${isLanding ? ' landing-header' : ''}`}>
         <div className="header-main">
           <AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink>
           <nav className="main-nav" aria-label="주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/tours" aria-current={pathname === '/tours' || tour ? 'page' : undefined}>여행 둘러보기</AppLink><AppLink href="/my-trips" aria-current={pathname === '/my-trips' ? 'page' : undefined}>내 여행</AppLink></nav>
           <nav className="utility-nav" aria-label="보조 메뉴">{!isStaff && <AppLink href="/cart" aria-label={`장바구니 ${cartIds.length}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{cartIds.length > 0 && <b>{cartIds.length}</b>}</AppLink>}{session ? <button className="session-pill" onClick={exitDemo} title="시연 정보와 개인정보를 지우고 시연을 종료합니다">{session.role === 'staff' ? '직원' : '고객'} 시연 종료</button> : <AppLink href={`/login?next=${encodeURIComponent(isAuth ? '/my-trips' : route)}`}>로그인</AppLink>}<AppLink href="/staff/tours" className="staff-entry" aria-current={isStaff ? 'page' : undefined}>직원 화면</AppLink></nav>
         </div>
-        {!isLanding && !isStaff && !isAuth && <nav className="category-nav" aria-label="여행 테마 메뉴">{themes.map(item => {
+        {!isLanding && !isStaff && !isAuth && pathname !== '/tours' && pathname !== '/my-trips' && <nav className="category-nav" aria-label="여행 테마 메뉴">{themes.map(item => {
           const href = item.id === 'all' ? '/tours' : `/tours?theme=${item.id}`
           const selected = tour ? tour.theme === item.id : pathname === '/tours' && (new URLSearchParams(search).get('theme') ?? 'all') === item.id
           return <AppLink key={item.id} href={href} className={selected ? 'nav-active' : ''} aria-current={selected && pathname === '/tours' ? 'page' : undefined}>{themeLabels[item.id]}</AppLink>
@@ -260,14 +267,14 @@ function CutyApp() {
         {renderPage()}
       </main>
 
-      {isLanding ? <footer className={`home-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta compact onClick={() => setVoiceOpen(true)} /></footer> : <footer className={`site-footer app-footer${voiceOpen ? ' is-voice-open' : ''}`}>
+      {isLanding ? <footer className={`home-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} compact onClick={() => setVoiceOpen(true)} /></footer> : <footer className={`site-footer app-footer${voiceOpen ? ' is-voice-open' : ''}`}>
           <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink><nav aria-label="하단 메뉴"><AppLink href="/tours">전체 여행</AppLink><AppLink href="/my-trips">내 여행</AppLink><AppLink href="/cart">장바구니</AppLink></nav></div>
-          <VoiceFooterCta onClick={() => setVoiceOpen(true)} />
+          <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} />
           <p>Mr.CUTY · 테마여행 상품 구성 서비스</p>
           <small>© Mr.CUTY.</small>
       </footer>}
       <TravelHistoryDialog />
-      {voiceOpen && <VoiceSearchPanel onClose={() => setVoiceOpen(false)} />}
+      {voiceOpen && <VoiceSearchPanel display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} />}
     </>
   )
 }

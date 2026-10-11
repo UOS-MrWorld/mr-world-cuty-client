@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Icon } from './Icon'
 
 export interface HeroSelectOption {
   value: string
@@ -51,7 +52,7 @@ export function HeroSelect({ label, name, value, options, onChange, className = 
       aria-expanded={open}
       onClick={() => setOpen(current => !current)}
     >
-      <span>{selected?.label}</span><span aria-hidden="true" className="hero-field-chevron">⌄</span>
+      <span>{selected?.label}</span><span aria-hidden="true" className="hero-field-chevron"><Icon name="chevron-down" size={15} /></span>
     </button>
     {open && <div className="hero-field-popover hero-select-options" role="listbox" aria-labelledby={labelId}>
       {options.map(option => <button

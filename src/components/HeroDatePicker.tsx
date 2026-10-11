@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Icon } from './Icon'
 
 interface Props {
   label: string
@@ -58,13 +59,13 @@ export function HeroDatePicker({ label, name, min, value, onChange, className = 
     <span id={labelId}>{label}</span>
     <input type="hidden" name={name} value={value} />
     <button ref={trigger} type="button" className="hero-field-trigger" aria-labelledby={labelId} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(current => !current)}>
-      <span>{readable}</span><span aria-hidden="true" className="hero-field-calendar">◫</span>
+      <span>{readable}</span><span aria-hidden="true" className="hero-field-calendar"><Icon name="calendar" size={16} /></span>
     </button>
     {open && <div className="hero-field-popover hero-calendar" role="dialog" aria-modal="false" aria-label="출발 희망일">
       <div className="hero-calendar-head">
-        <button type="button" aria-label="이전 달" onClick={() => setView(date => new Date(date.getFullYear(), date.getMonth() - 1, 1))}>‹</button>
+        <button type="button" aria-label="이전 달" onClick={() => setView(date => new Date(date.getFullYear(), date.getMonth() - 1, 1))}><Icon name="chevron-left" size={16} /></button>
         <strong>{view.getFullYear()}년 {view.getMonth() + 1}월</strong>
-        <button type="button" aria-label="다음 달" onClick={() => setView(date => new Date(date.getFullYear(), date.getMonth() + 1, 1))}>›</button>
+        <button type="button" aria-label="다음 달" onClick={() => setView(date => new Date(date.getFullYear(), date.getMonth() + 1, 1))}><Icon name="chevron-right" size={16} /></button>
       </div>
       <div className="hero-calendar-weekdays" aria-hidden="true">{weekdays.map(day => <span key={day}>{day}</span>)}</div>
       <div className="hero-calendar-grid">
