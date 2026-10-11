@@ -590,7 +590,7 @@ body {
   text-align: left;
 }
 .hero-field-chevron { transform: translateY(-2px); color: #6792a4; font-size: 15px; }
-.hero-field-calendar { color: #5d98b4; font-size: 16px; }
+.hero-field-calendar { display: grid; flex: 0 0 auto; place-items: center; color: #5d98b4; }
 .hero-field-popover {
   position: absolute;
   z-index: 60;
