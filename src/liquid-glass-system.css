@@ -1328,6 +1328,30 @@ input, select { accent-color: var(--aurora-violet); }
 .voice-input-wave:hover,
 .voice-input-wave:active { background: linear-gradient(0deg, rgb(79 168 240 / .1), rgb(79 168 240 / .045) 45%, rgb(79 168 240 / .012) 76%, transparent); }
 .voice-input-wave:focus-visible { outline: 2px solid var(--aurora-violet); }
+.voice-input-wave.is-starting span { animation: voice-input-wait 1.15s ease-in-out infinite; }
+.voice-input-wave.is-starting span:nth-child(3n + 2) { animation-delay: 90ms; }
+.voice-input-wave.is-starting span:nth-child(3n) { animation-delay: 180ms; }
+.voice-input-wave.is-unavailable span { opacity: .3; transform: scaleY(.12); }
+.voice-input-status {
+  position: fixed;
+  z-index: 111;
+  left: 50%;
+  bottom: calc(66px + env(safe-area-inset-bottom));
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #46647c;
+  background: rgb(248 252 255 / .9);
+  box-shadow: 0 5px 16px rgb(52 80 104 / .1);
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.voice-input-status.is-unavailable { color: #9b3e4a; }
+@keyframes voice-input-wait {
+  0%, 100% { transform: scaleY(.12); opacity: .42; }
+  50% { transform: scaleY(.38); opacity: .8; }
+}
 
 /* Keep the page as one continuous canvas: no header shelf or footer color band. */
 .site-header.app-header {
@@ -1497,6 +1521,7 @@ body::before { display: none; content: none; }
   .voice-neon-cta::before { animation: none; opacity: .7; }
   .voice-neon-cta::after { animation: none; }
   .voice-input-wave::after { animation: none; }
+  .voice-input-wave.is-starting span { animation: none; }
 }
 
 /* Darken the theme labels so the edge-faded header remains readable. */

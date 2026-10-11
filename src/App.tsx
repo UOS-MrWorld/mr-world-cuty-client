@@ -90,6 +90,7 @@ function CutyApp() {
   const [storedDrafts, saveDrafts, draftsError] = useLocalStorage('cuty:drafts:v1', [], isStoredDraftArray)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const previousPath = useRef<string | null>(null)
   const drafts = tours.flatMap((item) => {
     const stored = storedDrafts.find((draft) => draft.tourId === item.id)
@@ -123,6 +124,11 @@ function CutyApp() {
 
   function toggleCart(id: string) {
     saveCartIds(cartIds.includes(id) ? cartIds.filter((item) => item !== id) : [...cartIds, id])
+  }
+
+  function closeVoice() {
+    setVoiceOpen(false)
+    window.requestAnimationFrame(() => voiceTriggerRef.current?.focus())
   }
 
   function renderPage() {
@@ -260,14 +266,14 @@ function CutyApp() {
         {renderPage()}
       </main>
 
-      {isLanding ? <footer className={`home-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta compact onClick={() => setVoiceOpen(true)} /></footer> : <footer className={`site-footer app-footer${voiceOpen ? ' is-voice-open' : ''}`}>
+      {isLanding ? <footer className={`home-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} compact onClick={() => setVoiceOpen(true)} /></footer> : <footer className={`site-footer app-footer${voiceOpen ? ' is-voice-open' : ''}`}>
           <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink><nav aria-label="하단 메뉴"><AppLink href="/tours">전체 여행</AppLink><AppLink href="/my-trips">내 여행</AppLink><AppLink href="/cart">장바구니</AppLink></nav></div>
-          <VoiceFooterCta onClick={() => setVoiceOpen(true)} />
+          <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} />
           <p>Mr.CUTY · 테마여행 상품 구성 서비스</p>
           <small>© Mr.CUTY.</small>
       </footer>}
       <TravelHistoryDialog />
-      {voiceOpen && <VoiceSearchPanel onClose={() => setVoiceOpen(false)} />}
+      {voiceOpen && <VoiceSearchPanel display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} />}
     </>
   )
 }
