@@ -8,7 +8,6 @@ import { themeLabels } from '../data/catalogue'
 import { getEarliestDepartureDate } from '../data/configuration'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { navigate } from '../hooks/useRoute'
-import { LiquidGlassLayer } from '../components/LiquidGlassLayer'
 import { PlaneLoader } from '../components/PlaneLoader'
 import { HeroDatePicker } from '../components/HeroDatePicker'
 import { HeroSelect } from '../components/HeroSelect'
@@ -31,7 +30,6 @@ export default function LandingPage({ onMoodChange }: { onMoodChange?: (mood: Gl
     <section className="landing-hero" aria-label="CUTY 테마 여행">
       <div className="landing-copy"><AppLink className="landing-hero-brand" href="/" aria-label="CUTY 홈"><BrandMark large/></AppLink><h1 key={mood.id}>{mood.title}</h1><p className="landing-description" key={`${mood.id}-description`}>{mood.description}</p><AppLink className="landing-guide-link" href="/tours"><strong>Curate Your Travel</strong><span>여행 둘러보기 ↗</span></AppLink></div>
       <form className="landing-search" role="search" aria-label="여행 조건 검색" onFocusCapture={()=>setFocused(true)} onBlurCapture={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))setFocused(false)}} onSubmit={e=>{e.preventDefault();setSearching(true)}}>
-        <LiquidGlassLayer/>
         <HeroSelect className="hero-search-theme" label="어떤 여행" name="theme" value={searchTheme} onChange={setSearchTheme} options={themes.map(t=>({value:t.id,label:themeLabels[t.id]}))}/>
         <HeroDatePicker className="hero-search-date" label="출발 희망일" name="date" min={getEarliestDepartureDate()} value={searchDate} onChange={setSearchDate}/>
         <HeroSelect className="hero-search-people" label="함께할 인원" name="travelers" value={travelers} onChange={setTravelers} options={Array.from({length:10},(_,i)=>i+1).filter(n=>searchTheme!=='romance'||n%2===0).map(n=>({value:String(n),label:`${n}명${searchTheme==='romance'?` · ${n/2}커플`:''}`}))}/>

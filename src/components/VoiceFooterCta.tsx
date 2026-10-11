@@ -1,13 +1,16 @@
+import type { Ref } from 'react'
 import { Icon } from './Icon'
 
 type VoiceFooterCtaProps = {
   compact?: boolean
   onClick: () => void
+  buttonRef?: Ref<HTMLButtonElement>
 }
 
-export function VoiceFooterCta({ compact = false, onClick }: VoiceFooterCtaProps) {
+export function VoiceFooterCta({ compact = false, onClick, buttonRef }: VoiceFooterCtaProps) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       className={`voice-neon-cta${compact ? ' is-compact' : ' is-floating'}`}
       onClick={onClick}
