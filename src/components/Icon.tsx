@@ -3,6 +3,10 @@ export type IconName =
   | 'search'
   | 'heart'
   | 'cart'
+  | 'calendar'
+  | 'chevron-down'
+  | 'chevron-left'
+  | 'chevron-right'
   | 'leaf'
   | 'flag'
   | 'mountain'
@@ -19,6 +23,10 @@ const paths: Record<IconName, string> = {
   heart:
     'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
   cart: 'M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 1.9-1.4L22 8H6m5 13a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm8 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z',
+  calendar: 'M8 2v4m8-4v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z',
+  'chevron-down': 'm7 10 5 5 5-5',
+  'chevron-left': 'm15 18-6-6 6-6',
+  'chevron-right': 'm9 18 6-6-6-6',
   leaf: 'M20 3C6 2 2 8 5 15c3 7 16 4 15-12ZM4 21 15 10',
   flag: 'M5 21V3m0 1c5-4 9 4 14 0v10c-5 4-9-4-14 0',
   mountain: 'm2 20 8-16 5 9 3-5 5 12H2Zm5-10 3 3 3-3',
