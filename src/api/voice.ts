@@ -17,7 +17,7 @@ export interface VoiceScreenContext {
 }
 
 export interface VoiceCommand {
-  action: 'search' | 'select' | 'configure' | 'checkout' | 'back' | 'summary' | 'cancel' | 'unknown'
+  action: 'search' | 'select' | 'configure' | 'next' | 'checkout' | 'back' | 'summary' | 'cancel' | 'unknown'
   params: Record<string, unknown>
 }
 
