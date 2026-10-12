@@ -5,7 +5,8 @@ import { FlowSteps } from './components/FlowSteps'
 import { Icon } from './components/Icon'
 import { createDraft, isValidTravelDate, normalizeDraft } from './data/configuration'
 import { themes, tours } from './data/travel'
-import { themeLabels } from './data/catalogue'
+import { getVisibleTours, themeLabels } from './data/catalogue'
+import { sendVoiceCommand, type VoiceResponse, type VoiceScreenContext } from './api/voice'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { navigate, useRoute, useRouteTransitioning } from './hooks/useRoute'
 import ExplorePage from './pages/ExplorePage'
@@ -25,7 +26,12 @@ import type { GlobeMood } from './types/landing'
 const SnowGlobe = lazy(() => import('./components/SnowGlobe'))
 const StaffPage = lazy(() => import('./pages/StaffPage'))
 
-import type { TravelDraft } from './types/travel'
+import type { ThemeId, TravelDraft } from './types/travel'
+
+// 음성 AI 서버의 Theme 값(BE Enum) → FE 테마 id
+const voiceThemes: Record<string, Exclude<ThemeId, 'all'>> = {
+  HONEYMOON: 'romance', HEALING: 'healing', GOLF: 'golf', TREKKING: 'outdoor',
+}
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string')
@@ -91,6 +97,7 @@ function CutyApp() {
   const [storedDrafts, saveDrafts, draftsError] = useLocalStorage('cuty:drafts:v1', [], isStoredDraftArray)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voicePending, setVoicePending] = useState<string | null>(null)
   const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const previousPath = useRef<string | null>(null)
   const drafts = tours.flatMap((item) => {
@@ -125,6 +132,62 @@ function CutyApp() {
 
   function toggleCart(id: string) {
     saveCartIds(cartIds.includes(id) ? cartIds.filter((item) => item !== id) : [...cartIds, id])
+  }
+
+  // 음성 AI 서버에 보낼 '지금 화면' 정보. 목록 화면이면 보이는 순서 그대로 상품을 보낸다.
+  function voiceContext(): VoiceScreenContext {
+    const visible = pathname === '/tours' ? getVisibleTours(new URLSearchParams(search), cartIds) : tour ? [tour] : []
+    return {
+      screen: pathname === '/tours' ? 'list' : tour ? (screen === 'configure' ? 'configure' : screen === 'checkout' ? 'checkout' : 'detail') : 'other',
+      tours: visible.map(item => ({ tourId: item.id, tourName: item.title, location: item.location, theme: themeLabels[item.theme], price: item.price })),
+      availableTourLevels: [],
+      drinkOptions: [],
+      pendingAction: voicePending,
+    }
+  }
+
+  // 음성 AI 서버가 돌려준 명령을 기존 화면 이동·검색 기능으로 실행한다.
+  function applyVoice(result: VoiceResponse) {
+    const heard = result.recognizedText ? `“${result.recognizedText}” ` : ''
+    let target = route
+    let message = ''
+    setVoicePending(result.pending?.action ?? null)
+    for (const command of result.commands) {
+      const params = command.params
+      if (command.action === 'search') {
+        const next = new URLSearchParams()
+        const theme = voiceThemes[String(params.theme ?? '')]
+        if (theme) next.set('theme', theme)
+        if (typeof params.maxPrice === 'number') next.set('budget', String(params.maxPrice))
+        if (typeof params.keyword === 'string' && params.keyword) next.set('q', params.keyword)
+        target = next.size ? `/tours?${next.toString()}` : '/tours'
+        message = `${heard}조건으로 여행을 찾았어요.`
+        navigate(target)
+      } else if (command.action === 'select' && tours.some(item => item.id === params.tourId)) {
+        target = `/tours/${String(params.tourId)}${search}`
+        navigate(target)
+      } else if (command.action === 'checkout' && tour) {
+        target = `/tours/${tour.id}/checkout${search}`
+        navigate(target)
+      } else if (command.action === 'back') {
+        window.history.back()
+        return
+      } else if (command.action === 'unknown') {
+        message = `${heard}${String(params.message ?? '다시 말씀해 주세요.')}`
+      } else if (command.action !== 'cancel') {
+        message = `${heard}이 요청은 아직 음성으로 처리할 수 없어요. 화면에서 직접 선택해 주세요.`
+      }
+    }
+    if (result.pending?.message) message = `${heard}${result.pending.message} 마이크를 눌러 “응”이라고 답해 주세요.`
+    if (message) setFeedback({ route: target, message })
+  }
+
+  async function handleVoiceAudio(audio: Blob) {
+    try {
+      applyVoice(await sendVoiceCommand(audio, voiceContext()))
+    } catch {
+      setFeedback({ route, message: '음성 서버에 연결하지 못했어요. 화면에서 직접 선택해 주세요.' })
+    }
   }
 
   function closeVoice() {
@@ -274,7 +337,7 @@ function CutyApp() {
           <small>© Mr.CUTY.</small>
       </footer>}
       <TravelHistoryDialog />
-      {voiceOpen && <VoiceSearchPanel display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} />}
+      {voiceOpen && <VoiceSearchPanel display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} onRecorded={handleVoiceAudio} />}
     </>
   )
 }
