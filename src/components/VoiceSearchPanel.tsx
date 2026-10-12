@@ -1,16 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
+import { encodeWav16k } from '../api/voice'
 
 const BAR_COUNT = 31
 type VoiceDisplay = 'waveform' | 'floating'
 
-/** Captures microphone amplitude only; speech is never recognized, transcribed, or stored. */
-export function VoiceSearchPanel({ onClose, display = 'waveform' }: { onClose: () => void; display?: VoiceDisplay }) {
+/**
+ * 마이크 세기를 파형으로 보여주면서 음성을 녹음한다.
+ * 마이크 버튼을 다시 누르면 녹음을 끝내고 onRecorded로 넘긴다 (음성 AI 서버로 전송).
+ * 녹음은 브라우저 메모리에만 있고 저장하지 않는다.
+ */
+export function VoiceSearchPanel({ onClose, onRecorded, display = 'waveform' }: {
+  onClose: () => void
+  onRecorded?: (audio: Blob) => Promise<void>
+  display?: VoiceDisplay
+}) {
   const controlRef = useRef<HTMLButtonElement>(null)
   const barsRef = useRef<(HTMLSpanElement | null)[]>([])
   const stopListeningRef = useRef<() => void>(() => undefined)
   const closeTimerRef = useRef<number | undefined>(undefined)
-  const [status, setStatus] = useState<'starting' | 'listening' | 'unavailable'>('starting')
+  const chunksRef = useRef<Float32Array[]>([])
+  const sampleRateRef = useRef(48000)
+  const [status, setStatus] = useState<'starting' | 'listening' | 'processing' | 'unavailable'>('starting')
   const [closing, setClosing] = useState(false)
 
   useEffect(() => {
@@ -53,7 +64,19 @@ export function VoiceSearchPanel({ onClose, display = 'waveform' }: { onClose: (
         const analyser = context.createAnalyser()
         analyser.fftSize = 128
         analyser.smoothingTimeConstant = 0.72
-        context.createMediaStreamSource(stream).connect(analyser)
+        const source = context.createMediaStreamSource(stream)
+        source.connect(analyser)
+        // 녹음: 소리 데이터를 모아뒀다가 끝날 때 WAV로 만든다. 스피커로는 내보내지 않는다(볼륨 0).
+        sampleRateRef.current = context.sampleRate
+        chunksRef.current = []
+        const recorder = context.createScriptProcessor(4096, 1, 1)
+        recorder.onaudioprocess = event => {
+          if (!cancelled) chunksRef.current.push(new Float32Array(event.inputBuffer.getChannelData(0)))
+        }
+        const mute = context.createGain()
+        mute.gain.value = 0
+        source.connect(recorder)
+        recorder.connect(mute).connect(context.destination)
         const samples = new Uint8Array(analyser.fftSize)
         setStatus('listening')
 
@@ -105,7 +128,15 @@ export function VoiceSearchPanel({ onClose, display = 'waveform' }: { onClose: (
   }, [])
 
   function close() {
+    if (status === 'processing') return
     stopListeningRef.current()
+    const chunks = chunksRef.current
+    chunksRef.current = []
+    if (onRecorded && status === 'listening' && chunks.length > 0) {
+      setStatus('processing')
+      void onRecorded(encodeWav16k(chunks, sampleRateRef.current)).finally(onClose)
+      return
+    }
     if (display === 'floating' && status === 'listening' && !closing) {
       setClosing(true)
       closeTimerRef.current = window.setTimeout(onClose, 220)
@@ -125,8 +156,9 @@ export function VoiceSearchPanel({ onClose, display = 'waveform' }: { onClose: (
         title="음성 입력 종료"
       >
         <span className="voice-input-mic-icon" aria-hidden="true"><Icon name="mic-filled" size={25} /></span>
-        <span className="sr-only">{status === 'starting' ? '마이크 연결 중' : status === 'listening' ? '음성 입력 중' : '마이크를 사용할 수 없음'}</span>
+        <span className="sr-only">{status === 'starting' ? '마이크 연결 중' : status === 'listening' ? '음성 입력 중. 다 말했으면 다시 누르세요' : status === 'processing' ? '음성 인식 중' : '마이크를 사용할 수 없음'}</span>
       </button>
+      {status === 'processing' && <span className="voice-input-status is-processing" role="status">음성을 인식하고 있어요…</span>}
       {status === 'unavailable' && <span className="sr-only" role="alert">마이크를 사용할 수 없습니다. 브라우저 권한을 확인해 주세요.</span>}
     </>
   }
@@ -144,7 +176,7 @@ export function VoiceSearchPanel({ onClose, display = 'waveform' }: { onClose: (
     </button>
     {status !== 'listening' && (
       <span className={`voice-input-status is-${status}`} role={status === 'unavailable' ? 'alert' : 'status'}>
-        {status === 'starting' ? '마이크 연결 중…' : '마이크 권한을 확인해 주세요'}
+        {status === 'starting' ? '마이크 연결 중…' : status === 'processing' ? '음성을 인식하고 있어요…' : '마이크 권한을 확인해 주세요'}
       </span>
     )}
   </>

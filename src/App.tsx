@@ -3,9 +3,11 @@ import { AppLink } from './components/AppLink'
 import { BrandMark } from './components/BrandMark'
 import { FlowSteps } from './components/FlowSteps'
 import { Icon } from './components/Icon'
-import { createDraft, isValidTravelDate, normalizeDraft } from './data/configuration'
+import { createDraft, getEstimate, gradeLabels, hotelLabels, isOpenTravelDate, isValidTravelDate, mealLabels, minimumGrade, normalizeDraft, getGradeDefaults, transportLabels } from './data/configuration'
+import { formatPrice } from './data/travel'
 import { themes, tours } from './data/travel'
-import { themeLabels } from './data/catalogue'
+import { getVisibleTours, themeLabels } from './data/catalogue'
+import { sendVoiceCommand, type VoiceResponse, type VoiceScreenContext } from './api/voice'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { navigate, useRoute, useRouteTransitioning } from './hooks/useRoute'
 import ExplorePage from './pages/ExplorePage'
@@ -25,7 +27,24 @@ import type { GlobeMood } from './types/landing'
 const SnowGlobe = lazy(() => import('./components/SnowGlobe'))
 const StaffPage = lazy(() => import('./pages/StaffPage'))
 
-import type { TravelDraft } from './types/travel'
+import type { HotelGrade, ThemeId, TravelDraft, TravelGrade, TravelMeal, TravelTransport } from './types/travel'
+
+// 음성 AI 서버의 Theme 값(BE Enum) → FE 테마 id
+const voiceThemes: Record<string, Exclude<ThemeId, 'all'>> = {
+  HONEYMOON: 'romance', HEALING: 'healing', GOLF: 'golf', TREKKING: 'outdoor',
+}
+// 음성 AI 서버의 구성 값(BE Enum) → FE 여행 구성 값
+const voiceGrades: Record<string, TravelGrade> = { CLASSIC: 'classic', GRAND: 'grand', PREMIUM: 'premium' }
+const voiceHotels: Record<string, HotelGrade> = { THREE_STAR: '3', FOUR_STAR: '4', FIVE_STAR: '5' }
+const voiceMeals: Record<string, TravelMeal> = { LUNCH_BOX: 'lunch', LOCAL_RESTAURANT: 'local', FINE_DINING: 'steak' }
+const voiceTransports: Record<string, TravelTransport> = { PREMIUM_CAR_2: 'private', PREMIUM_VAN_10: 'van' }
+const voiceDrinks = [{ optionId: 1, name: '샴페인', key: 'champagne' }, { optionId: 2, name: '커피', key: 'coffee' }] as const
+
+function describeDraft(draft: TravelDraft) {
+  const drinks = [draft.grade === 'premium' || draft.champagne ? '샴페인' : '', draft.coffee ? '커피' : ''].filter(Boolean).join('·')
+  return [draft.date && `${draft.date} 출발`, `${draft.travelers}명`, gradeLabels[draft.grade], hotelLabels[draft.hotel],
+    mealLabels[draft.meal], transportLabels[draft.transport], drinks].filter(Boolean).join(' · ')
+}
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string')
@@ -91,6 +110,7 @@ function CutyApp() {
   const [storedDrafts, saveDrafts, draftsError] = useLocalStorage('cuty:drafts:v1', [], isStoredDraftArray)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voicePending, setVoicePending] = useState<string | null>(null)
   const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const previousPath = useRef<string | null>(null)
   const drafts = tours.flatMap((item) => {
@@ -125,6 +145,120 @@ function CutyApp() {
 
   function toggleCart(id: string) {
     saveCartIds(cartIds.includes(id) ? cartIds.filter((item) => item !== id) : [...cartIds, id])
+  }
+
+  // 음성 AI 서버에 보낼 '지금 화면' 정보. 목록 화면이면 보이는 순서 그대로 상품을 보낸다.
+  function voiceContext(): VoiceScreenContext {
+    const visible = pathname === '/tours' ? getVisibleTours(new URLSearchParams(search), cartIds) : tour ? [tour] : []
+    return {
+      screen: pathname === '/tours' ? 'list' : tour ? (screen === 'configure' ? 'configure' : screen === 'checkout' ? 'checkout' : 'detail') : 'other',
+      tours: visible.map(item => ({ tourId: item.id, tourName: item.title, location: item.location, theme: themeLabels[item.theme], price: item.price })),
+      availableTourLevels: tour ? (minimumGrade(tour) === 'grand' ? ['GRAND', 'PREMIUM'] : ['CLASSIC', 'GRAND', 'PREMIUM']) : [],
+      drinkOptions: tour ? voiceDrinks.map(({ optionId, name }) => ({ optionId, name })) : [],
+      pendingAction: voicePending,
+    }
+  }
+
+  // 음성 AI 서버가 돌려준 명령을 기존 화면 이동·검색 기능으로 실행한다.
+  function applyVoice(result: VoiceResponse) {
+    const heard = result.recognizedText ? `“${result.recognizedText}” ` : ''
+    let target = route
+    let message = ''
+    // 한 문장에 명령이 여러 개일 수 있어서("11월 20일로 하고 다음으로") 바뀐 구성·화면을 따라가며 처리한다
+    let currentTour = tour
+    let current = draft
+    let currentScreen = screen
+    setVoicePending(result.pending?.action ?? null)
+    for (const command of result.commands) {
+      const params = command.params
+      if (command.action === 'search') {
+        const next = new URLSearchParams()
+        const theme = voiceThemes[String(params.theme ?? '')]
+        if (theme) next.set('theme', theme)
+        if (typeof params.maxPrice === 'number') next.set('budget', String(params.maxPrice))
+        if (typeof params.keyword === 'string' && params.keyword) next.set('q', params.keyword)
+        target = next.size ? `/tours?${next.toString()}` : '/tours'
+        message = `${heard}조건으로 여행을 찾았어요.`
+        navigate(target)
+      } else if (command.action === 'select' && tours.some(item => item.id === params.tourId)) {
+        currentTour = tours.find(item => item.id === params.tourId)!
+        current = drafts.find(item => item.tourId === currentTour!.id) ?? createDraft(currentTour)
+        currentScreen = undefined
+        target = `/tours/${currentTour.id}${search}`
+        navigate(target)
+      } else if (command.action === 'configure' && currentTour && current) {
+        // 등급을 바꾸면 화면에서 고를 때처럼 그 등급 기본 구성부터 적용하고, 말한 항목을 덮어쓴다
+        const grade = voiceGrades[String(params.tourLevel ?? '')]
+        const changes: Partial<TravelDraft> = grade ? { grade, ...getGradeDefaults(currentTour, grade) } : {}
+        const hotel = voiceHotels[String(params.hotelGrade ?? '')]
+        const meal = voiceMeals[String(params.mealType ?? '')]
+        const transport = voiceTransports[String(params.transport ?? '')]
+        if (hotel) changes.hotel = hotel
+        if (meal) changes.meal = meal
+        if (transport) changes.transport = transport
+        if (typeof params.guestCount === 'number') changes.travelers = params.guestCount
+        if (typeof params.departureDate === 'string') changes.date = params.departureDate
+        if (Array.isArray(params.drinkOptions)) {
+          for (const option of params.drinkOptions as { optionId?: number; quantity?: number }[]) {
+            const drink = voiceDrinks.find(item => item.optionId === option.optionId)
+            if (drink) changes[drink.key] = (option.quantity ?? 0) > 0
+          }
+        }
+        const next = normalizeDraft(currentTour, { ...current, ...changes })
+        updateDraft(next)
+        current = next
+        // 상품 규칙(허니문은 짝수 인원·클래식 불가 등) 때문에 말한 값과 달라진 항목이 있으면 알려준다
+        const adjusted = (Object.keys(changes) as (keyof TravelDraft)[]).some(key => next[key] !== changes[key])
+        const dateNote = changes.date && !isOpenTravelDate(next.date) ? ' 출발일은 모집 마감 전 날짜로 다시 골라 주세요.' : ''
+        message = `${heard}구성을 바꿨어요: ${describeDraft(next)}. 예상 합계 ${formatPrice(getEstimate(currentTour, next).total)}원.${adjusted ? ' 상품 규칙에 맞게 일부 선택을 조정했어요.' : ''}${dateNote}`
+        const onlyDateOrTravelers = Object.keys(changes).every(key => key === 'date' || key === 'travelers')
+        if (!currentScreen && !onlyDateOrTravelers) {
+          target = `/tours/${currentTour.id}/configure${search}`
+          currentScreen = 'configure'
+          navigate(target)
+        }
+      } else if (command.action === 'next' && currentTour && current) {
+        if (currentScreen !== 'configure' && currentScreen) {
+          message = `${heard}이 화면에서는 다음 단계가 없어요.`
+        } else if (!isOpenTravelDate(current.date)) {
+          message = `${heard}먼저 출발 희망일을 말해 주세요. 예: “11월 20일 출발로 해줘”`
+        } else {
+          currentScreen = currentScreen === 'configure' ? 'checkout' : 'configure'
+          target = `/tours/${currentTour.id}/${currentScreen}${search}`
+          navigate(target)
+        }
+      } else if (command.action === 'checkout' && currentTour && current) {
+        if (!isOpenTravelDate(current.date)) {
+          message = `${heard}신청하려면 출발 희망일이 필요해요. 예: “11월 20일 출발로 해줘”`
+        } else {
+          currentScreen = 'checkout'
+          target = `/tours/${currentTour.id}/checkout${search}`
+          message = `${heard}신청 화면으로 왔어요. 여행자 정보 입력과 결제는 직접 진행해 주세요.`
+          navigate(target)
+        }
+      } else if (command.action === 'summary' && currentTour && current) {
+        message = `${heard}${describeDraft(current)} · 예상 합계 ${formatPrice(getEstimate(currentTour, current).total)}원이에요.`
+      } else if (command.action === 'back') {
+        window.history.back()
+        return
+      } else if (command.action === 'unknown') {
+        message = `${heard}${String(params.message ?? '다시 말씀해 주세요.')}`
+      } else if (['configure', 'next', 'checkout', 'summary'].includes(command.action)) {
+        message = `${heard}먼저 여행 상품을 골라 주세요. 예: “두 번째 거 보여줘”`
+      } else if (command.action !== 'cancel') {
+        message = `${heard}이 요청은 아직 음성으로 처리할 수 없어요. 화면에서 직접 선택해 주세요.`
+      }
+    }
+    if (result.pending?.message) message = `${heard}${result.pending.message} 마이크를 눌러 “응”이라고 답해 주세요.`
+    if (message) setFeedback({ route: target, message })
+  }
+
+  async function handleVoiceAudio(audio: Blob) {
+    try {
+      applyVoice(await sendVoiceCommand(audio, voiceContext()))
+    } catch {
+      setFeedback({ route, message: '음성 서버에 연결하지 못했어요. 화면에서 직접 선택해 주세요.' })
+    }
   }
 
   function closeVoice() {
@@ -274,7 +408,7 @@ function CutyApp() {
           <small>© Mr.CUTY.</small>
       </footer>}
       <TravelHistoryDialog />
-      {voiceOpen && <VoiceSearchPanel display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} />}
+      {voiceOpen && <VoiceSearchPanel display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} onRecorded={handleVoiceAudio} />}
     </>
   )
 }
