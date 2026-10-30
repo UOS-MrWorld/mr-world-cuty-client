@@ -1,15 +1,22 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { createBooking } from '../api/booking'
+import { createPayment } from '../api/payment'
+import { getTourQuote } from '../api/tour'
 import { AppLink } from '../components/AppLink'
 import { Icon } from '../components/Icon'
 import { TripSummary } from '../components/TripSummary'
 import { getEstimate, getToday } from '../data/configuration'
 import { demoContactPattern, getRecruitmentDeadline, paymentMethodLabels } from '../data/demoBookings'
 import { formatPrice } from '../data/travel'
+import { toBookingRequest, toQuoteRequest } from '../data/bookingApiAdapter'
 import { useDemoSession } from '../hooks/useDemoSession'
 import { useAuth } from '../hooks/useAuth'
 import { navigate } from '../hooks/useRoute'
 import type { DemoPaymentMethod, DemoPerson } from '../types/demo'
 import type { Tour, TravelDraft } from '../types/travel'
+import type { BookingResponse } from '../types/bookingApi'
+import type { PaymentResponse } from '../types/paymentApi'
+import type { QuoteResponse } from '../types/tourApi'
 
 const emptyPerson: DemoPerson = { name: '', address: '', contact: '' }
 
@@ -23,6 +30,94 @@ function PersonFields({ person, prefix, onChange }: {
     <label className="field" htmlFor={`${prefix}-contact`}>연락처 <span className="required-mark">필수</span><input id={`${prefix}-contact`} type="tel" required autoComplete="off" pattern={demoContactPattern} placeholder="010-0000-0000" value={person.contact} onChange={event => onChange({ ...person, contact: event.target.value })} /><small>휴대전화번호 또는 지역번호를 포함해 입력해 주세요.</small></label>
     <label className="field person-address" htmlFor={`${prefix}-address`}>주소 <span className="required-mark">필수</span><input id={`${prefix}-address`} required maxLength={160} autoComplete="off" value={person.address} onChange={event => onChange({ ...person, address: event.target.value })} /></label>
   </div>
+}
+
+function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
+  const [quote, setQuote] = useState<QuoteResponse | null>(null)
+  const [booking, setBooking] = useState<BookingResponse | null>(null)
+  const [payment, setPayment] = useState<PaymentResponse | null>(null)
+  const [cardNumber, setCardNumber] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [processing, setProcessing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setErrorMessage('')
+    void getTourQuote(Number(tour.id), toQuoteRequest(tour, draft)).then(response => {
+      if (active) setQuote(response.data)
+    }).catch(error => {
+      if (active) setErrorMessage(error instanceof Error ? error.message : '결제 예정 금액을 확인하지 못했습니다.')
+    }).finally(() => {
+      if (active) setLoading(false)
+    })
+    return () => { active = false }
+  }, [draft, tour])
+
+  async function submitBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (processing || !quote || !event.currentTarget.reportValidity()) return
+    setProcessing(true)
+    setErrorMessage('')
+    try {
+      const { data } = await createBooking(toBookingRequest(tour, draft))
+      setBooking(data)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '예약을 생성하지 못했습니다.')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  async function submitPayment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (processing || !booking || !event.currentTarget.reportValidity()) return
+    setProcessing(true)
+    setErrorMessage('')
+    try {
+      const { data } = await createPayment({ bookingId: booking.bookingId, cardNumber })
+      setPayment(data)
+      if (data.paymentStatus === 'SUCCESS') {
+        const params = new URLSearchParams(window.location.search)
+        params.set('booking', String(data.bookingId))
+        navigate(`/tours/${tour.id}/preview?${params}`)
+      } else {
+        setErrorMessage('Mock 결제가 거절되었습니다. 예약은 PENDING 상태로 유지되며 카드번호를 바꿔 다시 시도할 수 있습니다.')
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Mock 결제를 처리하지 못했습니다.')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  if (loading) return <p className="notice" role="status">서버에서 결제 예정 금액을 확인하는 중입니다.</p>
+  if (!quote) return <div className="empty-state"><Icon name="compass" size={36} /><h1>신청 내용을 확인하지 못했어요.</h1><p>{errorMessage}</p><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성으로 돌아가기</AppLink></div>
+
+  return <>
+    <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>{booking ? 'PENDING 예약이 생성됐어요.' : '선택한 구성으로 예약할까요?'}</h1><p>{booking ? 'Mock 카드번호를 입력해 결제 결과를 확인하세요.' : '서버가 계산한 금액과 출발·취소 조건을 확인해 주세요.'}</p></div>
+    <div className="flow-layout">
+      <div className="flow-main checkout-fields">
+        {!booking ? <form className="surface-card" onSubmit={submitBooking}>
+          <h2 className="section-title">예약 생성</h2>
+          <dl className="detail-facts"><div><dt>예약 상태</dt><dd>PENDING으로 생성</dd></div><div><dt>할인율</dt><dd>{quote.discountRate}%</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(quote.expectedPaymentAmount)}원</dd></div></dl>
+          <label className="checkout-agreement"><input type="checkbox" required /><span>선택 구성과 서버 계산 금액을 확인했습니다.</span></label>
+          {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
+          <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="submit" disabled={processing}>{processing ? '예약 생성 중…' : 'PENDING 예약 생성'}</button></div>
+        </form> : <form className="surface-card" onSubmit={submitPayment}>
+          <h2 className="section-title">Mock 카드 결제</h2>
+          <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>{booking.bookingStatus}</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(booking.expectedPaymentAmount)}원</dd></div></dl>
+          <label className="field" htmlFor="api-card-number">Mock 카드번호 <span className="required-mark">필수</span><input id="api-card-number" required autoComplete="off" value={cardNumber} onChange={event => setCardNumber(event.target.value)} placeholder="승인: 1 / 거절: 그 외 값" /><small>실제 카드번호를 입력하지 마세요. 서버 Mock 결제는 숫자 1만 승인합니다.</small></label>
+          {payment && <p className={`notice${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role="status">최근 결제 결과: {payment.paymentStatus} · {formatPrice(payment.amount)}원</p>}
+          {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
+          <div className="action-row"><AppLink className="button secondary" href={`/my-trips?tab=bookings`}>내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing}>{processing ? '결제 처리 중…' : 'Mock 결제 요청'} <Icon name="arrow" size={18} /></button></div>
+        </form>}
+        <section className="surface-card"><h2 className="section-title">출발·취소 조건</h2><dl className="detail-facts"><div><dt>모집 마감</dt><dd>{getRecruitmentDeadline(draft.date)} · 출발 7일 전</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd></div><div><dt>재고 부족</dt><dd>예약·결제를 차단하지 않음</dd></div></dl></section>
+      </div>
+      <TripSummary tour={tour} draft={draft} quote={quote} />
+    </div>
+  </>
 }
 
 export function CheckoutPage({ tour, draft, onPreview }: { tour: Tour; draft: TravelDraft; onPreview: () => void }) {
@@ -71,14 +166,7 @@ export function CheckoutPage({ tour, draft, onPreview }: { tour: Tour; draft: Tr
     }, 1300)
   }
 
-  if (authSession?.role === 'CUSTOMER' && demoSession?.role !== 'customer') return <>
-    <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>선택한 여행 구성을 확인해 주세요.</h1><p>고객 계정으로 로그인되었습니다.</p></div>
-    <div className="flow-layout"><section className="surface-card flow-main">
-      <h2>예약 API 연결을 준비하고 있어요.</h2>
-      <p className="muted">다음 단계에서 PENDING 예약 생성과 Mock 결제를 연결합니다. 지금은 실제 예약이나 결제를 만들지 않습니다.</p>
-      <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="button" onClick={onPreview}>선택 구성 미리보기</button></div>
-    </section><TripSummary tour={tour} draft={draft} /></div>
-  </>
+  if (authSession?.role === 'CUSTOMER' && demoSession?.role !== 'customer' && tour.source === 'api') return <ApiCheckout tour={tour} draft={draft} />
 
   if (demoSession?.role !== 'customer') return <>
     <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>신청을 이어가려면 로그인해 주세요.</h1><p>선택한 일정과 구성은 그대로 유지돼요.</p></div>

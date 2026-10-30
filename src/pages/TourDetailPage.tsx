@@ -55,12 +55,12 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
           </section>
           <section id="tour-grade" className="detail-section">
             <h2>등급별 기본 구성</h2>
-            <div className="table-scroll"><table className="grade-table"><caption className="sr-only">등급별 호텔과 식사 비교</caption><thead><tr><th scope="col">등급</th><th scope="col">호텔</th><th scope="col">기본 식사</th></tr></thead><tbody><tr className={requiresGrand ? 'unavailable-row' : ''}><th scope="row">클래식{requiresGrand && <small>선택 불가</small>}</th><td>3등급</td><td>도시락</td></tr><tr><th scope="row">그랜드</th><td>4등급</td><td>현지식 레스토랑</td></tr><tr><th scope="row">프리미엄</th><td>5등급</td><td>스테이크·샴페인</td></tr></tbody></table></div>
+            <div className="table-scroll"><table className="grade-table"><caption className="sr-only">등급별 호텔과 식사 비교</caption><thead><tr><th scope="col">등급</th><th scope="col">호텔</th><th scope="col">기본 식사</th></tr></thead><tbody><tr className={requiresGrand ? 'unavailable-row' : ''}><th scope="row">클래식{requiresGrand && <small>선택 불가</small>}</th><td>3등급</td><td>도시락</td></tr><tr><th scope="row">그랜드</th><td>4등급</td><td>현지식 레스토랑</td></tr><tr><th scope="row">프리미엄</th><td>5등급</td><td>{tour.source === 'api' ? '파인다이닝' : '스테이크·샴페인'}</td></tr></tbody></table></div>
             <p className="muted">호텔·교통·식사는 다음 단계에서 변경할 수 있습니다. 기본 구성 대비 차액이 반영됩니다.</p>
           </section>
         </div>
         <aside className="flow-summary booking-panel" aria-labelledby="booking-panel-title">
-          <div className="booking-panel-header"><h2 id="booking-panel-title">일정·인원 선택</h2><span>예시 상품</span></div>
+          <div className="booking-panel-header"><h2 id="booking-panel-title">일정·인원 선택</h2><span>{tour.source === 'api' ? '서버 상품' : '예시 상품'}</span></div>
           <div className="starting-price"><small>{gradeLabels[minimumGrade(tour)]} 기본 구성 · 1인</small><p><strong>{formatPrice(tour.price)}</strong>원~</p></div>
           <form id="detail-booking" noValidate onSubmit={event => {
             event.preventDefault()
@@ -71,7 +71,7 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
             {dateError ? <p className="field-error" id="detail-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p> : <p id="detail-date-help" className="summary-note">{tour.source === 'api' ? '서버에 등록된 출발일이며 변경할 수 없습니다.' : '모집 마감은 출발 7일 전이에요.'}</p>}
             <label className="field" htmlFor="detail-travelers">여행 인원<input id="detail-travelers" type="number" min="1" step="1" value={draft.travelers} readOnly={tour.theme === 'romance'} onChange={event => update({travelers:Number(event.currentTarget.value)})} /></label>
             <p className="summary-note">{tour.theme === 'romance' ? '허니문 예약은 2명' : '일반 투어 예약 인원 상한 없음'} · 전체 결제 인원 3명 이상이면 마감일에 출발 확정</p>
-            <div className="summary-total"><span>{draft.travelers}명 예상 합계</span><strong>{formatPrice(estimate.total)}<small>원</small></strong></div>
+            <div className="summary-total"><span>{draft.travelers}명 {tour.source === 'api' ? '기본가 합계' : '예상 합계'}</span><strong>{formatPrice(tour.source === 'api' ? tour.price * draft.travelers : estimate.total)}<small>원</small></strong></div>
             <button className="button primary" type="submit">등급·옵션 선택<Icon name="arrow" size={17} /></button>
           </form>
           <button className={`button secondary cart-toggle-button${inCart ? ' is-in-cart' : ''}`} type="button" onClick={onCartToggle} aria-pressed={inCart}>{inCart ? '장바구니에 담김' : '장바구니 담기'}<Icon name="cart" size={17} /></button>

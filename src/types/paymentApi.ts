@@ -10,6 +10,6 @@ export interface PaymentResponse {
   bookingId: number
   paymentStatus: ApiPaymentStatus
   amount: number
-  paidAt: LocalDateTimeString
+  paidAt: LocalDateTimeString | null
   bookingStatus: ApiBookingStatus
 }
