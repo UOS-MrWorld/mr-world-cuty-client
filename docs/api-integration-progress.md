@@ -46,6 +46,7 @@ Auth 계약 확인 백엔드 커밋: `70382456dae034c281576491302938f17ca11df5`
 - [x] 실제 고객 세션의 Tour 목록·GUI 검색·상세 조회 연결
 - [x] 서버 고정 출발일을 상세·구성 화면에 읽기 전용으로 반영
 - [x] 서버 미제공 이미지에는 테마 기본 이미지를 사용하고 지역 필터는 실제 세션에서 제외
+- [x] 서버에 존재하지 않는 미사용 Wish API 제거 및 README 연동 상태 갱신
 - [x] 고객 Tour/Booking/Payment 요청에 `/customer` 역할 prefix 적용
 - [x] Payment API를 Booking 파일에서 별도 도메인 파일로 분리
 - [x] `npm run build`, `npm run lint`, `git diff --check` 통과
