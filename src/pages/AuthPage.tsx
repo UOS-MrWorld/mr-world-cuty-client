@@ -48,7 +48,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
           password: String(values.get('password') ?? ''),
           confirmPassword: String(values.get('passwordConfirm') ?? ''),
           name: String(values.get('name') ?? ''),
-          phoneNum: String(values.get('contact') ?? ''),
+          phoneNum: String(values.get('contact') ?? '').replace(/\D/g, ''),
           address: String(values.get('address') ?? ''),
           role: 'CUSTOMER',
         })
@@ -95,7 +95,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
             <label className="field" htmlFor="auth-confirm">비밀번호 확인<input id="auth-confirm" name="passwordConfirm" type="password" autoComplete="new-password" required minLength={8} onInput={event => event.currentTarget.setCustomValidity('')} /></label>
             <label className="field" htmlFor="auth-name">성명<input id="auth-name" name="name" autoComplete="off" required maxLength={40} placeholder="화면 검토에는 예시 이름을 사용해 주세요" /></label>
             <label className="field" htmlFor="auth-address">주소<input id="auth-address" name="address" autoComplete="off" required maxLength={160} /></label>
-            <label className="field" htmlFor="auth-contact">연락처<input id="auth-contact" name="contact" type="tel" autoComplete="off" required pattern={demoContactPattern} placeholder="010-0000-0000" /></label>
+            <label className="field" htmlFor="auth-contact">연락처<input id="auth-contact" name="contact" type="tel" autoComplete="tel" required pattern={demoContactPattern} placeholder="010-0000-0000" /><small>하이픈을 입력해도 서버에는 숫자만 전송됩니다.</small></label>
           </>}
           <button className="button primary" type="submit" disabled={submitting}>{submitting ? '처리 중…' : signup ? '회원가입' : '로그인'} {!submitting && <Icon name="arrow" size={18} />}</button>
         </form>}

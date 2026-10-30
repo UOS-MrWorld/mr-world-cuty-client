@@ -1,12 +1,21 @@
 import { apiClient } from './client'
+import type { ApiLoyaltyGrade, PageResponse } from '../types/api'
+import type {
+  CustomerDetailResponse,
+  CustomerListParams,
+  CustomerSummaryResponse,
+  DiscountResponse,
+  LoyaltyPolicyResponse,
+} from '../types/staffApi'
 
-export const getCustomers = (params?: unknown) => apiClient.get('/staff/customers', { params })
+export const getCustomers = (params?: CustomerListParams) =>
+  apiClient.get<PageResponse<CustomerSummaryResponse>>('/staff/customers', { params })
 
-export const getCustomer = (customerId: string) => apiClient.get(`/staff/customers/${customerId}`)
+export const getCustomer = (customerId: number) =>
+  apiClient.get<CustomerDetailResponse>(`/staff/customers/${customerId}`)
 
-export const updateCustomerLoyalty = (customerId: string, payload: unknown) =>
-  apiClient.patch(`/staff/customers/${customerId}/loyalty`, payload)
+export const getLoyaltyPolicy = () =>
+  apiClient.get<LoyaltyPolicyResponse>('/staff/loyalty-policy')
 
-export const getLoyaltyPolicy = () => apiClient.get('/staff/loyalty-policy')
-
-export const updateLoyaltyPolicy = (payload: unknown) => apiClient.patch('/staff/loyalty-policy', payload)
+export const activateLoyaltyDiscountByGrade = (loyaltyGrade: ApiLoyaltyGrade) =>
+  apiClient.patch<DiscountResponse>('/staff/customers/loyalty-discount/by-grade', { loyaltyGrade })

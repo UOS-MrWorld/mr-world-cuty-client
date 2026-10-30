@@ -1,5 +1,27 @@
 import axios from 'axios'
 
+export type LocalDateString = string
+export type LocalDateTimeString = string
+export type ApiTheme = 'HONEYMOON' | 'HEALING' | 'GOLF' | 'TREKKING'
+export type ApiTourLevel = 'CLASSIC' | 'GRAND' | 'PREMIUM'
+export type ApiHotelGrade = 'THREE_STAR' | 'FOUR_STAR' | 'FIVE_STAR'
+export type ApiMealType = 'LUNCH_BOX' | 'LOCAL_RESTAURANT' | 'FINE_DINING'
+export type ApiTransport = 'PREMIUM_CAR_2' | 'PREMIUM_VAN_10'
+export type ApiBookingStatus = 'PENDING' | 'PAID' | 'CANCELLED'
+export type ApiTourStatus = 'RECRUITING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
+export type ApiPaymentStatus = 'SUCCESS' | 'FAILED' | 'REFUNDED'
+export type ApiLoyaltyGrade = 'NORMAL' | 'VIP'
+
+export interface PagingParams {
+  page?: number
+  size?: number
+}
+
+export interface PageResponse<T> {
+  content: T[]
+  totalElements: number
+}
+
 export interface ApiErrorResponse {
   success: false
   message: string

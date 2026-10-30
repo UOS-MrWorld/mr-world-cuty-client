@@ -76,15 +76,13 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
               </div>
               <div className="field">
                 <label htmlFor="travelers">여행 인원</label>
-                <select id="travelers" value={draft.travelers} aria-describedby="travelers-help"
+                <input id="travelers" type="number" min="1" step="1" value={draft.travelers} readOnly={tour.theme === 'romance'} aria-describedby="travelers-help"
                   onChange={(event) => {
-                    const travelers = Number(event.target.value)
+                    const travelers = Number(event.currentTarget.value)
                     update({ travelers })
-                    setChangeNotice(tour.theme === 'romance' ? `${travelers / 2}커플 · 커플별 전용 차량이 제공됩니다.` : travelers > 2 && draft.transport === 'private' ? '3명 이상 선택 시 10인승 차량이 적용됩니다. 예시 기준입니다.' : '')
-                  }}>
-                  {(tour.theme === 'romance' ? [2, 4, 6, 8, 10] : Array.from({ length: 10 }, (_, index) => index + 1)).map((count) => <option key={count} value={count}>{count}명{tour.theme === 'romance' ? ` · ${count / 2}커플` : ''}</option>)}
-                </select>
-                <small className="muted" id="travelers-help">{tour.theme === 'romance' ? '2명 단위 신청 · 전체 모집은 최소 2커플(4명)' : '1~10명 선택 가능 · 출발은 전체 결제 인원 최소 3명'}</small>
+                    setChangeNotice(travelers > 2 && draft.transport === 'private' ? '3명 이상 선택 시 10인승 차량이 적용됩니다. 예시 기준입니다.' : '')
+                  }} />
+                <small className="muted" id="travelers-help">{tour.theme === 'romance' ? '허니문 예약은 정확히 2명 · 전체 결제 인원 3명 이상이면 출발 확정' : '예약 인원 상한 없음 · 전체 결제 인원 3명 이상이면 출발 확정'}</small>
               </div>
             </div>
           </section>

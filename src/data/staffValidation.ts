@@ -8,10 +8,7 @@ export function validateStaffProduct(value: StaffProduct): StaffFormErrors {
   if (!value.location.trim()) errors.location = '여행지를 입력해 주세요.'
   if (!value.duration.trim()) errors.duration = '여행 기간을 입력해 주세요. 예: 3박 4일'
   if (!Number.isSafeInteger(value.price) || value.price < 1) errors.price = '기본 가격은 1원 이상의 정수로 입력해 주세요.'
-  if (!Number.isSafeInteger(value.maximumPeople) || value.maximumPeople < 1) errors.maximumPeople = '상품 정원은 1명 이상의 정수로 입력해 주세요.'
-  if (value.theme === 'romance' && (value.maximumPeople < 2 || value.maximumPeople > 10 || value.maximumPeople % 2 !== 0)) errors.maximumPeople = '허니문 신청 가능 인원은 커플 단위로 2~10명 중 짝수로 입력해 주세요.'
   if ((value.theme === 'romance' || value.theme === 'healing') && value.minimumGrade === 'classic') errors.minimumGrade = '허니문·효도 테마는 그랜드 이상만 선택할 수 있습니다.'
-  if (value.minimumDeparturePeople !== '' && (!Number.isSafeInteger(Number(value.minimumDeparturePeople)) || Number(value.minimumDeparturePeople) < 1)) errors.minimumDeparturePeople = '출발 기준 인원은 1명 이상의 정수로 입력해 주세요. 고객 시연의 최소 출발 기준은 허니문 4명, 다른 테마 3명입니다.'
   const dates = value.departureDates.split(/\n|,/).map(date => date.trim()).filter(Boolean)
   if (dates.some(date => !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date)) errors.departureDates = '날짜는 YYYY-MM-DD 형식으로 한 줄에 하나씩 입력해 주세요.'
   value.grades.forEach(grade => {

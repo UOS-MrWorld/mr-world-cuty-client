@@ -3,6 +3,7 @@
 기준일: 2026-10-30 (Asia/Seoul)  
 기준 커밋: `b5b55fe5519763533c6af8e3f0d78d1c17b2aa97`
 Auth 계약 확인 백엔드 커밋: `70382456dae034c281576491302938f17ca11df5`
+최신 전체 API 계약 확인: `origin/main@d4fba18675edf3d13884ec4d0af35fcaed0bd78d`
 
 ## 목표
 
@@ -32,27 +33,34 @@ Auth 계약 확인 백엔드 커밋: `70382456dae034c281576491302938f17ca11df5`
 - [x] 401 응답의 단일 refresh 요청 및 원 요청 재시도
 - [x] JWT 세션 복원과 CUSTOMER/STAFF 직원 화면 가드 연결
 - [x] 실제 로그인 세션과 DEMO 세션의 권한 판정을 분리
+- [x] 최신 서버 Tour·Booking·Payment·Member·Inventory·Customer Controller/DTO 재검토
+- [x] 공통 enum·페이지 응답과 도메인별 요청/응답 TypeScript 계약 추가
+- [x] GUI 검색·가격 계산·PENDING 수정·여행 내역·일괄 할인 API 함수 정정
+- [x] 회원가입 전화번호를 서버 계약에 맞춰 숫자 10~11자리로 정규화
+- [x] 실제 고객의 예약 목록·여행 내역·회원정보 조회 연결
+- [x] 실제 고객의 연락처·주소 수정 연결
+- [x] 일반 투어 인원 상한 제거·허니문 예약 2명 고정·전체 PAID 3명 기준으로 UI 정정
+- [x] 서버가 받지 않는 직원용 최대 인원·최소 출발 인원 편집 필드 제거
+- [x] 직원 Tour 등록·목록·상세·수정 API 타입 확정
 - [x] 고객 Tour/Booking/Payment 요청에 `/customer` 역할 prefix 적용
 - [x] Payment API를 Booking 파일에서 별도 도메인 파일로 분리
 - [x] `npm run build`, `npm run lint`, `git diff --check` 통과
-- [ ] Auth 성공 응답 DTO 확정 후 로그인·재발급·로그아웃 연결
-- [ ] Tour 검색/상세/옵션 가격 계산 DTO 확정
-- [ ] Booking PENDING 생성·옵션 수정·조회·취소 DTO 확정
-- [ ] Payment 결제·환불 상태 DTO 확정
+- [x] Auth 성공 응답 DTO 기준 로그인·재발급·로그아웃 연결
+- [x] Tour 검색/상세/옵션 가격 계산 DTO 확정
+- [x] Booking PENDING 생성·옵션 수정·조회·취소 DTO 확정
+- [x] Payment 결제 상태 DTO 확정
 
 ## 계약 확인이 필요한 항목
 
-1. Tour GUI 검색/음성 검색/옵션 가격 계산의 정확한 경로와 요청·응답 DTO
-2. Booking의 PENDING 옵션 수정 및 여행 내역 조회 경로
-3. Payment 생성, 상태 조회, 자동 환불 결과 조회 경로
-4. 음성 서버를 프론트에서 직접 호출하는지 메인 Tour API가 중계하는지 여부
+1. 음성을 텍스트로 바꾸는 STT 제공 주체와 프론트 호출 경로
+2. 서버 Tour 응답에 이미지·지역 필드가 없어 기존 상품 카드에서 사용할 표시 정책
 
 ## 다음 작업 순서
 
-1. Tour 목록·상세·GUI 검색 DTO를 백엔드 명세와 맞춰 추가
-2. 샘플 상품 목록을 서버 데이터로 전환
-3. 음성 검색 결과를 GUI 검색 조건 모델에 합류
-4. PENDING 예약 → 결제 → PAID/REFUNDED 상태 흐름 연결
+1. Tour 목록·상세 화면을 서버 데이터로 전환
+2. 옵션 선택을 Quote API와 연결하고 PENDING 예약 생성
+3. Mock 결제와 PAID/FAILED/REFUNDED 상태 연결
+4. 음성 검색 결과를 GUI 검색 조건 모델에 합류
 
 ## 보존 원칙
 

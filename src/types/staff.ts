@@ -23,8 +23,6 @@ export type StaffProductState = 'draft' | 'preview' | 'paused'
 export interface StaffProduct extends Tour {
   state: StaffProductState
   departureDates: string
-  maximumPeople: number
-  minimumDeparturePeople: string
   minimumGrade: TravelGrade
   grades: StaffGradeConfiguration[]
   options: Record<StaffOptionId, StaffOptionRule>
