@@ -2,8 +2,10 @@ import axios from 'axios'
 import { ApiRequestError, normalizeApiError } from '../types/api'
 import type { VoiceResponse, VoiceScreenContext } from '../types/voiceApi'
 
+// 음성 AI 서버(mr-world-cuty-voice)는 Spring 서버와 별도 주소를 사용한다.
 const voiceClient = axios.create({
   baseURL: import.meta.env.VITE_VOICE_API_BASE_URL ?? 'http://localhost:8000/api/v1',
+  timeout: 20_000,
   headers: { Accept: 'application/json' },
 })
 
