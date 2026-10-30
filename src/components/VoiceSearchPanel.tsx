@@ -1,61 +1,128 @@
 import { useEffect, useRef, useState } from 'react'
+import { sendVoiceCommand } from '../api/voice'
+import { encodeVoiceWav } from '../data/voiceAudio'
+import type { VoiceResponse, VoiceScreenContext } from '../types/voiceApi'
 import { Icon } from './Icon'
 
 const BAR_COUNT = 31
+const MAX_RECORDING_MS = 15_000
 type VoiceDisplay = 'waveform' | 'floating'
+type VoiceStatus = 'starting' | 'listening' | 'processing' | 'error' | 'unavailable'
 
-/** Captures microphone amplitude only; speech is never recognized, transcribed, or stored. */
-export function VoiceSearchPanel({ onClose, display = 'waveform' }: { onClose: () => void; display?: VoiceDisplay }) {
+interface RecordingSession {
+  stream: MediaStream
+  context: AudioContext
+  source: MediaStreamAudioSourceNode
+  analyser: AnalyserNode
+  processor: ScriptProcessorNode
+  silentOutput: GainNode
+  chunks: Float32Array[]
+  frame: number
+  timer: number
+}
+
+export function VoiceSearchPanel({ context, onResponse, onClose, display = 'waveform' }: {
+  context: VoiceScreenContext
+  onResponse: (response: VoiceResponse) => void
+  onClose: () => void
+  display?: VoiceDisplay
+}) {
   const controlRef = useRef<HTMLButtonElement>(null)
   const barsRef = useRef<(HTMLSpanElement | null)[]>([])
-  const stopListeningRef = useRef<() => void>(() => undefined)
-  const closeTimerRef = useRef<number | undefined>(undefined)
-  const [status, setStatus] = useState<'starting' | 'listening' | 'unavailable'>('starting')
-  const [closing, setClosing] = useState(false)
+  const sessionRef = useRef<RecordingSession | null>(null)
+  const mountedRef = useRef(true)
+  const submittingRef = useRef(false)
+  const [status, setStatus] = useState<VoiceStatus>('starting')
+  const [errorMessage, setErrorMessage] = useState('')
+
+  function stopSession() {
+    const session = sessionRef.current
+    if (!session) return null
+    sessionRef.current = null
+    window.clearTimeout(session.timer)
+    cancelAnimationFrame(session.frame)
+    session.processor.onaudioprocess = null
+    session.stream.getTracks().forEach(track => track.stop())
+    session.source.disconnect()
+    session.processor.disconnect()
+    session.silentOutput.disconnect()
+    session.analyser.disconnect()
+    if (session.context.state !== 'closed') void session.context.close()
+    return session
+  }
+
+  async function submit() {
+    if (submittingRef.current) return
+    const session = stopSession()
+    if (!session) return
+    submittingRef.current = true
+    setStatus('processing')
+    setErrorMessage('')
+    try {
+      const audio = encodeVoiceWav(session.chunks, session.context.sampleRate)
+      const response = await sendVoiceCommand(audio, context)
+      if (!mountedRef.current) return
+      onResponse(response.data)
+      onClose()
+    } catch (error) {
+      if (!mountedRef.current) return
+      setErrorMessage(error instanceof Error ? error.message : '음성을 처리하지 못했습니다. 다시 시도해 주세요.')
+      setStatus('error')
+    } finally {
+      submittingRef.current = false
+    }
+  }
 
   useEffect(() => {
-    let stream: MediaStream | undefined
-    let context: AudioContext | undefined
-    let frame = 0
+    mountedRef.current = true
     let cancelled = false
-    let stopped = false
     let smoothedLevel = 0
 
-    controlRef.current?.focus()
-
-    const stopListening = () => {
-      if (stopped) return
-      stopped = true
-      cancelled = true
-      cancelAnimationFrame(frame)
-      stream?.getTracks().forEach(track => track.stop())
-      if (context && context.state !== 'closed') void context.close()
-    }
-    stopListeningRef.current = stopListening
-
-    async function listen() {
+    async function start() {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone unavailable')
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            autoGainControl: true,
-            echoCancellation: true,
-            noiseSuppression: true,
-          },
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { autoGainControl: true, echoCancellation: true, noiseSuppression: true, channelCount: 1 },
         })
         if (cancelled) {
           stream.getTracks().forEach(track => track.stop())
           return
         }
-        context = new AudioContext({ latencyHint: 'interactive' })
-        if (context.state === 'suspended') await context.resume()
-        if (cancelled) return
-        const analyser = context.createAnalyser()
+        const audioContext = new AudioContext({ latencyHint: 'interactive' })
+        if (audioContext.state === 'suspended') await audioContext.resume()
+        if (cancelled) {
+          stream.getTracks().forEach(track => track.stop())
+          void audioContext.close()
+          return
+        }
+        const source = audioContext.createMediaStreamSource(stream)
+        const analyser = audioContext.createAnalyser()
+        const processor = audioContext.createScriptProcessor(4096, 1, 1)
+        const silentOutput = audioContext.createGain()
+        const chunks: Float32Array[] = []
         analyser.fftSize = 128
         analyser.smoothingTimeConstant = 0.72
-        context.createMediaStreamSource(stream).connect(analyser)
+        silentOutput.gain.value = 0
+        source.connect(analyser)
+        source.connect(processor)
+        processor.connect(silentOutput)
+        silentOutput.connect(audioContext.destination)
+        processor.onaudioprocess = event => chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)))
         const samples = new Uint8Array(analyser.fftSize)
+        const session: RecordingSession = {
+          stream,
+          context: audioContext,
+          source,
+          analyser,
+          processor,
+          silentOutput,
+          chunks,
+          frame: 0,
+          timer: window.setTimeout(() => void submit(), MAX_RECORDING_MS),
+        }
+        sessionRef.current = session
         setStatus('listening')
+        controlRef.current?.focus()
 
         const animate = () => {
           analyser.getByteTimeDomainData(samples)
@@ -71,81 +138,64 @@ export function VoiceSearchPanel({ onClose, display = 'waveform' }: { onClose: (
           controlRef.current?.style.setProperty('--voice-neon-opacity', `${0.38 + smoothedLevel * 0.58}`)
           controlRef.current?.style.setProperty('--voice-neon-core-opacity', `${0.48 + smoothedLevel * 0.5}`)
           controlRef.current?.style.setProperty('--voice-neon-blur', `${8.5 + smoothedLevel * 7}px`)
-
           if (display === 'waveform') {
             barsRef.current.forEach((bar, index) => {
               if (!bar) return
-              const sample = (samples[index * stride] ?? 128) - 128
-              const localLevel = Math.abs(sample) / 128
+              const localLevel = Math.abs((samples[index * stride] ?? 128) - 128) / 128
               const envelope = Math.abs(samples[(index * stride + 7) % samples.length] - 128) / 128
               const idle = 0.08 + Math.abs(Math.sin(performance.now() / 260 + index * 0.7)) * 0.1
-              const scale = Math.min(1.15, Math.max(0.1, idle + localLevel * 1.35 + envelope * 0.75))
-              bar.style.transform = `scaleY(${scale})`
+              bar.style.transform = `scaleY(${Math.min(1.15, Math.max(0.1, idle + localLevel * 1.35 + envelope * 0.75))})`
             })
           }
-          frame = requestAnimationFrame(animate)
+          session.frame = requestAnimationFrame(animate)
         }
         animate()
       } catch {
-        stream?.getTracks().forEach(track => track.stop())
-        stream = undefined
         if (!cancelled) setStatus('unavailable')
       }
     }
 
-    void listen()
-    return () => {
-      stopListening()
-      stopListeningRef.current = () => undefined
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      stopSession()
+      onClose()
     }
+
+    window.addEventListener('keydown', onKeyDown)
+    void start()
+    return () => {
+      cancelled = true
+      mountedRef.current = false
+      stopSession()
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  // Recording starts once when the control opens. Updated context is used on the next opening.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [display])
 
-  useEffect(() => () => {
-    if (closeTimerRef.current !== undefined) window.clearTimeout(closeTimerRef.current)
-  }, [])
-
-  function close() {
-    stopListeningRef.current()
-    if (display === 'floating' && status === 'listening' && !closing) {
-      setClosing(true)
-      closeTimerRef.current = window.setTimeout(onClose, 220)
-      return
-    }
-    onClose()
-  }
+  const finishOrClose = () => status === 'listening' ? void submit() : onClose()
+  const label = status === 'listening' ? '음성 입력 완료하고 분석하기' : '음성 입력 닫기'
+  const message = status === 'starting' ? '마이크 연결 중…'
+    : status === 'listening' ? '말씀하신 뒤 눌러 주세요'
+      : status === 'processing' ? '말씀하신 내용을 확인하고 있어요…'
+        : status === 'error' ? errorMessage
+          : '마이크를 사용할 수 없습니다. 브라우저 권한을 확인해 주세요.'
 
   if (display === 'floating') {
     return <>
-      <button
-        ref={controlRef}
-        className={`voice-input-mic${status === 'listening' && !closing ? ' is-listening' : ''}${closing ? ' is-closing' : ''}${status === 'unavailable' ? ' is-unavailable' : ''}`}
-        type="button"
-        onClick={close}
-        aria-label="음성 입력 종료"
-        title="음성 입력 종료"
-      >
+      <button ref={controlRef} className={`voice-input-mic is-${status}`} type="button" onClick={finishOrClose}
+        disabled={status === 'starting' || status === 'processing'} aria-label={label} title={label}>
         <span className="voice-input-mic-icon" aria-hidden="true"><Icon name="mic-filled" size={25} /></span>
-        <span className="sr-only">{status === 'starting' ? '마이크 연결 중' : status === 'listening' ? '음성 입력 중' : '마이크를 사용할 수 없음'}</span>
       </button>
-      {status === 'unavailable' && <span className="sr-only" role="alert">마이크를 사용할 수 없습니다. 브라우저 권한을 확인해 주세요.</span>}
+      <span className={`voice-input-status is-floating is-${status}`} role={status === 'error' || status === 'unavailable' ? 'alert' : 'status'}>{message}</span>
     </>
   }
 
   return <>
-    <button
-      ref={controlRef}
-      className={`voice-input-wave is-${status}`}
-      type="button"
-      onClick={close}
-      aria-label="음성 입력 종료"
-      title="음성 입력 종료"
-    >
+    <button ref={controlRef} className={`voice-input-wave is-${status}`} type="button" onClick={finishOrClose}
+      disabled={status === 'starting' || status === 'processing'} aria-label={label} title={label}>
       {Array.from({ length: BAR_COUNT }, (_, index) => <span key={index} ref={node => { barsRef.current[index] = node }} />)}
     </button>
-    {status !== 'listening' && (
-      <span className={`voice-input-status is-${status}`} role={status === 'unavailable' ? 'alert' : 'status'}>
-        {status === 'starting' ? '마이크 연결 중…' : '마이크 권한을 확인해 주세요'}
-      </span>
-    )}
+    <span className={`voice-input-status is-${status}`} role={status === 'error' || status === 'unavailable' ? 'alert' : 'status'}>{message}</span>
   </>
 }

@@ -30,13 +30,21 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
   const sort = ['price-asc', 'price-desc', 'duration'].includes(params.get('sort') ?? '') ? params.get('sort') ?? '' : ''
   const cartOnly = params.get('view') === 'cart' || params.get('view') === 'saved'
   const departureDate = params.get('date')?.trim() ?? ''
+  const startDateFrom = params.get('from')?.trim() ?? ''
+  const startDateTo = params.get('to')?.trim() ?? ''
 
   useEffect(() => {
-    if (!useApi) return
+    if (!useApi) {
+      setApiTours([])
+      setApiTotal(0)
+      setLoading(false)
+      setErrorMessage('')
+      return
+    }
     let active = true
     setLoading(true)
     setErrorMessage('')
-    const hasSearchCondition = Boolean(search || theme !== 'all' || budget || departureDate)
+    const hasSearchCondition = Boolean(search || theme !== 'all' || budget || departureDate || startDateFrom || startDateTo)
     const request = hasSearchCondition
       ? searchTours({
         page: 0,
@@ -57,14 +65,16 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
       if (active) setLoading(false)
     })
     return () => { active = false }
-  }, [budget, departureDate, retryNonce, search, theme, useApi])
+  }, [budget, departureDate, retryNonce, search, startDateFrom, startDateTo, theme, useApi])
 
   const filtered = useMemo(() => {
     if (!useApi) return getVisibleTours(params, cartIds)
     return apiTours
       .filter(tour => !cartOnly || cartIds.includes(tour.id))
+      .filter(tour => !startDateFrom || (tour.startDate ?? '') >= startDateFrom)
+      .filter(tour => !startDateTo || (tour.startDate ?? '') <= startDateTo)
       .sort((a, b) => sort === 'price-asc' ? a.price - b.price : sort === 'price-desc' ? b.price - a.price : sort === 'duration' ? getTourDays(a) - getTourDays(b) : 0)
-  }, [apiTours, cartIds, cartOnly, params, sort, useApi])
+  }, [apiTours, cartIds, cartOnly, params, sort, startDateFrom, startDateTo, useApi])
 
   function updateFilters(values: Record<string, string | null>) {
     const next = new URLSearchParams(window.location.search)
@@ -80,6 +90,7 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
     budget ? { key: 'budget', label: `${Number(budget) / 10000}만원 이하` } : null,
     !useApi && duration ? { key: 'duration', label: duration === 'short' ? '4일 이하' : duration === 'medium' ? '5~7일' : '8일 이상' } : null,
     search ? { key: 'q', label: search } : null,
+    startDateFrom || startDateTo ? { key: 'date-range', label: `${startDateFrom || '시작'} ~ ${startDateTo || '종료'}` } : null,
     cartOnly ? { key: 'view', label: '장바구니' } : null,
   ].filter(item => item !== null)
 
@@ -107,8 +118,8 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
       </form>
       {(params.get('date') || params.get('travelers')) && <p className="catalog-intent"><strong>선택한 조건</strong> {params.get('date') && `출발 희망일 ${params.get('date')}`} {params.get('travelers') && ` · ${params.get('travelers')}명`}</p>}
       <section className="catalog-results" aria-labelledby="results-title">
-        <div className="results-toolbar"><h2 id="results-title">검색 결과 <strong role="status">{useApi && !cartOnly ? apiTotal : filtered.length}</strong>건</h2><label><span className="sr-only">상품 정렬</span><select value={sort} onChange={event => updateFilters({sort:event.target.value})}><option value="">기본순</option><option value="price-asc">낮은 가격순</option><option value="price-desc">높은 가격순</option><option value="duration">짧은 일정순</option></select></label></div>
-        {activeFilters.length > 0 && <div className="applied-filters" aria-label="적용한 검색 조건">{activeFilters.map(item => <button key={item.key} onClick={() => updateFilters({[item.key]:null})} aria-label={`${item.label} 조건 해제`}>{item.label}<Icon name="close" size={13} /></button>)}</div>}
+        <div className="results-toolbar"><h2 id="results-title">검색 결과 <strong role="status">{useApi && !cartOnly && !startDateFrom && !startDateTo ? apiTotal : filtered.length}</strong>건</h2><label><span className="sr-only">상품 정렬</span><select value={sort} onChange={event => updateFilters({sort:event.target.value})}><option value="">기본순</option><option value="price-asc">낮은 가격순</option><option value="price-desc">높은 가격순</option><option value="duration">짧은 일정순</option></select></label></div>
+        {activeFilters.length > 0 && <div className="applied-filters" aria-label="적용한 검색 조건">{activeFilters.map(item => <button key={item.key} onClick={() => item.key === 'date-range' ? updateFilters({from:null,to:null}) : updateFilters({[item.key]:null})} aria-label={`${item.label} 조건 해제`}>{item.label}<Icon name="close" size={13} /></button>)}</div>}
         {loading ? <p className="notice" role="status">서버에서 여행상품을 불러오는 중입니다.</p>
           : errorMessage ? <div className="empty-state"><Icon name="compass" size={32} /><h2>여행상품을 불러오지 못했어요.</h2><p>{errorMessage}</p><button className="button secondary" type="button" onClick={() => setRetryNonce(value => value + 1)}>다시 시도</button></div>
             : filtered.length ? <div className="product-list">{filtered.map(tour => <TourCard key={tour.id} tour={tour} inCart={cartIds.includes(tour.id)} onCartToggle={() => onCartToggle(tour.id)} href={`/tours/${tour.id}${window.location.search}`} />)}</div> : <div className="empty-state"><Icon name="search" size={32} /><h2>검색된 상품이 없습니다</h2><p>상품명이나 상세 조건을 변경해 주세요.</p><AppLink className="button secondary" href="/tours">검색 조건 초기화</AppLink></div>}
