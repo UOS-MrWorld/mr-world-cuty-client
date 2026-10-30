@@ -52,7 +52,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
       </div>
       <form className="flow-layout configure-layout" noValidate onSubmit={(event) => {
         event.preventDefault()
-        if (!isOpenTravelDate(draft.date)) {
+        if (tour.source !== 'api' && !isOpenTravelDate(draft.date)) {
           setDateError(true)
           dateInput.current?.focus()
           return
@@ -64,14 +64,14 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
             <h2>출발 희망일·인원</h2>
             <div className="field-grid">
               <div className="field">
-                <label htmlFor="travel-date">희망 출발일 <span className="muted">필수</span></label>
-                <input ref={dateInput} id="travel-date" type="date" min={getEarliestDepartureDate()} required value={draft.date}
+                <label htmlFor="travel-date">{tour.source === 'api' ? '출발일' : '희망 출발일'} <span className="muted">필수</span></label>
+                <input ref={dateInput} id="travel-date" type="date" min={tour.source === 'api' ? undefined : getEarliestDepartureDate()} readOnly={tour.source === 'api'} required value={draft.date}
                   aria-invalid={dateError || undefined} aria-describedby={dateError ? 'travel-date-error travel-date-help' : 'travel-date-help'}
                   onInput={(event) => {
                     update({ date: event.currentTarget.value })
                     setDateError(false)
                   }} />
-                <small id="travel-date-help" className="muted">출발 7일 전 모집 마감 · 실제 출발 일정은 별도 확인이 필요합니다.</small>
+                <small id="travel-date-help" className="muted">{tour.source === 'api' ? '서버에 등록된 출발일 · 출발 7일 전 모집 마감' : '출발 7일 전 모집 마감 · 실제 출발 일정은 별도 확인이 필요합니다.'}</small>
                 {dateError && <p className="field-error" id="travel-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p>}
               </div>
               <div className="field">

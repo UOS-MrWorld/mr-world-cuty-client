@@ -39,7 +39,7 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
     <>
       <header className="detail-heading">
         <AppLink className="detail-back icon-button" href={`/tours${window.location.search}`} aria-label="상품 목록으로 돌아가기"><Icon name="arrow" size={21} /></AppLink>
-        <div className="detail-heading-meta"><span className="theme-tag">{themeLabels[tour.theme]}</span><span>{tour.location}</span></div>
+        <div className="detail-heading-meta"><span className="theme-tag">{themeLabels[tour.theme]}</span><span>{tour.source === 'api' ? `${tour.startDate} 출발` : tour.location}</span></div>
         <h1>{tour.title}</h1>
         <p>{tour.description}</p>
         <div className="detail-quick-facts"><span><Icon name="compass" size={17} />{tour.duration}</span><span>{gradeLabels[minimumGrade(tour)]} 이상</span><span>{tour.theme === 'romance' ? '커플별 2인 전용 차량' : '10인승 차량 기본'}</span></div>
@@ -50,7 +50,7 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
           <nav className="detail-section-nav" aria-label="상품 상세 목차"><a href="#tour-overview">상품 안내</a><a href="#tour-grade">등급별 구성</a></nav>
           <section id="tour-overview" className="detail-section">
             <h2>상품 안내</h2>
-            <dl className="information-table"><div><dt>여행지</dt><dd>{tour.location}</dd></div><div><dt>여행 기간</dt><dd>{tour.duration}</dd></div><div><dt>여행 테마</dt><dd>{themeLabels[tour.theme]}</dd></div><div><dt>기본 등급</dt><dd>{gradeLabels[minimumGrade(tour)]}{requiresGrand && ' · 클래식 선택 불가'}</dd></div></dl>
+            <dl className="information-table"><div><dt>{tour.source === 'api' ? '출발일' : '여행지'}</dt><dd>{tour.source === 'api' ? tour.startDate : tour.location}</dd></div><div><dt>여행 기간</dt><dd>{tour.duration}</dd></div><div><dt>여행 테마</dt><dd>{themeLabels[tour.theme]}</dd></div><div><dt>기본 등급</dt><dd>{gradeLabels[minimumGrade(tour)]}{requiresGrand && ' · 클래식 선택 불가'}</dd></div></dl>
             <h3>테마 기본 제공</h3><ul className="benefit-list">{themeBenefits[tour.theme].map(item => <li key={item}><Icon name="check" size={16} />{item}</li>)}</ul>
           </section>
           <section id="tour-grade" className="detail-section">
@@ -64,11 +64,11 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
           <div className="starting-price"><small>{gradeLabels[minimumGrade(tour)]} 기본 구성 · 1인</small><p><strong>{formatPrice(tour.price)}</strong>원~</p></div>
           <form id="detail-booking" noValidate onSubmit={event => {
             event.preventDefault()
-            if (!isOpenTravelDate(draft.date)) { setDateError(true); dateInput.current?.focus(); return }
+            if (tour.source !== 'api' && !isOpenTravelDate(draft.date)) { setDateError(true); dateInput.current?.focus(); return }
             onContinue()
           }}>
-            <label className="field" htmlFor="detail-date">출발 희망일<input ref={dateInput} id="detail-date" type="date" min={getEarliestDepartureDate()} value={draft.date} required aria-invalid={dateError || undefined} aria-describedby={dateError ? 'detail-date-error' : 'detail-date-help'} onInput={event => { update({date:event.currentTarget.value}); setDateError(false) }} /></label>
-            {dateError ? <p className="field-error" id="detail-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p> : <p id="detail-date-help" className="summary-note">모집 마감은 출발 7일 전이에요.</p>}
+            <label className="field" htmlFor="detail-date">{tour.source === 'api' ? '출발일' : '출발 희망일'}<input ref={dateInput} id="detail-date" type="date" min={tour.source === 'api' ? undefined : getEarliestDepartureDate()} value={draft.date} readOnly={tour.source === 'api'} required aria-invalid={dateError || undefined} aria-describedby={dateError ? 'detail-date-error' : 'detail-date-help'} onInput={event => { update({date:event.currentTarget.value}); setDateError(false) }} /></label>
+            {dateError ? <p className="field-error" id="detail-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p> : <p id="detail-date-help" className="summary-note">{tour.source === 'api' ? '서버에 등록된 출발일이며 변경할 수 없습니다.' : '모집 마감은 출발 7일 전이에요.'}</p>}
             <label className="field" htmlFor="detail-travelers">여행 인원<input id="detail-travelers" type="number" min="1" step="1" value={draft.travelers} readOnly={tour.theme === 'romance'} onChange={event => update({travelers:Number(event.currentTarget.value)})} /></label>
             <p className="summary-note">{tour.theme === 'romance' ? '허니문 예약은 2명' : '일반 투어 예약 인원 상한 없음'} · 전체 결제 인원 3명 이상이면 마감일에 출발 확정</p>
             <div className="summary-total"><span>{draft.travelers}명 예상 합계</span><strong>{formatPrice(estimate.total)}<small>원</small></strong></div>
