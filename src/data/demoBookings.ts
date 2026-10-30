@@ -17,7 +17,7 @@ export function getDepartureState(tour: Tour, departureDate: string, bookings: D
   const participants = bookings
     .filter(booking => booking.tourId === tour.id && booking.draft.date === departureDate && booking.status === 'paid')
     .reduce((sum, booking) => sum + booking.draft.travelers, 0)
-  const minimum = tour.theme === 'romance' ? 4 : 3
+  const minimum = 3
   const deadline = getRecruitmentDeadline(departureDate)
   const closed = Boolean(deadline) && today >= deadline
   const enough = participants >= minimum

@@ -23,7 +23,7 @@ export default function LandingPage({ onMoodChange }: { onMoodChange?: (mood: Gl
   const reduced=useReducedMotion()
   const mood=landingMoods[active]
   useEffect(()=>onMoodChange?.(mood.id),[mood.id,onMoodChange])
-  useEffect(()=>{if(searchTheme==='romance'&&Number(travelers)%2!==0)setTravelers('2')},[searchTheme,travelers])
+  useEffect(()=>{if(searchTheme==='romance'&&travelers!=='2')setTravelers('2')},[searchTheme,travelers])
   useEffect(()=>{if(reduced||focused||searching)return;const timer=window.setInterval(()=>{if(!document.hidden)setActive(i=>(i+1)%landingMoods.length)},14000);return()=>clearInterval(timer)},[reduced,focused,searching])
   useEffect(()=>{if(!searching)return;const timer=window.setTimeout(()=>{const form=document.querySelector<HTMLFormElement>('.landing-search');if(!form)return;const data=new FormData(form);const params=new URLSearchParams();for(const key of ['theme','date','travelers','q']){const value=String(data.get(key)??'').trim();if(value&&value!=='all')params.set(key,value)}navigate(`/tours?${params}`)},650);return()=>clearTimeout(timer)},[searching])
   return <div className={`landing-experience mood-${mood.id}`}>
@@ -32,7 +32,7 @@ export default function LandingPage({ onMoodChange }: { onMoodChange?: (mood: Gl
       <form className="landing-search" role="search" aria-label="여행 조건 검색" onFocusCapture={()=>setFocused(true)} onBlurCapture={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))setFocused(false)}} onSubmit={e=>{e.preventDefault();setSearching(true)}}>
         <HeroSelect className="hero-search-theme" label="어떤 여행" name="theme" value={searchTheme} onChange={setSearchTheme} options={themes.map(t=>({value:t.id,label:themeLabels[t.id]}))}/>
         <HeroDatePicker className="hero-search-date" label="출발 희망일" name="date" min={getEarliestDepartureDate()} value={searchDate} onChange={setSearchDate}/>
-        <HeroSelect className="hero-search-people" label="함께할 인원" name="travelers" value={travelers} onChange={setTravelers} options={Array.from({length:10},(_,i)=>i+1).filter(n=>searchTheme!=='romance'||n%2===0).map(n=>({value:String(n),label:`${n}명${searchTheme==='romance'?` · ${n/2}커플`:''}`}))}/>
+        <label className="hero-search-people"><span>함께할 인원</span><input type="number" name="travelers" min="1" step="1" value={travelers} readOnly={searchTheme==='romance'} onChange={event=>setTravelers(event.currentTarget.value)} aria-describedby={searchTheme==='romance'?'landing-honeymoon-help':undefined}/>{searchTheme==='romance'&&<small id="landing-honeymoon-help">허니문은 2명 신청</small>}</label>
         <label className="hero-search-keyword"><span>떠나고 싶은 곳</span><input type="search" name="q" placeholder="여행지·상품명" aria-label="여행지·상품명"/></label>
         <button type="submit" className="hero-search-submit" disabled={searching}>여행 찾기<Icon name="search" size={20}/></button>
       </form>

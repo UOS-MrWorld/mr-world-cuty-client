@@ -1,0 +1,89 @@
+# CUTY API 연동 진행 기록
+
+기준일: 2026-10-30 (Asia/Seoul)  
+기준 커밋: `b5b55fe5519763533c6af8e3f0d78d1c17b2aa97`
+Auth 계약 확인 백엔드 커밋: `70382456dae034c281576491302938f17ca11df5`
+최신 전체 API 계약 확인: `origin/main@d4fba18675edf3d13884ec4d0af35fcaed0bd78d`
+
+## 목표
+
+현재 화면 시연용 React 상태를 `/api/v1` JWT API와 연결한다. 화면 디자인은 유지하고, 인증·서버 상태·가격·예약·결제·직원 업무의 판단 주체를 서버로 옮긴다.
+
+## 확정된 계약
+
+- API 버전 경로: `/api/v1`
+- 인증: JWT Bearer Token
+- 고객 전용: `/api/v1/customer/**`
+- 직원 전용: `/api/v1/staff/**`
+- 공통: `/api/v1/**`
+- 공통 에러: `{ success: false, message: string, code: number }`
+- 날짜: `YYYY-MM-DD`, 일시: ISO-8601
+- 예약·취소 마감과 투어 확정/취소, 자동 환불, 재고 차감, SMS, 완료 처리, 단골 산정은 서버 내부 로직이다.
+- Voice AI는 `/api/v1/voice/command`에서 16kHz·모노·16bit WAV와 현재 화면 context를 받고, 프론트가 실행할 JSON 명령을 반환한다.
+- 실제 상품 조회·가격·예약·결제·권한 검증은 기존 Spring 서버가 담당하며 Voice AI는 도메인 데이터를 직접 변경하지 않는다.
+
+## 작업 로그
+
+### 2026-10-30 — P0 기반 시작
+
+- [x] 현재 프론트엔드와 요구사항 Gap Analysis
+- [x] 공통 API 에러 타입과 정규화 오류 클래스 추가
+- [x] JWT access token 접근을 API 클라이언트 내부 저장소로 격리
+- [x] 로그인·회원가입 요청 DTO 추가
+- [x] 백엔드 Auth Controller/DTO를 기준으로 성공 응답 타입 확정
+- [x] 실제 로그인·회원가입·로그아웃 UI 연결
+- [x] 401 응답의 단일 refresh 요청 및 원 요청 재시도
+- [x] JWT 세션 복원과 CUSTOMER/STAFF 직원 화면 가드 연결
+- [x] 실제 로그인 세션과 DEMO 세션의 권한 판정을 분리
+- [x] 최신 서버 Tour·Booking·Payment·Member·Inventory·Customer Controller/DTO 재검토
+- [x] 공통 enum·페이지 응답과 도메인별 요청/응답 TypeScript 계약 추가
+- [x] GUI 검색·가격 계산·PENDING 수정·여행 내역·일괄 할인 API 함수 정정
+- [x] 회원가입 전화번호를 서버 계약에 맞춰 숫자 10~11자리로 정규화
+- [x] 실제 고객의 예약 목록·여행 내역·회원정보 조회 연결
+- [x] 실제 고객의 연락처·주소 수정 연결
+- [x] 일반 투어 인원 상한 제거·허니문 예약 2명 고정·전체 PAID 3명 기준으로 UI 정정
+- [x] 서버가 받지 않는 직원용 최대 인원·최소 출발 인원 편집 필드 제거
+- [x] 직원 Tour 등록·목록·상세·수정 API 타입 확정
+- [x] 실제 고객 세션의 Tour 목록·GUI 검색·상세 조회 연결
+- [x] 서버 고정 출발일을 상세·구성 화면에 읽기 전용으로 반영
+- [x] 서버 미제공 이미지에는 테마 기본 이미지를 사용하고 지역 필터는 실제 세션에서 제외
+- [x] 서버에 존재하지 않는 미사용 Wish API 제거 및 README 연동 상태 갱신
+- [x] 최신 백엔드 전체 H2 테스트 통과
+- [x] 로컬 MySQL 실서버에서 Auth·Member·Tour·Booking 목록 HTTP 스모크 테스트 통과
+- [x] 옵션 선택을 서버 Quote와 연결하고 서버 금액·할인율 표시
+- [x] 실제 고객 PENDING 예약 생성과 Mock 결제 거절·재시도·승인 연결
+- [x] 실제 예약 상세 조회와 확인 후 취소·자동 환불 연결
+- [x] 브라우저에서 로그인→Tour→Quote→PENDING→FAILED→SUCCESS→상세→목록 흐름 검증
+- [x] 고객 Tour/Booking/Payment 요청에 `/customer` 역할 prefix 적용
+- [x] Payment API를 Booking 파일에서 별도 도메인 파일로 분리
+- [x] 별도 Voice AI 원격 최신 계약과 자동 테스트 25개 확인
+- [x] 브라우저 마이크 입력을 16kHz·모노·16bit WAV로 변환해 Voice API 전송
+- [x] 화면별 상품·등급·음료·확인 대기 상태를 Voice `ScreenContext`로 전달
+- [x] 음성 검색·상품 선택·옵션 변경·다음/이전 단계·구성 요약 명령 연결
+- [x] 음성 checkout 요청은 재확인 후 신청 내용 확인 화면까지만 이동하도록 제한
+- [x] 월 단위 음성 검색의 시작일·종료일을 기존 상품 목록 필터에 합류
+- [x] Voice 서비스의 현재 오류 형식과 기존 서버 공통 오류 형식을 프론트에서 모두 사용자 메시지로 정규화
+- [x] 백엔드가 응답하지 않는 로그아웃에서도 로컬 토큰을 지우고 미처리 Promise 오류가 남지 않도록 수정
+- [x] `npm run build`, `npm run lint`, `git diff --check` 통과
+- [x] Auth 성공 응답 DTO 기준 로그인·재발급·로그아웃 연결
+- [x] Tour 검색/상세/옵션 가격 계산 DTO 확정
+- [x] Booking PENDING 생성·옵션 수정·조회·취소 DTO 확정
+- [x] Payment 결제 상태 DTO 확정
+
+## 계약 확인이 필요한 항목
+
+1. 미지원 브라우저와 마이크 권한 거부 시 사용할 텍스트 명령 입력 동선
+2. Render 배포 Voice URL과 실제 Groq 키를 사용한 한국어 발화 최종 검증
+
+## 다음 작업 순서
+
+1. 직원 상품·재고·고객 화면을 서버 데이터로 전환
+2. PENDING 예약의 옵션 수정 진입 동선 추가
+3. 배포 환경에서 Voice 콜드 스타트·CORS·마이크 권한 동선 검증
+
+## 보존 원칙
+
+- `src/data`의 샘플 값은 서버 DTO로 재사용하지 않는다.
+- 프론트엔드 계산 결과는 예상 표시로만 사용하고 최종 가격·마감·상태는 서버 응답을 따른다.
+- 재고 부족은 고객 예약·결제를 차단하지 않는다.
+- DEMO 기능은 실제 연동이 검증될 때까지 별도 경로로 유지하고 프로덕션 세션과 섞지 않는다.
