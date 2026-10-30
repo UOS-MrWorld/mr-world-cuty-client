@@ -89,9 +89,9 @@ export function normalizeDraft(tour: Tour, value?: unknown): TravelDraft {
   if (grade === 'classic' && minimumGrade(tour) === 'grand') grade = 'grand'
   const defaults = getGradeDefaults(tour, grade)
   const rawTravelers = typeof raw.travelers === 'number' && Number.isFinite(raw.travelers)
-    ? Math.min(10, Math.max(1, Math.floor(raw.travelers))) : initial.travelers
+    ? Math.max(1, Math.floor(raw.travelers)) : initial.travelers
   const travelers = tour.theme === 'romance'
-    ? Math.max(2, Math.floor(rawTravelers / 2) * 2) : rawTravelers
+    ? 2 : rawTravelers
   const hotelValue = raw.hotel === '편안한 4성급' ? '4' : raw.hotel === '특별한 5성급' ? '5' : raw.hotel
   const mealValue = raw.meal === '전 일정 식사 포함' ? 'local' : raw.meal
   const transportValue = raw.transport === '우리만의 전용 차량'

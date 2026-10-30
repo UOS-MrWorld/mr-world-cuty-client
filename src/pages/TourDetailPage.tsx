@@ -28,7 +28,7 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
     const next = normalizeDraft(tour, {
       ...draft,
       ...(date && isOpenTravelDate(date) ? { date } : {}),
-      ...(Number.isInteger(travelers) && travelers >= 1 && travelers <= 10 ? { travelers } : {}),
+      ...(Number.isInteger(travelers) && travelers >= 1 ? { travelers } : {}),
     })
     if (next.date !== draft.date || next.travelers !== draft.travelers) onChange(next)
   }, [draft, onChange, tour])
@@ -69,8 +69,8 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
           }}>
             <label className="field" htmlFor="detail-date">출발 희망일<input ref={dateInput} id="detail-date" type="date" min={getEarliestDepartureDate()} value={draft.date} required aria-invalid={dateError || undefined} aria-describedby={dateError ? 'detail-date-error' : 'detail-date-help'} onInput={event => { update({date:event.currentTarget.value}); setDateError(false) }} /></label>
             {dateError ? <p className="field-error" id="detail-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p> : <p id="detail-date-help" className="summary-note">모집 마감은 출발 7일 전이에요.</p>}
-            <label className="field" htmlFor="detail-travelers">여행 인원<select id="detail-travelers" value={draft.travelers} onChange={event => update({travelers:Number(event.target.value)})}>{(tour.theme === 'romance' ? [2, 4, 6, 8, 10] : Array.from({length:10},(_,i)=>i+1)).map(n=><option key={n} value={n}>{n}명{tour.theme === 'romance' ? ` · ${n / 2}커플` : ''}</option>)}</select></label>
-            <p className="summary-note">최소 출발 인원 {tour.theme === 'romance' ? '2커플' : '3명'} · 마감일에 확정</p>
+            <label className="field" htmlFor="detail-travelers">여행 인원<input id="detail-travelers" type="number" min="1" step="1" value={draft.travelers} readOnly={tour.theme === 'romance'} onChange={event => update({travelers:Number(event.currentTarget.value)})} /></label>
+            <p className="summary-note">{tour.theme === 'romance' ? '허니문 예약은 2명' : '일반 투어 예약 인원 상한 없음'} · 전체 결제 인원 3명 이상이면 마감일에 출발 확정</p>
             <div className="summary-total"><span>{draft.travelers}명 예상 합계</span><strong>{formatPrice(estimate.total)}<small>원</small></strong></div>
             <button className="button primary" type="submit">등급·옵션 선택<Icon name="arrow" size={17} /></button>
           </form>

@@ -38,8 +38,8 @@ export function BookingPreviewPage({ tour, draft }: { tour: Tour; draft: TravelD
         </section>
         <section className="surface-card" aria-labelledby="departure-heading">
           <h2 className="section-title" id="departure-heading">출발 현황</h2>
-          {booking && <div className="recruitment-progress"><div><span>결제 완료 인원</span><strong>{departure.participants}명 <small>/ 최소 {departure.minimum}명</small></strong></div><progress aria-label={`현재 ${departure.participants}명, 최소 ${departure.minimum}명`} value={Math.min(departure.participants, departure.minimum)} max={departure.minimum} />{tour.theme === 'romance' && <small>{departure.participants / 2}커플 모집 · 최소 2커플</small>}</div>}
-          <dl className="detail-facts"><div><dt>모집 마감</dt><dd>{deadline} · 출발 7일 전</dd></div><div><dt>최소 인원</dt><dd>{tour.theme === 'romance' ? '2커플' : '3명'}</dd></div></dl>
+          {booking && <div className="recruitment-progress"><div><span>결제 완료 인원</span><strong>{departure.participants}명 <small>/ 최소 {departure.minimum}명</small></strong></div><progress aria-label={`현재 ${departure.participants}명, 최소 ${departure.minimum}명`} value={Math.min(departure.participants, departure.minimum)} max={departure.minimum} />{tour.theme === 'romance' && <small>허니문 예약은 건별 2명이며, 출발 판정은 전체 결제 인원 합계 기준입니다.</small>}</div>}
+          <dl className="detail-facts"><div><dt>모집 마감</dt><dd>{deadline} · 출발 7일 전</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd></div></dl>
           <p className="summary-note">출발 여부는 모집 마감일에 확정됩니다.</p>
         </section>
         {booking && <section className="surface-card" aria-labelledby="booking-travelers-heading">

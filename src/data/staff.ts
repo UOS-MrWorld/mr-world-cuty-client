@@ -20,8 +20,6 @@ export function createStaffProduct(tour: Tour): StaffProduct {
     ...tour,
     state: 'draft',
     departureDates: '',
-    maximumPeople: 10,
-    minimumDeparturePeople: tour.theme === 'romance' ? '4' : '3',
     minimumGrade: restricted ? 'grand' : 'classic',
     grades: [
       { id: 'classic', price: tour.price - startingAdjustment, hotel: '3', meal: 'lunch', transport: tour.theme === 'romance' ? 'private' : 'van', champagneIncluded: false },
@@ -36,7 +34,7 @@ export function createStaffProduct(tour: Tour): StaffProduct {
       coffee: { enabled: true, adjustment: 10000, unit: 'person', reason: '' },
     },
     supplies: themeBenefits[tour.theme].join('\n'),
-    limitations: tour.theme === 'romance' ? '2명씩 커플 단위로 2~10명 신청합니다. 커플마다 2인 전용 차량을 제공합니다. 그랜드 이상을 선택하며 최소 2커플(4명)의 결제 완료 인원이 모여야 출발합니다.' : tour.theme === 'healing' ? '그랜드 이상 선택합니다.' : '',
+    limitations: tour.theme === 'romance' ? '예약당 정확히 2명이며 커플별 2인 전용 차량을 제공합니다. 그랜드 이상을 선택합니다. 전체 결제 인원 3명 이상이면 마감일에 출발이 확정됩니다.' : tour.theme === 'healing' ? '그랜드 이상 선택합니다.' : '',
   }
 }
 

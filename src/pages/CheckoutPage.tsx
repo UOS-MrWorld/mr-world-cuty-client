@@ -117,7 +117,7 @@ export function CheckoutPage({ tour, draft, onPreview }: { tour: Tour; draft: Tr
         </section>
         <section className="surface-card" aria-labelledby="checkout-policy-heading">
           <h2 className="section-title" id="checkout-policy-heading">출발·취소 조건</h2>
-          <dl className="detail-facts"><div><dt>모집 마감</dt><dd>{deadline} · 출발 7일 전</dd></div><div><dt>최소 출발 인원</dt><dd>{tour.theme === 'romance' ? '2커플' : '3명'}</dd></div><div><dt>취소·환불</dt><dd>마감 전까지 가능</dd></div></dl>
+          <dl className="detail-facts"><div><dt>모집 마감</dt><dd>{deadline} · 출발 7일 전</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd></div><div><dt>취소·환불</dt><dd>마감 전까지 가능</dd></div></dl>
           <p className="summary-note">마감 시 최소 인원 미달이면 출발이 취소됩니다.</p>
           <label className="checkout-agreement"><input type="checkbox" required /><span>여행 구성·금액과 출발·취소 조건을 확인했습니다.</span></label>
           {recruitmentClosed && <p className="field-error" role="alert">모집 마감일이 지난 일정입니다. 구성 화면에서 출발일을 변경해 주세요.</p>}
