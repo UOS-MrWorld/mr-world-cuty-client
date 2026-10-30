@@ -1,8 +1,9 @@
 import { apiClient } from './client'
+import type { LoginRequest, SignupRequest } from '../types/auth'
 
-export const signup = (payload: unknown) => apiClient.post('/auth/signup', payload)
+export const signup = (payload: SignupRequest) => apiClient.post('/auth/signup', payload)
 
-export const login = (payload: unknown) => apiClient.post('/auth/login', payload)
+export const login = (payload: LoginRequest) => apiClient.post('/auth/login', payload)
 
 export const refresh = (payload: unknown) => apiClient.post('/auth/refresh', payload)
 

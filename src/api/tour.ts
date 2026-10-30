@@ -1,11 +1,11 @@
 import { apiClient } from './client'
 
 // 고객용
-export const getTours = (params?: unknown) => apiClient.get('/tours', { params })
+export const getTours = (params?: unknown) => apiClient.get('/customer/tours', { params })
 
-export const getTour = (tourId: string) => apiClient.get(`/tours/${tourId}`)
+export const getTour = (tourId: string) => apiClient.get(`/customer/tours/${tourId}`)
 
-export const searchToursByVoice = (payload: unknown) => apiClient.post('/tours/voice-search', payload)
+export const searchToursByVoice = (payload: unknown) => apiClient.post('/customer/tours/voice-search', payload)
 
 // 직원용
 export const getStaffTours = (params?: unknown) => apiClient.get('/staff/tours', { params })

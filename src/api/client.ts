@@ -1,15 +1,23 @@
 import axios from 'axios'
+import { normalizeApiError } from '../types/api'
+import { getAccessToken } from './tokenStorage'
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api/v1',
+  headers: { Accept: 'application/json' },
 })
 
 apiClient.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem('accessToken')
+  const accessToken = getAccessToken()
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
   return config
 })
 
-// TODO: 401 응답 시 refresh 토큰으로 accessToken 재발급 후 재요청하는 인터셉터 추가
+apiClient.interceptors.response.use(
+  response => response,
+  error => Promise.reject(normalizeApiError(error)),
+)
+
+// TODO: Auth 성공 응답과 refresh token 저장 방식 확정 후 401 재발급 큐를 추가합니다.

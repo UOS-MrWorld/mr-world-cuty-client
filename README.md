@@ -65,7 +65,8 @@ npm run dev
 | `member.ts` | `member` | 내 회원정보 조회·수정, 이전 여행 이력 |
 | `tour.ts` | `tour` | 여행상품 조회/검색(고객), 등록·수정·삭제·현황(직원) |
 | `wish.ts` | `wish` | 찜 등록/해제/목록 |
-| `booking.ts` | `booking` | 여행신청, 취소, 결제 |
+| `booking.ts` | `booking` | 여행신청, 옵션 수정, 목록·상세 조회, 취소, 여행 내역 |
+| `payment.ts` | `payment` | Mock 결제 및 결제·환불 상태 |
 | `inventory.ts` | `inventory` | 직원용 재고 관리 |
 | `customer.ts` | `customer` | 직원용 고객 관리, 단골 등급 정책 |
 
