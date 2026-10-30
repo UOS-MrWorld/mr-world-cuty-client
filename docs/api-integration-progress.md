@@ -2,6 +2,7 @@
 
 기준일: 2026-10-30 (Asia/Seoul)  
 기준 커밋: `b5b55fe5519763533c6af8e3f0d78d1c17b2aa97`
+Auth 계약 확인 백엔드 커밋: `70382456dae034c281576491302938f17ca11df5`
 
 ## 목표
 
@@ -26,6 +27,11 @@
 - [x] 공통 API 에러 타입과 정규화 오류 클래스 추가
 - [x] JWT access token 접근을 API 클라이언트 내부 저장소로 격리
 - [x] 로그인·회원가입 요청 DTO 추가
+- [x] 백엔드 Auth Controller/DTO를 기준으로 성공 응답 타입 확정
+- [x] 실제 로그인·회원가입·로그아웃 UI 연결
+- [x] 401 응답의 단일 refresh 요청 및 원 요청 재시도
+- [x] JWT 세션 복원과 CUSTOMER/STAFF 직원 화면 가드 연결
+- [x] 실제 로그인 세션과 DEMO 세션의 권한 판정을 분리
 - [x] 고객 Tour/Booking/Payment 요청에 `/customer` 역할 prefix 적용
 - [x] Payment API를 Booking 파일에서 별도 도메인 파일로 분리
 - [x] `npm run build`, `npm run lint`, `git diff --check` 통과
@@ -36,20 +42,17 @@
 
 ## 계약 확인이 필요한 항목
 
-1. Auth 성공 응답의 access token, refresh token, role 필드명과 refresh token 저장 방식
-2. API 성공 응답이 원본 DTO인지 공통 envelope를 사용하는지 여부
-3. Tour GUI 검색/음성 검색/옵션 가격 계산의 정확한 경로와 요청·응답 DTO
-4. Booking의 PENDING 옵션 수정 및 여행 내역 조회 경로
-5. Payment 생성, 상태 조회, 자동 환불 결과 조회 경로
-6. 음성 서버를 프론트에서 직접 호출하는지 메인 Tour API가 중계하는지 여부
+1. Tour GUI 검색/음성 검색/옵션 가격 계산의 정확한 경로와 요청·응답 DTO
+2. Booking의 PENDING 옵션 수정 및 여행 내역 조회 경로
+3. Payment 생성, 상태 조회, 자동 환불 결과 조회 경로
+4. 음성 서버를 프론트에서 직접 호출하는지 메인 Tour API가 중계하는지 여부
 
 ## 다음 작업 순서
 
-1. 확정 DTO를 `src/types`에 추가
-2. 실제 Auth 세션과 역할 가드 연결
-3. Tour 목록·상세·GUI 검색을 샘플 데이터에서 서버 데이터로 전환
-4. 음성 검색 결과를 GUI 검색 조건 모델에 합류
-5. PENDING 예약 → 결제 → PAID/REFUNDED 상태 흐름 연결
+1. Tour 목록·상세·GUI 검색 DTO를 백엔드 명세와 맞춰 추가
+2. 샘플 상품 목록을 서버 데이터로 전환
+3. 음성 검색 결과를 GUI 검색 조건 모델에 합류
+4. PENDING 예약 → 결제 → PAID/REFUNDED 상태 흐름 연결
 
 ## 보존 원칙
 

@@ -6,6 +6,7 @@ import { demoContactPattern, getDepartureState } from '../data/demoBookings'
 import { formatPrice, tours } from '../data/travel'
 import { getEstimate, getToday, gradeLabels } from '../data/configuration'
 import { useDemoSession } from '../hooks/useDemoSession'
+import { useAuth } from '../hooks/useAuth'
 import { navigate, useRoute } from '../hooks/useRoute'
 import type { DemoBooking } from '../types/demo'
 import type { TravelDraft } from '../types/travel'
@@ -51,7 +52,8 @@ function ProfilePanel() {
 
 export function MyTripsPage({ drafts }: { drafts: TravelDraft[] }) {
   const route = useRoute()
-  const { session, bookings } = useDemoSession()
+  const { session: authSession } = useAuth()
+  const { session: demoSession, bookings } = useDemoSession()
   const requested = new URLSearchParams(route.split('?')[1]).get('tab') as MyTripsTab | null
   const tab: MyTripsTab = requested && tabIds.includes(requested) ? requested : 'drafts'
   const currentBookings = bookings.filter(booking => booking.draft.date >= getToday())
@@ -78,12 +80,13 @@ export function MyTripsPage({ drafts }: { drafts: TravelDraft[] }) {
           return <article className="draft-card surface-card" key={tour.id}><img src={tour.image} alt={tour.imageAlt} /><div><span className="status-pill">구성 중</span><h2>{tour.title}</h2><p className="muted">{draft.date || '출발일 미선택'} · {tour.duration} · {draft.travelers}명 · {gradeLabels[draft.grade]}</p><strong>예상 합계 {formatPrice(getEstimate(tour, draft).total)}원</strong></div><AppLink className="button secondary" href={`/tours/${tour.id}/configure`}>이어서 구성 <Icon name="arrow" size={17} /></AppLink></article>
         })}</div> : <div className="empty-state"><Icon name="compass" size={36} /><h2>저장한 여행이 없어요.</h2><p>상품을 고르고 일정·등급·옵션을 저장해 보세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
       </>}
-      {tab !== 'drafts' && session?.role !== 'customer' && <div className="empty-state"><Icon name="compass" size={36} /><h2>고객 계정으로 확인해 주세요.</h2><p>실제 로그인 연결 전에는 고객 시연 모드로 내 여행을 체험할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(route)}`}>로그인 화면으로 <Icon name="arrow" size={17} /></AppLink></div>}
-      {session?.role === 'customer' && (tab === 'bookings' || tab === 'history') && <>
+      {tab !== 'drafts' && authSession?.role === 'CUSTOMER' && demoSession?.role !== 'customer' && <div className="empty-state"><Icon name="compass" size={36} /><h2>여행 내역 API를 연결하고 있어요.</h2><p>{authSession.memberName} 고객님으로 로그인되었습니다. 다음 단계에서 예약한 여행과 완료 여행을 서버에서 불러옵니다.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
+      {tab !== 'drafts' && authSession?.role !== 'CUSTOMER' && demoSession?.role !== 'customer' && <div className="empty-state"><Icon name="compass" size={36} /><h2>고객 계정으로 확인해 주세요.</h2><p>로그인하거나 고객 시연 모드로 내 여행을 체험할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(route)}`}>로그인 화면으로 <Icon name="arrow" size={17} /></AppLink></div>}
+      {demoSession?.role === 'customer' && (tab === 'bookings' || tab === 'history') && <>
         <p className="notice demo-notice"><span className="demo-badge">DEMO</span><span>현재 시연 내역만 표시됩니다.</span></p>
         {(tab === 'bookings' ? currentBookings : previousBookings).length ? <BookingCards records={tab === 'bookings' ? currentBookings : previousBookings} /> : <div className="empty-state"><Icon name="compass" size={36} /><h2>{tab === 'history' ? '아직 여행 이력이 없어요.' : '신청한 여행이 없어요.'}</h2><p>{tab === 'history' ? '완료한 여행뿐 아니라 신청·결제 내역도 여기서 확인할 수 있어요.' : '여행을 선택하고 결제 시연을 완료하면 내역이 표시돼요.'}</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
       </>}
-      {session?.role === 'customer' && tab === 'profile' && <ProfilePanel />}
+      {demoSession?.role === 'customer' && tab === 'profile' && <ProfilePanel />}
     </div>
   </>
 }

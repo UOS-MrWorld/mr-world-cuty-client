@@ -1,14 +1,46 @@
 export type MemberRole = 'CUSTOMER' | 'STAFF'
 
 export interface LoginRequest {
-  account: string
+  loginId: string
   password: string
 }
 
 export interface SignupRequest extends LoginRequest {
   name: string
+  confirmPassword: string
+  phoneNum: string
   address: string
-  contact: string
+  role: MemberRole
 }
 
-// 성공 응답 필드명은 백엔드 계약 확인 후 추가합니다.
+export interface LoginResponse {
+  memberId: number
+  memberName: string
+  role: MemberRole
+  accessToken: string
+  refreshToken: string
+  tokenType: 'Bearer'
+}
+
+export interface SignupResponse {
+  memberId: number
+  name: string
+  loginId: string
+  phoneNum: string
+  address: string
+  role: MemberRole
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string
+}
+
+export interface TokenResponse {
+  accessToken: string
+}
+
+export interface AuthSession {
+  memberId: number
+  memberName: string
+  role: MemberRole
+}
