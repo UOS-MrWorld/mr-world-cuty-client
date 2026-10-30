@@ -7,6 +7,7 @@ import { Icon } from './components/Icon'
 import { createDraft, isValidTravelDate, normalizeDraft } from './data/configuration'
 import { themes, tours } from './data/travel'
 import { toDisplayTour } from './data/tourApiAdapter'
+import { apiTourLevels, applyVoiceConfiguration, voiceSearchPath, voiceSummary } from './data/voiceCommand'
 import { themeLabels } from './data/catalogue'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { navigate, useRoute, useRouteTransitioning } from './hooks/useRoute'
@@ -25,6 +26,7 @@ import { VoiceFooterCta } from './components/VoiceFooterCta'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import type { GlobeMood } from './types/landing'
+import type { VoiceResponse, VoiceScreenContext, VoiceTourContext } from './types/voiceApi'
 const SnowGlobe = lazy(() => import('./components/SnowGlobe'))
 const StaffPage = lazy(() => import('./pages/StaffPage'))
 
@@ -53,6 +55,15 @@ const collectionNames: Record<string, string> = {
   '/signup': '회원가입',
 }
 const flowSteps: Record<string, number> = { configure: 2, checkout: 3, preview: 4 }
+
+function visibleVoiceTours(): VoiceTourContext[] {
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-voice-tour-id]')).map(node => ({
+    tourId: /^\d+$/.test(node.dataset.voiceTourId ?? '') ? Number(node.dataset.voiceTourId) : node.dataset.voiceTourId ?? '',
+    tourName: node.dataset.voiceTourName ?? '',
+    theme: node.dataset.voiceTourTheme ?? '',
+    price: Number(node.dataset.voiceTourPrice) || 0,
+  })).filter(item => item.tourId !== '' && item.tourName)
+}
 
 export default function App() {
   return <AuthProvider><DemoSessionProvider><CutyApp /></DemoSessionProvider></AuthProvider>
@@ -125,6 +136,8 @@ function CutyApp() {
   const [storedDrafts, saveDrafts, draftsError] = useLocalStorage('cuty:drafts:v1', [], isStoredDraftArray)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voicePendingAction, setVoicePendingAction] = useState<string | null>(null)
+  const [voiceFeedback, setVoiceFeedback] = useState('')
   const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const previousPath = useRef<string | null>(null)
   const drafts = tours.flatMap((item) => {
@@ -138,6 +151,22 @@ function CutyApp() {
     ? previewBooking?.draft ?? (storedTourDraft ? normalizeDraft(tour, storedTourDraft) : createDraft(tour))
     : undefined
 
+  const voiceTours = pathname === '/tours'
+    ? visibleVoiceTours()
+    : tour ? [{
+      tourId: /^\d+$/.test(tour.id) ? Number(tour.id) : tour.id,
+      tourName: tour.title,
+      theme: tour.tag,
+      price: tour.price,
+    }] : []
+  const voiceContext: VoiceScreenContext = {
+    screen: isLanding ? 'home' : pathname === '/tours' ? 'list' : screen ?? (tour ? 'detail' : pathname.slice(1) || 'home'),
+    tours: voiceTours,
+    availableTourLevels: apiTourLevels(tour),
+    drinkOptions: tour?.apiConfiguration?.drinkOptions.map(option => ({ optionId: option.id, name: option.name })) ?? [],
+    pendingAction: voicePendingAction,
+  }
+
   useEffect(() => {
     document.title = `${title} | CUTY`
     if (previousPath.current !== pathname) {
@@ -150,6 +179,10 @@ function CutyApp() {
       previousPath.current = pathname
     }
   }, [pathname, title])
+
+  useEffect(() => {
+    setVoicePendingAction(null)
+  }, [route])
 
   function updateDraft(next: TravelDraft) {
     return saveDrafts([
@@ -165,6 +198,104 @@ function CutyApp() {
   function closeVoice() {
     setVoiceOpen(false)
     window.requestAnimationFrame(() => voiceTriggerRef.current?.focus())
+  }
+
+  function handleVoiceResponse(response: VoiceResponse) {
+    const heard = response.recognizedText ? `“${response.recognizedText}”` : '음성 입력'
+    const go = (to: string) => window.setTimeout(() => navigate(to), 0)
+    if (response.pending.action) {
+      if (response.pending.action === 'checkout' && tour && draft && tour.source !== 'api' && !isValidTravelDate(draft.date)) {
+        setVoicePendingAction(null)
+        setVoiceFeedback(`${heard} 신청 전에 출발 희망일을 먼저 선택해 주세요.`)
+        return
+      }
+      setVoicePendingAction(response.pending.action)
+      setVoiceFeedback(`${heard} · ${response.pending.message ?? '계속 진행할까요?'} 다시 마이크를 눌러 “응” 또는 “아니”라고 말씀해 주세요.`)
+      return
+    }
+    setVoicePendingAction(null)
+    for (const command of response.commands) {
+      if (command.action === 'search') {
+        go(voiceSearchPath(command.params))
+        setVoiceFeedback(`${heard} 조건으로 여행상품을 찾았습니다.`)
+        continue
+      }
+      if (command.action === 'select') {
+        const tourId = command.params.tourId
+        if (typeof tourId === 'string' || typeof tourId === 'number') {
+          go(`/tours/${tourId}`)
+          setVoiceFeedback(`${heard} 선택한 여행상품을 열었습니다.`)
+        }
+        continue
+      }
+      if (command.action === 'configure') {
+        if (!tour || !draft) {
+          setVoiceFeedback(`${heard} 먼저 여행상품을 선택해 주세요.`)
+          continue
+        }
+        const next = applyVoiceConfiguration(tour, draft, command.params)
+        updateDraft(next)
+        if (screen !== 'configure') go(`/tours/${tour.id}/configure${search}`)
+        setVoiceFeedback(`${heard} 요청한 여행 구성을 적용했습니다. ${voiceSummary(next)}`)
+        continue
+      }
+      if (command.action === 'next') {
+        if (isLanding) {
+          go('/tours')
+          setVoiceFeedback(`${heard} 여행상품 목록으로 이동했습니다.`)
+        }
+        else if (pathname === '/tours') {
+          const visible = visibleVoiceTours()
+          const first = visible[0]
+          if (visible.length === 1 && first) {
+            go(`/tours/${first.tourId}`)
+            setVoiceFeedback(`${heard} 검색된 여행상품을 열었습니다.`)
+          }
+          else setVoiceFeedback(`${heard} 목록에서 원하는 상품을 말씀해 주세요.`)
+        } else if (tour && draft && !screen) {
+          go(`/tours/${tour.id}/configure${search}`)
+          setVoiceFeedback(`${heard} 여행 구성 단계로 이동했습니다.`)
+        }
+        else if (tour && draft && screen === 'configure') {
+          if (tour.source !== 'api' && !isValidTravelDate(draft.date)) {
+            setVoiceFeedback(`${heard} 신청 전에 출발 희망일을 먼저 선택해 주세요.`)
+            continue
+          }
+          updateDraft(draft)
+          go(`/tours/${tour.id}/checkout${search}`)
+          setVoiceFeedback(`${heard} 신청 내용을 확인하는 화면으로 이동했습니다.`)
+        } else setVoiceFeedback(`${heard} 현재 화면에서 이동할 다음 단계가 없습니다.`)
+        continue
+      }
+      if (command.action === 'checkout') {
+        if (tour && draft) {
+          if (tour.source !== 'api' && !isValidTravelDate(draft.date)) {
+            setVoiceFeedback(`${heard} 신청 전에 출발 희망일을 먼저 선택해 주세요.`)
+            continue
+          }
+          updateDraft(draft)
+          go(`/tours/${tour.id}/checkout${search}`)
+          setVoiceFeedback(`${heard} 신청 내용을 확인하는 화면으로 이동했습니다. 결제는 화면에서 직접 진행해 주세요.`)
+        } else setVoiceFeedback(`${heard} 먼저 여행상품과 옵션을 선택해 주세요.`)
+        continue
+      }
+      if (command.action === 'back') {
+        window.setTimeout(() => window.history.back(), 0)
+        setVoiceFeedback(`${heard} 이전 화면으로 이동했습니다.`)
+        continue
+      }
+      if (command.action === 'summary') {
+        setVoiceFeedback(draft ? `${heard} 현재 구성은 ${voiceSummary(draft)}입니다.` : `${heard} 아직 선택한 여행 구성이 없습니다.`)
+        continue
+      }
+      if (command.action === 'cancel') {
+        setVoiceFeedback(`${heard} 요청을 취소했습니다.`)
+        continue
+      }
+      if (command.action === 'unknown') {
+        setVoiceFeedback(typeof command.params.message === 'string' ? command.params.message : '잘 못 알아들었어요. 다시 말씀해 주세요.')
+      }
+    }
   }
 
   function renderPage() {
@@ -302,6 +433,7 @@ function CutyApp() {
         {feedback.route === route && feedback.message && (
           <p className="notice" role="status">{feedback.message}</p>
         )}
+        {voiceFeedback && <p className="notice voice-feedback" role="status">{voiceFeedback}</p>}
         {renderPage()}
       </main>
 
@@ -312,7 +444,7 @@ function CutyApp() {
           <small>© Mr.CUTY.</small>
       </footer>}
       <TravelHistoryDialog />
-      {voiceOpen && <VoiceSearchPanel display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} />}
+      {voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display={isLanding ? 'waveform' : 'floating'} onClose={closeVoice} />}
     </>
   )
 }

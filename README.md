@@ -42,7 +42,7 @@ src/
 └── types/        # 공통 UI 타입
 ```
 
-현재는 **FE 화면과 고객 API를 단계적으로 연결하는 중**이다. JWT 인증, 고객 상품 목록·검색·상세, Quote 옵션 가격, PENDING 예약 생성, Mock 결제, 예약 상세·취소, 예약 목록·여행 내역, 회원정보 조회·수정은 실제 서버 API를 사용한다. 음성 검색과 직원 화면 실데이터 전환은 다음 연동 단계다. 로그인하지 않았거나 DEMO 모드를 선택하면 기존 샘플 화면을 사용한다.
+현재는 **FE 화면과 고객 API를 단계적으로 연결하는 중**이다. JWT 인증, 고객 상품 목록·검색·상세, Quote 옵션 가격, PENDING 예약 생성, Mock 결제, 예약 상세·취소, 예약 목록·여행 내역, 회원정보 조회·수정은 실제 서버 API를 사용한다. 별도 Voice AI 서비스의 음성 검색·상품 선택·옵션 구성·단계 이동도 연결했으며, 결제는 음성으로 실행하지 않는다. 직원 화면 실데이터 전환은 다음 연동 단계다. 로그인하지 않았거나 DEMO 모드를 선택하면 기존 샘플 화면을 사용한다.
 
 홈의 3D 장면은 Three.js와 React Three Fiber를 사용하며 지연 로드한다. Liquid Glass 셰이더의 출처와 MIT 라이선스는 `src/vendor/liquid-glass`에 보관한다.
 
@@ -53,7 +53,7 @@ npm ci
 npm run dev
 ```
 
-검증: `npm run build`, `npm run lint`. 실제 API를 확인할 때는 `.env.example`을 복사해 `VITE_API_BASE_URL`을 설정하고 백엔드를 함께 실행한다. DEMO 화면은 서버 없이도 확인할 수 있다.
+검증: `npm run build`, `npm run lint`. 실제 API를 확인할 때는 `.env.example`을 복사해 `VITE_API_BASE_URL`과 `VITE_VOICE_API_BASE_URL`을 설정하고 백엔드·Voice 서버를 함께 실행한다. DEMO 화면은 서버 없이도 확인할 수 있다.
 
 ### api/
 

@@ -52,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshToken = getRefreshToken()
     try {
       if (refreshToken) await requestLogout({ refreshToken })
+    } catch {
+      // 서버가 응답하지 않아도 이 기기의 토큰과 세션은 반드시 종료한다.
     } finally {
       clearStoredAuth()
       setSession(null)
