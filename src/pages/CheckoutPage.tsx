@@ -6,6 +6,7 @@ import { getEstimate, getToday } from '../data/configuration'
 import { demoContactPattern, getRecruitmentDeadline, paymentMethodLabels } from '../data/demoBookings'
 import { formatPrice } from '../data/travel'
 import { useDemoSession } from '../hooks/useDemoSession'
+import { useAuth } from '../hooks/useAuth'
 import { navigate } from '../hooks/useRoute'
 import type { DemoPaymentMethod, DemoPerson } from '../types/demo'
 import type { Tour, TravelDraft } from '../types/travel'
@@ -25,8 +26,9 @@ function PersonFields({ person, prefix, onChange }: {
 }
 
 export function CheckoutPage({ tour, draft, onPreview }: { tour: Tour; draft: TravelDraft; onPreview: () => void }) {
-  const { session, createDemoBooking } = useDemoSession()
-  const [applicant, setApplicant] = useState<DemoPerson>(() => session?.profile ?? { ...emptyPerson })
+  const { session: authSession } = useAuth()
+  const { session: demoSession, createDemoBooking } = useDemoSession()
+  const [applicant, setApplicant] = useState<DemoPerson>(() => demoSession?.profile ?? { ...emptyPerson })
   const [companions, setCompanions] = useState<DemoPerson[]>(() => Array.from({ length: draft.travelers - 1 }, () => ({ ...emptyPerson })))
   const [method, setMethod] = useState<DemoPaymentMethod>('card')
   const [resultCase, setResultCase] = useState<'success' | 'failure'>('success')
@@ -69,12 +71,21 @@ export function CheckoutPage({ tour, draft, onPreview }: { tour: Tour; draft: Tr
     }, 1300)
   }
 
-  if (session?.role !== 'customer') return <>
+  if (authSession?.role === 'CUSTOMER' && demoSession?.role !== 'customer') return <>
+    <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>선택한 여행 구성을 확인해 주세요.</h1><p>고객 계정으로 로그인되었습니다.</p></div>
+    <div className="flow-layout"><section className="surface-card flow-main">
+      <h2>예약 API 연결을 준비하고 있어요.</h2>
+      <p className="muted">다음 단계에서 PENDING 예약 생성과 Mock 결제를 연결합니다. 지금은 실제 예약이나 결제를 만들지 않습니다.</p>
+      <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="button" onClick={onPreview}>선택 구성 미리보기</button></div>
+    </section><TripSummary tour={tour} draft={draft} /></div>
+  </>
+
+  if (demoSession?.role !== 'customer') return <>
     <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>신청을 이어가려면 로그인해 주세요.</h1><p>선택한 일정과 구성은 그대로 유지돼요.</p></div>
     <div className="flow-layout"><section className="surface-card flow-main">
       <h2>고객 계정으로 신청해 주세요.</h2>
       <p className="muted">실제 로그인 연결 전에는 고객 시연 모드로 신청·결제 화면을 체험할 수 있어요.</p>
-      {session?.role === 'staff' && <p className="notice">직원 시연 모드에서는 고객 신청을 진행할 수 없습니다.</p>}
+      {(authSession?.role === 'STAFF' || demoSession?.role === 'staff') && <p className="notice">직원 계정에서는 고객 신청을 진행할 수 없습니다.</p>}
       <div className="action-row"><AppLink className="button primary" href={`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`}>로그인 화면으로 <Icon name="arrow" size={18} /></AppLink><button className="button secondary" type="button" onClick={onPreview}>선택 구성 미리보기</button></div>
     </section><TripSummary tour={tour} draft={draft} /></div>
   </>
