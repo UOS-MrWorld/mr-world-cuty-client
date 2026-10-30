@@ -2,6 +2,7 @@ export type ThemeId = 'all' | 'romance' | 'healing' | 'golf' | 'outdoor'
 
 export interface Tour {
   id: string
+  source?: 'api'
   theme: Exclude<ThemeId, 'all'>
   title: string
   location: string
@@ -11,6 +12,13 @@ export interface Tour {
   image: string
   imageAlt: string
   tag: string
+  startDate?: string
+  endDate?: string
+  apiConfiguration?: {
+    availableGrades: TravelGrade[]
+    defaultTransport: TravelTransport
+    drinkOptions: Array<{ id: number; name: string; price: number }>
+  }
 }
 
 export interface TravelDraft {

@@ -69,7 +69,7 @@ export function ProductEditor({ product, onApply, onDirtyChange }: {
 
   function changeTheme(theme: Tour['theme']) {
     const defaults = createStaffProduct({ ...value, theme })
-    setValue(current => ({ ...current, theme, grades: defaults.grades, minimumGrade: defaults.minimumGrade, maximumPeople: defaults.maximumPeople, supplies: themeBenefits[theme].join('\n'), limitations: defaults.limitations, minimumDeparturePeople: defaults.minimumDeparturePeople, options: defaults.options }))
+    setValue(current => ({ ...current, theme, grades: defaults.grades, minimumGrade: defaults.minimumGrade, supplies: themeBenefits[theme].join('\n'), limitations: defaults.limitations, options: defaults.options }))
     setFeedback({ kind: 'success', message: '선택한 테마의 등급·차량·제공 물품·선택 제한을 기본값으로 바꿨습니다. 상품명·여행지·일정은 유지했습니다. 아직 목록에 적용하지 않았습니다.' })
   }
 
@@ -95,9 +95,9 @@ export function ProductEditor({ product, onApply, onDirtyChange }: {
         <Field label="운영 상태" hint="실제 판매 상태를 변경하지 않는 화면 예시입니다."><select value={value.state} onChange={e => update('state', e.target.value as StaffProduct['state'])}><option value="draft">초안</option><option value="preview">판매 화면 예시</option><option value="paused">운영 중지 예시</option></select></Field>
       </div><Field label="상품 소개"><textarea value={value.description} onChange={e => update('description', e.target.value)} rows={3} /></Field></section>
 
-      <section className="staff-sheet"><div className="staff-section-heading"><h2>출발 일정과 인원</h2><span>차량 좌석 수와 상품 정원을 구분합니다.</span></div><div className="staff-fields two">
+      <section className="staff-sheet"><div className="staff-section-heading"><h2>출발 일정과 인원 정책</h2><span>서버가 적용하는 예약·확정 규칙</span></div><div className="staff-fields two">
         <Field label="출발일 목록" error={errors.departureDates} hint="YYYY-MM-DD 형식으로 한 줄에 하나씩. 실제 예약 가능일과 연동 전입니다."><textarea name="departureDates" value={value.departureDates} onChange={e => update('departureDates', e.target.value)} rows={3} placeholder={'2026-11-20\n2026-12-05'} aria-invalid={!!errors.departureDates} /></Field>
-        <div className="staff-fields"><Field label={value.theme === 'romance' ? '신청 가능 최대 인원 · 커플 단위' : '상품 정원 · 명'} error={errors.maximumPeople} hint={value.theme === 'romance' ? '2~10명 중 짝수로 설정합니다. 커플마다 2인 차량이 제공되며, 출발은 최소 2커플의 결제 완료 인원이 기준입니다.' : '10인승은 차량 좌석 수입니다. 상품 정원과 같은 뜻으로 사용하지 않습니다.'}><input name="maximumPeople" type="number" min={value.theme === 'romance' ? 2 : 1} max={value.theme === 'romance' ? 10 : undefined} step={value.theme === 'romance' ? 2 : 1} value={value.maximumPeople} onChange={e => update('maximumPeople', Number(e.target.value))} aria-invalid={!!errors.maximumPeople} /></Field><Field label="최소 출발 기준 인원 · 명" error={errors.minimumDeparturePeople} hint="동일 상품·동일 출발일의 결제 완료 인원을 합산합니다. 허니문은 최소 2커플(4명), 다른 테마는 최소 3명입니다."><input name="minimumDeparturePeople" type="number" min="1" step="1" value={value.minimumDeparturePeople} onChange={e => update('minimumDeparturePeople', e.target.value)} placeholder={value.theme === 'romance' ? '4' : '3'} aria-invalid={!!errors.minimumDeparturePeople} /></Field></div>
+        <div className="staff-policy-card"><h3>고정 정책</h3><p>일반 투어는 예약 인원 상한이 없습니다. 허니문은 예약당 정확히 2명입니다.</p><p>모든 테마는 같은 투어의 결제 완료 인원 합계가 3명 이상이면 출발 7일 전 마감 시 확정됩니다. 이 값은 직원이 수정하지 않습니다.</p></div>
       </div></section>
 
       <section className="staff-sheet"><div className="staff-section-heading"><h2>등급별 기본 구성</h2><span>등급 가격과 기본 포함 사항을 개별 편집합니다.</span></div><Field label="최소 선택 등급" error={errors.minimumGrade} hint={restricted ? '허니문·효도 테마는 그랜드 이상만 선택할 수 있습니다.' : '최소 등급보다 낮은 등급은 고객 선택에서 제외됩니다.'}><select name="minimumGrade" value={value.minimumGrade} onChange={e => { const minimumGrade = e.target.value as TravelGrade; setValue(current => ({ ...current, minimumGrade, price: current.grades.find(grade => grade.id === minimumGrade)?.price ?? current.price })) }}>{gradeOrder.map(id => <option key={id} value={id} disabled={restricted && id === 'classic'}>{gradeLabels[id]}</option>)}</select></Field>

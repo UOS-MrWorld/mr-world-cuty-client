@@ -58,7 +58,7 @@ export function minimumGrade(tour: Tour): TravelGrade {
 export function getGradeDefaults(tour: Tour, grade: TravelGrade) {
   return {
     ...gradeDefaults[grade],
-    transport: (tour.theme === 'romance' ? 'private' : 'van') as TravelTransport,
+    transport: (tour.apiConfiguration?.defaultTransport ?? (tour.theme === 'romance' ? 'private' : 'van')) as TravelTransport,
     champagne: false,
     coffee: false,
   }
@@ -70,7 +70,7 @@ export function createDraft(tour: Tour): TravelDraft {
     tourId: tour.id,
     grade,
     ...getGradeDefaults(tour, grade),
-    date: '',
+    date: tour.startDate ?? '',
     travelers: tour.theme === 'romance' ? 2 : 1,
   }
 }
@@ -89,9 +89,9 @@ export function normalizeDraft(tour: Tour, value?: unknown): TravelDraft {
   if (grade === 'classic' && minimumGrade(tour) === 'grand') grade = 'grand'
   const defaults = getGradeDefaults(tour, grade)
   const rawTravelers = typeof raw.travelers === 'number' && Number.isFinite(raw.travelers)
-    ? Math.min(10, Math.max(1, Math.floor(raw.travelers))) : initial.travelers
+    ? Math.max(1, Math.floor(raw.travelers)) : initial.travelers
   const travelers = tour.theme === 'romance'
-    ? Math.max(2, Math.floor(rawTravelers / 2) * 2) : rawTravelers
+    ? 2 : rawTravelers
   const hotelValue = raw.hotel === '편안한 4성급' ? '4' : raw.hotel === '특별한 5성급' ? '5' : raw.hotel
   const mealValue = raw.meal === '전 일정 식사 포함' ? 'local' : raw.meal
   const transportValue = raw.transport === '우리만의 전용 차량'
@@ -104,7 +104,9 @@ export function normalizeDraft(tour: Tour, value?: unknown): TravelDraft {
     hotel: knownValue(hotelValue, ['3', '4', '5'], defaults.hotel),
     meal: knownValue(mealValue, ['lunch', 'local', 'steak'], defaults.meal),
     transport: tour.theme === 'romance' ? 'private' : travelers > 2 ? 'van' : transport,
-    date: typeof raw.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '',
+    date: tour.source === 'api' && tour.startDate
+      ? tour.startDate
+      : typeof raw.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '',
     travelers,
     champagne: grade !== 'premium' && raw.champagne === true,
     coffee: raw.coffee === true,
