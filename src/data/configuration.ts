@@ -70,7 +70,7 @@ export function createDraft(tour: Tour): TravelDraft {
     tourId: tour.id,
     grade,
     ...getGradeDefaults(tour, grade),
-    date: '',
+    date: tour.startDate ?? '',
     travelers: tour.theme === 'romance' ? 2 : 1,
   }
 }
@@ -104,7 +104,9 @@ export function normalizeDraft(tour: Tour, value?: unknown): TravelDraft {
     hotel: knownValue(hotelValue, ['3', '4', '5'], defaults.hotel),
     meal: knownValue(mealValue, ['lunch', 'local', 'steak'], defaults.meal),
     transport: tour.theme === 'romance' ? 'private' : travelers > 2 ? 'van' : transport,
-    date: typeof raw.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '',
+    date: tour.source === 'api' && tour.startDate
+      ? tour.startDate
+      : typeof raw.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '',
     travelers,
     champagne: grade !== 'premium' && raw.champagne === true,
     coffee: raw.coffee === true,

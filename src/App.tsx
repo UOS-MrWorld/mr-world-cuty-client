@@ -1,10 +1,12 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { getTour as requestTour } from './api/tour'
 import { AppLink } from './components/AppLink'
 import { BrandMark } from './components/BrandMark'
 import { FlowSteps } from './components/FlowSteps'
 import { Icon } from './components/Icon'
 import { createDraft, isValidTravelDate, normalizeDraft } from './data/configuration'
 import { themes, tours } from './data/travel'
+import { toDisplayTour } from './data/tourApiAdapter'
 import { themeLabels } from './data/catalogue'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { navigate, useRoute, useRouteTransitioning } from './hooks/useRoute'
@@ -64,20 +66,50 @@ function CutyApp() {
   const pathname = route.split('?')[0].replace(/\/$/, '') || '/'
   const search = window.location.search
   const match = pathname.match(/^\/tours\/([^/]+)(?:\/(configure|checkout|preview))?$/)
-  const tour = match ? tours.find((item) => item.id === match[1]) : undefined
+  const routeTourId = match?.[1]
+  const staticTour = routeTourId ? tours.find((item) => item.id === routeTourId) : undefined
   const screen = match?.[2]
   const isStaff = /^\/staff\/(?:tours(?:\/new|\/[^/]+\/edit)?|inventory|customers)$/.test(pathname)
   const isLanding = pathname === '/'
   const isAuth = pathname === '/login' || pathname === '/signup'
   const reducedMotion = useReducedMotion()
   const [homeMood, setHomeMood] = useState<GlobeMood>('honeymoon')
+  const useCustomerApi = authSession?.role === 'CUSTOMER' && demoSession?.role !== 'customer'
+  const apiTourRequested = Boolean(useCustomerApi && routeTourId && /^\d+$/.test(routeTourId))
+  const [apiTour, setApiTour] = useState<ReturnType<typeof toDisplayTour> | undefined>()
+  const [apiTourLoading, setApiTourLoading] = useState(false)
+  const [apiTourError, setApiTourError] = useState('')
+  const [apiTourRetry, setApiTourRetry] = useState(0)
+
+  useEffect(() => {
+    if (!apiTourRequested || !routeTourId) {
+      setApiTour(undefined)
+      setApiTourLoading(false)
+      setApiTourError('')
+      return
+    }
+    let active = true
+    setApiTour(undefined)
+    setApiTourLoading(true)
+    setApiTourError('')
+    void requestTour(Number(routeTourId)).then(response => {
+      if (active) setApiTour(toDisplayTour(response.data))
+    }).catch(error => {
+      if (active) setApiTourError(error instanceof Error ? error.message : '여행상품을 불러오지 못했습니다.')
+    }).finally(() => {
+      if (active) setApiTourLoading(false)
+    })
+    return () => { active = false }
+  }, [apiTourRequested, apiTourRetry, routeTourId])
+
+  const tour = apiTourRequested ? apiTour : staticTour
   const requestedTheme = new URLSearchParams(search).get('theme')
   const selectedTheme = tour?.theme ?? themes.find(item => item.id === requestedTheme)?.id ?? 'all'
   const routeMood: GlobeMood = selectedTheme === 'golf' ? 'golf'
     : selectedTheme === 'healing' ? 'family'
       : selectedTheme === 'outdoor' ? 'trekking' : 'honeymoon'
   const backdropMood = isLanding || selectedTheme === 'all' ? homeMood : routeMood
-  const pageLabel = isStaff ? '직원 화면 미리보기' : tour
+  const pageLabel = isStaff ? '직원 화면 미리보기' : tour || match
     ? pageNames[screen ?? ''] ?? '상품 상세'
     : collectionNames[pathname] ?? '페이지를 찾을 수 없습니다'
   const title = tour ? `${pageLabel} · ${tour.title}` : pageLabel
@@ -101,8 +133,9 @@ function CutyApp() {
   })
   const bookingId = new URLSearchParams(search).get('booking')
   const previewBooking = screen === 'preview' ? bookings.find(item => item.id === bookingId && item.tourId === tour?.id) : undefined
+  const storedTourDraft = tour ? storedDrafts.find((item) => item.tourId === tour.id) : undefined
   const draft = tour
-    ? previewBooking?.draft ?? drafts.find((item) => item.tourId === tour.id) ?? createDraft(tour)
+    ? previewBooking?.draft ?? (storedTourDraft ? normalizeDraft(tour, storedTourDraft) : createDraft(tour))
     : undefined
 
   useEffect(() => {
@@ -144,7 +177,7 @@ function CutyApp() {
     }
     if (pathname === '/') return <LandingPage onMoodChange={setHomeMood} />
     if (pathname === '/tours') {
-      return <ExplorePage cartIds={cartIds} onCartToggle={toggleCart} />
+      return <ExplorePage cartIds={cartIds} onCartToggle={toggleCart} useApi={useCustomerApi} />
     }
     if (pathname === '/my-trips') {
       return <MyTripsPage drafts={drafts} />
@@ -152,6 +185,8 @@ function CutyApp() {
     if (pathname === '/cart' || pathname === '/saved') {
       return <CartPage cartIds={cartIds} onCartToggle={toggleCart} />
     }
+    if (apiTourRequested && apiTourLoading) return <p className="notice" role="status">서버에서 여행상품 상세를 불러오는 중입니다.</p>
+    if (apiTourRequested && apiTourError) return <div className="empty-state"><Icon name="compass" size={36} /><h1>여행상품을 불러오지 못했어요.</h1><p>{apiTourError}</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 목록으로</AppLink><button className="button primary" type="button" onClick={() => setApiTourRetry(value => value + 1)}>다시 시도</button></div></div>
     if (!tour || !draft) {
       return (
         <div className="empty-state">
