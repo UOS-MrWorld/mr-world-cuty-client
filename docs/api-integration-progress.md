@@ -47,6 +47,12 @@ Auth 계약 확인 백엔드 커밋: `70382456dae034c281576491302938f17ca11df5`
 - [x] 서버 고정 출발일을 상세·구성 화면에 읽기 전용으로 반영
 - [x] 서버 미제공 이미지에는 테마 기본 이미지를 사용하고 지역 필터는 실제 세션에서 제외
 - [x] 서버에 존재하지 않는 미사용 Wish API 제거 및 README 연동 상태 갱신
+- [x] 최신 백엔드 전체 H2 테스트 통과
+- [x] 로컬 MySQL 실서버에서 Auth·Member·Tour·Booking 목록 HTTP 스모크 테스트 통과
+- [x] 옵션 선택을 서버 Quote와 연결하고 서버 금액·할인율 표시
+- [x] 실제 고객 PENDING 예약 생성과 Mock 결제 거절·재시도·승인 연결
+- [x] 실제 예약 상세 조회와 확인 후 취소·자동 환불 연결
+- [x] 브라우저에서 로그인→Tour→Quote→PENDING→FAILED→SUCCESS→상세→목록 흐름 검증
 - [x] 고객 Tour/Booking/Payment 요청에 `/customer` 역할 prefix 적용
 - [x] Payment API를 Booking 파일에서 별도 도메인 파일로 분리
 - [x] `npm run build`, `npm run lint`, `git diff --check` 통과
@@ -61,9 +67,9 @@ Auth 계약 확인 백엔드 커밋: `70382456dae034c281576491302938f17ca11df5`
 
 ## 다음 작업 순서
 
-1. 옵션 선택을 Quote API와 연결하고 PENDING 예약 생성
-2. Mock 결제와 PAID/FAILED/REFUNDED 상태 연결
-3. 음성 검색 결과를 GUI 검색 조건 모델에 합류
+1. 음성 검색 결과를 GUI 검색 조건 모델에 합류
+2. 직원 상품·재고·고객 화면을 서버 데이터로 전환
+3. PENDING 예약의 옵션 수정 진입 동선 추가
 
 ## 보존 원칙
 

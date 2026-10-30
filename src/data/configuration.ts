@@ -58,7 +58,7 @@ export function minimumGrade(tour: Tour): TravelGrade {
 export function getGradeDefaults(tour: Tour, grade: TravelGrade) {
   return {
     ...gradeDefaults[grade],
-    transport: (tour.theme === 'romance' ? 'private' : 'van') as TravelTransport,
+    transport: (tour.apiConfiguration?.defaultTransport ?? (tour.theme === 'romance' ? 'private' : 'van')) as TravelTransport,
     champagne: false,
     coffee: false,
   }

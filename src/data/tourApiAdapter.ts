@@ -3,6 +3,17 @@ import type { ApiTheme } from '../types/api'
 import type { TourDetailResponse, TourSummaryResponse } from '../types/tourApi'
 import type { ThemeId, Tour } from '../types/travel'
 
+const localGradeByApiGrade = {
+  CLASSIC: 'classic',
+  GRAND: 'grand',
+  PREMIUM: 'premium',
+} as const
+
+const localTransportByApiTransport = {
+  PREMIUM_CAR_2: 'private',
+  PREMIUM_VAN_10: 'van',
+} as const
+
 const localThemeByApiTheme: Record<ApiTheme, Exclude<ThemeId, 'all'>> = {
   HONEYMOON: 'romance',
   HEALING: 'healing',
@@ -47,5 +58,12 @@ export function toDisplayTour(response: TourSummaryResponse | TourDetailResponse
     startDate: response.startDate,
     endDate: response.endDate,
     ...('description' in response && response.description ? { description: response.description } : {}),
+    ...('availableTourLevels' in response ? {
+      apiConfiguration: {
+        availableGrades: response.availableTourLevels.map(level => localGradeByApiGrade[level]),
+        defaultTransport: localTransportByApiTransport[response.defaultTransport],
+        drinkOptions: response.drinkOptions.map(option => ({ id: option.optionId, name: option.drinkName, price: option.drinkPrice })),
+      },
+    } : {}),
   }
 }

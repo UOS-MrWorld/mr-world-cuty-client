@@ -14,6 +14,11 @@ export interface Tour {
   tag: string
   startDate?: string
   endDate?: string
+  apiConfiguration?: {
+    availableGrades: TravelGrade[]
+    defaultTransport: TravelTransport
+    drinkOptions: Array<{ id: number; name: string; price: number }>
+  }
 }
 
 export interface TravelDraft {

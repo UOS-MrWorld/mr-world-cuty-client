@@ -8,14 +8,17 @@ import {
   mealLabels,
 } from '../data/configuration'
 import { formatPrice } from '../data/travel'
+import type { QuoteResponse } from '../types/tourApi'
 
 export function TripSummary({
   tour,
   draft,
+  quote,
   children,
 }: {
   tour: Tour
   draft: TravelDraft
+  quote?: QuoteResponse | null
   children?: ReactNode
 }) {
   const estimate = getEstimate(tour, draft)
@@ -29,7 +32,7 @@ export function TripSummary({
       <div className="summary-product">
         <img src={tour.image} alt={tour.imageAlt} />
         <div>
-          <p className="muted">{tour.location}</p>
+          <p className="muted">{tour.source === 'api' ? `${tour.startDate} 출발` : tour.location}</p>
           <h3>{tour.title}</h3>
           <p className="muted">{tour.duration}</p>
         </div>
@@ -44,24 +47,28 @@ export function TripSummary({
         <div><dt>식사</dt><dd>{mealLabels[draft.meal]}</dd></div>
         <div>
           <dt>샴페인</dt>
-          <dd>{draft.grade === 'premium' ? '기본 포함' : draft.champagne ? '추가 선택' : '선택 안 함'}</dd>
+          <dd>{tour.source !== 'api' && draft.grade === 'premium' ? '기본 포함' : draft.champagne ? '추가 선택' : '선택 안 함'}</dd>
         </div>
         <div><dt>커피</dt><dd>{draft.coffee ? '추가 선택' : '선택 안 함'}</dd></div>
       </dl>
 
-      <dl className="price-breakdown">
+      {quote ? <dl className="price-breakdown">
+        <div><dt>기본 금액</dt><dd>{formatPrice(quote.basePrice)}원</dd></div>
+        <div><dt>옵션 금액</dt><dd>{formatPrice(quote.optionPrice)}원</dd></div>
+        <div><dt>단골 할인</dt><dd>{quote.discountRate}%</dd></div>
+      </dl> : <dl className="price-breakdown">
         <div><dt>등급 기본 금액 · {draft.travelers}명</dt><dd>{formatPrice(estimate.base)}원</dd></div>
         <div>
           <dt>옵션 변경·추가</dt>
           <dd>{estimate.options === 0 ? '' : estimate.options < 0 ? '−' : '+'}{formatPrice(Math.abs(estimate.options))}원</dd>
         </div>
         <div><dt>단골 할인</dt><dd>정책 확인 전 · 미적용</dd></div>
-      </dl>
+      </dl>}
       <div className="summary-total" aria-live="polite" aria-atomic="true">
         <span>예상 총액</span>
-        <strong>{formatPrice(estimate.total)}원</strong>
+        <strong>{formatPrice(quote?.expectedPaymentAmount ?? estimate.total)}원</strong>
       </div>
-      <p className="summary-note muted">1인 {formatPrice(estimate.perPerson)}원 · 예시 금액</p>
+      <p className="summary-note muted">{quote ? '서버 Quote 기준 결제 예정 금액' : `1인 ${formatPrice(estimate.perPerson)}원 · 예시 금액`}</p>
       {children}
     </aside>
   )

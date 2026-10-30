@@ -199,7 +199,7 @@ function CutyApp() {
     }
 
     const requiresDate = screen === 'checkout' || screen === 'preview'
-    if (requiresDate && !bookingId && !previewBooking && !isValidTravelDate(draft.date)) {
+    if (requiresDate && tour.source !== 'api' && !bookingId && !previewBooking && !isValidTravelDate(draft.date)) {
       return (
         <div className="empty-state">
           <Icon name="compass" size={36} />
