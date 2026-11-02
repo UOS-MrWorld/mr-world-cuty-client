@@ -27,15 +27,20 @@ apiClient.interceptors.response.use(
     const request = error.config as RetryableRequest | undefined
     const path = request?.url ?? ''
     const refreshToken = getRefreshToken()
-    const canRefresh = error.response?.status === 401
+    const isProtectedUnauthorized = error.response?.status === 401
       && request
-      && !request._retry
-      && Boolean(refreshToken)
       && !path.includes('/auth/login')
       && !path.includes('/auth/signup')
       && !path.includes('/auth/refresh')
+    const canRefresh = isProtectedUnauthorized
+      && request
+      && !request._retry
+      && Boolean(refreshToken)
 
     if (!canRefresh || !request || !refreshToken) {
+      // 저장된 세션만 남고 토큰이 없거나, 재시도한 요청도 401이면
+      // 화면이 가짜 로그인 상태에 머물지 않도록 즉시 세션을 종료한다.
+      if (isProtectedUnauthorized) clearStoredAuth()
       return Promise.reject(normalizeApiError(error))
     }
 

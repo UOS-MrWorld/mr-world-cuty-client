@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { createBooking } from '../api/booking'
+import { createBooking, getBooking, updateBooking } from '../api/booking'
 import { createPayment } from '../api/payment'
 import { getTourQuote } from '../api/tour'
 import { AppLink } from '../components/AppLink'
@@ -8,7 +8,7 @@ import { TripSummary } from '../components/TripSummary'
 import { getEstimate, getToday } from '../data/configuration'
 import { demoContactPattern, getRecruitmentDeadline, paymentMethodLabels } from '../data/demoBookings'
 import { formatPrice } from '../data/travel'
-import { toBookingRequest, toQuoteRequest } from '../data/bookingApiAdapter'
+import { fromBookingDetail, quoteRequestFromBooking, toBookingRequest, toQuoteRequest } from '../data/bookingApiAdapter'
 import { useDemoSession } from '../hooks/useDemoSession'
 import { useAuth } from '../hooks/useAuth'
 import { navigate } from '../hooks/useRoute'
@@ -19,6 +19,13 @@ import type { PaymentResponse } from '../types/paymentApi'
 import type { QuoteResponse } from '../types/tourApi'
 
 const emptyPerson: DemoPerson = { name: '', address: '', contact: '' }
+
+function quoteRequestKey(request: ReturnType<typeof toQuoteRequest>) {
+  return JSON.stringify({
+    ...request,
+    drinkOptions: [...(request.drinkOptions ?? [])].sort((a, b) => a.optionId - b.optionId),
+  })
+}
 
 function PersonFields({ person, prefix, onChange }: {
   person: DemoPerson
@@ -32,14 +39,23 @@ function PersonFields({ person, prefix, onChange }: {
   </div>
 }
 
-function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
+function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: TravelDraft; onDraftChange: (draft: TravelDraft) => void }) {
+  const search = new URLSearchParams(window.location.search)
+  const requestedBookingId = search.get('booking')
+  const updatingExisting = search.get('update') === '1'
   const [quote, setQuote] = useState<QuoteResponse | null>(null)
   const [booking, setBooking] = useState<BookingResponse | null>(null)
+  const [serverSelectionKey, setServerSelectionKey] = useState('')
   const [payment, setPayment] = useState<PaymentResponse | null>(null)
   const [cardNumber, setCardNumber] = useState('')
   const [loading, setLoading] = useState(true)
+  const [restoring, setRestoring] = useState(Boolean(requestedBookingId))
+  const [resumeBlocked, setResumeBlocked] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const currentRequest = toQuoteRequest(tour, draft)
+  const currentSelectionKey = quoteRequestKey(currentRequest)
+  const selectionChanged = Boolean(booking && serverSelectionKey && serverSelectionKey !== currentSelectionKey)
 
   useEffect(() => {
     let active = true
@@ -55,6 +71,47 @@ function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
     return () => { active = false }
   }, [draft, tour])
 
+  useEffect(() => {
+    if (!requestedBookingId) {
+      setRestoring(false)
+      setResumeBlocked(false)
+      return
+    }
+    if (!/^\d+$/.test(requestedBookingId)) {
+      setErrorMessage('예약번호가 올바르지 않습니다.')
+      setRestoring(false)
+      setResumeBlocked(true)
+      return
+    }
+    let active = true
+    setRestoring(true)
+    setResumeBlocked(false)
+    void getBooking(Number(requestedBookingId)).then(response => {
+      if (!active) return
+      const detail = response.data
+      if (String(detail.tour.tourId) !== tour.id) throw new Error('이 상품의 예약이 아닙니다.')
+      if (detail.bookingStatus !== 'PENDING') throw new Error('결제 전 예약만 이 화면에서 이어갈 수 있습니다.')
+      setBooking({
+        bookingId: detail.bookingId,
+        bookingStatus: detail.bookingStatus,
+        totalPrice: detail.totalPrice,
+        discountRate: detail.discountRate,
+        expectedPaymentAmount: Math.floor(detail.totalPrice * (100 - detail.discountRate) / 100),
+      })
+      setServerSelectionKey(quoteRequestKey(quoteRequestFromBooking(detail)))
+      if (!updatingExisting) onDraftChange(fromBookingDetail(tour, detail))
+    }).catch(error => {
+      if (!active) return
+      setResumeBlocked(true)
+      setErrorMessage(error instanceof Error ? error.message : 'PENDING 예약을 불러오지 못했습니다.')
+    }).finally(() => {
+      if (active) setRestoring(false)
+    })
+    return () => { active = false }
+  // 예약번호나 수정 진입 여부가 바뀔 때만 서버 예약을 다시 읽습니다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedBookingId, tour, updatingExisting])
+
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (processing || !quote || !event.currentTarget.reportValidity()) return
@@ -63,6 +120,11 @@ function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
     try {
       const { data } = await createBooking(toBookingRequest(tour, draft))
       setBooking(data)
+      setServerSelectionKey(currentSelectionKey)
+      const params = new URLSearchParams(window.location.search)
+      params.set('booking', String(data.bookingId))
+      params.delete('update')
+      navigate(`/tours/${tour.id}/checkout?${params}`)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '예약을 생성하지 못했습니다.')
     } finally {
@@ -70,9 +132,28 @@ function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
     }
   }
 
+  async function syncBooking() {
+    if (!booking || processing) return
+    setProcessing(true)
+    setErrorMessage('')
+    try {
+      const { data } = await updateBooking(booking.bookingId, currentRequest)
+      setBooking(data)
+      setServerSelectionKey(currentSelectionKey)
+      const params = new URLSearchParams(window.location.search)
+      params.set('booking', String(data.bookingId))
+      params.delete('update')
+      navigate(`/tours/${tour.id}/checkout?${params}`)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'PENDING 예약의 구성을 수정하지 못했습니다.')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   async function submitPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (processing || !booking || !event.currentTarget.reportValidity()) return
+    if (processing || !booking || selectionChanged || !event.currentTarget.reportValidity()) return
     setProcessing(true)
     setErrorMessage('')
     try {
@@ -92,7 +173,8 @@ function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
     }
   }
 
-  if (loading) return <p className="notice" role="status">서버에서 결제 예정 금액을 확인하는 중입니다.</p>
+  if (loading || restoring) return <p className="notice" role="status">서버에서 예약과 결제 예정 금액을 확인하는 중입니다.</p>
+  if (resumeBlocked) return <div className="empty-state"><Icon name="compass" size={36} /><h1>PENDING 예약을 이어가지 못했어요.</h1><p>{errorMessage}</p><div className="action-row"><AppLink className="button secondary" href="/my-trips?tab=bookings">예약 목록으로</AppLink><AppLink className="button primary" href={`/tours/${tour.id}/configure`}>새 구성 시작</AppLink></div></div>
   if (!quote) return <div className="empty-state"><Icon name="compass" size={36} /><h1>신청 내용을 확인하지 못했어요.</h1><p>{errorMessage}</p><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성으로 돌아가기</AppLink></div>
 
   return <>
@@ -110,8 +192,9 @@ function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
           <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>{booking.bookingStatus}</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(booking.expectedPaymentAmount)}원</dd></div></dl>
           <label className="field" htmlFor="api-card-number">Mock 카드번호 <span className="required-mark">필수</span><input id="api-card-number" required autoComplete="off" value={cardNumber} onChange={event => setCardNumber(event.target.value)} placeholder="승인: 1 / 거절: 그 외 값" /><small>실제 카드번호를 입력하지 마세요. 서버 Mock 결제는 숫자 1만 승인합니다.</small></label>
           {payment && <p className={`notice${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role="status">최근 결제 결과: {payment.paymentStatus} · {formatPrice(payment.amount)}원</p>}
+          {selectionChanged && <div className="notice"><strong>저장한 구성과 PENDING 예약의 구성이 다릅니다.</strong><p>결제 전에 현재 구성을 서버 예약에 반영해 주세요.</p><button className="button secondary" type="button" disabled={processing} onClick={() => void syncBooking()}>{processing ? '예약 수정 중…' : '현재 구성으로 PENDING 예약 수정'}</button></div>}
           {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
-          <div className="action-row"><AppLink className="button secondary" href={`/my-trips?tab=bookings`}>내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing}>{processing ? '결제 처리 중…' : 'Mock 결제 요청'} <Icon name="arrow" size={18} /></button></div>
+          <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><AppLink className="button secondary" href="/my-trips?tab=bookings">내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing || selectionChanged}>{processing ? '결제 처리 중…' : 'Mock 결제 요청'} <Icon name="arrow" size={18} /></button></div>
         </form>}
         <section className="surface-card"><h2 className="section-title">출발·취소 조건</h2><dl className="detail-facts"><div><dt>모집 마감</dt><dd>{getRecruitmentDeadline(draft.date)} · 출발 7일 전</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd></div><div><dt>재고 부족</dt><dd>예약·결제를 차단하지 않음</dd></div></dl></section>
       </div>
@@ -120,7 +203,7 @@ function ApiCheckout({ tour, draft }: { tour: Tour; draft: TravelDraft }) {
   </>
 }
 
-export function CheckoutPage({ tour, draft, onPreview }: { tour: Tour; draft: TravelDraft; onPreview: () => void }) {
+export function CheckoutPage({ tour, draft, onDraftChange, onPreview }: { tour: Tour; draft: TravelDraft; onDraftChange: (draft: TravelDraft) => void; onPreview: () => void }) {
   const { session: authSession } = useAuth()
   const { session: demoSession, createDemoBooking } = useDemoSession()
   const [applicant, setApplicant] = useState<DemoPerson>(() => demoSession?.profile ?? { ...emptyPerson })
@@ -166,9 +249,9 @@ export function CheckoutPage({ tour, draft, onPreview }: { tour: Tour; draft: Tr
     }, 1300)
   }
 
-  if (authSession?.role === 'CUSTOMER' && demoSession?.role !== 'customer' && tour.source === 'api') return <ApiCheckout tour={tour} draft={draft} />
+  if (authSession?.role === 'CUSTOMER' && tour.source === 'api') return <ApiCheckout tour={tour} draft={draft} onDraftChange={onDraftChange} />
 
-  if (demoSession?.role !== 'customer') return <>
+  if (authSession || demoSession?.role !== 'customer') return <>
     <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>신청을 이어가려면 로그인해 주세요.</h1><p>선택한 일정과 구성은 그대로 유지돼요.</p></div>
     <div className="flow-layout"><section className="surface-card flow-main">
       <h2>고객 계정으로 신청해 주세요.</h2>
