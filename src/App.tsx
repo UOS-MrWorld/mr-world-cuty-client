@@ -85,7 +85,8 @@ function CutyApp() {
   const isAuth = pathname === '/login' || pathname === '/signup'
   const reducedMotion = useReducedMotion()
   const [homeMood, setHomeMood] = useState<GlobeMood>('honeymoon')
-  const useCustomerApi = authSession?.role === 'CUSTOMER' && demoSession?.role !== 'customer'
+  // 실제 로그인 세션이 있으면 DEMO 세션보다 항상 우선한다.
+  const useCustomerApi = authSession?.role === 'CUSTOMER'
   const apiTourRequested = Boolean(useCustomerApi && routeTourId && /^\d+$/.test(routeTourId))
   const [apiTour, setApiTour] = useState<ReturnType<typeof toDisplayTour> | undefined>()
   const [apiTourLoading, setApiTourLoading] = useState(false)
@@ -134,15 +135,25 @@ function CutyApp() {
   })()
   const [cartIds, saveCartIds, cartError] = useLocalStorage('cuty:cart:v1', legacyCart, isStringArray)
   const [storedDrafts, saveDrafts, draftsError] = useLocalStorage('cuty:drafts:v1', [], isStoredDraftArray)
+  const [savedApiTours, setSavedApiTours] = useState<ReturnType<typeof toDisplayTour>[]>([])
+  const [savedApiLoading, setSavedApiLoading] = useState(false)
+  const [savedApiError, setSavedApiError] = useState('')
+  const [savedApiRetry, setSavedApiRetry] = useState(0)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [voicePendingAction, setVoicePendingAction] = useState<string | null>(null)
   const [voiceFeedback, setVoiceFeedback] = useState('')
   const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const previousPath = useRef<string | null>(null)
-  const drafts = tours.flatMap((item) => {
+  const savedApiTourIds = Array.from(new Set([
+    ...cartIds,
+    ...storedDrafts.map(item => String(item.tourId ?? '')),
+  ].filter(id => /^\d+$/.test(id))))
+  const savedApiTourKey = savedApiTourIds.sort((a, b) => Number(a) - Number(b)).join(',')
+  const availableSavedTours = [...tours, ...savedApiTours]
+  const draftEntries = availableSavedTours.flatMap((item) => {
     const stored = storedDrafts.find((draft) => draft.tourId === item.id)
-    return stored ? [normalizeDraft(item, stored)] : []
+    return stored ? [{ tour: item, draft: normalizeDraft(item, stored) }] : []
   })
   const bookingId = new URLSearchParams(search).get('booking')
   const previewBooking = screen === 'preview' ? bookings.find(item => item.id === bookingId && item.tourId === tour?.id) : undefined
@@ -166,6 +177,31 @@ function CutyApp() {
     drinkOptions: tour?.apiConfiguration?.drinkOptions.map(option => ({ optionId: option.id, name: option.name })) ?? [],
     pendingAction: voicePendingAction,
   }
+
+  useEffect(() => {
+    if (!useCustomerApi || !savedApiTourKey) {
+      setSavedApiTours([])
+      setSavedApiLoading(false)
+      setSavedApiError('')
+      return
+    }
+    let active = true
+    setSavedApiLoading(true)
+    setSavedApiError('')
+    void Promise.allSettled(savedApiTourIds.map(id => requestTour(Number(id)))).then(results => {
+      if (!active) return
+      const loaded = results.flatMap(result => result.status === 'fulfilled' ? [toDisplayTour(result.value.data)] : [])
+      setSavedApiTours(loaded)
+      if (loaded.length !== savedApiTourIds.length) {
+        setSavedApiError('일부 저장한 서버 상품을 불러오지 못했습니다.')
+      }
+    }).finally(() => {
+      if (active) setSavedApiLoading(false)
+    })
+    return () => { active = false }
+  // savedApiTourKey가 ID 목록 전체를 대표하며, 배열 자체의 매 렌더 변경은 무시합니다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedApiRetry, savedApiTourKey, useCustomerApi])
 
   useEffect(() => {
     document.title = `${title} | CUTY`
@@ -311,10 +347,15 @@ function CutyApp() {
       return <ExplorePage cartIds={cartIds} onCartToggle={toggleCart} useApi={useCustomerApi} />
     }
     if (pathname === '/my-trips') {
-      return <MyTripsPage drafts={drafts} />
+      return <MyTripsPage draftEntries={draftEntries} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
     }
     if (pathname === '/cart' || pathname === '/saved') {
-      return <CartPage cartIds={cartIds} onCartToggle={toggleCart} />
+      return <CartPage cartIds={cartIds} onCartToggle={toggleCart} availableTours={availableSavedTours} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
+    }
+    const numericTourRoute = Boolean(routeTourId && /^\d+$/.test(routeTourId))
+    if (numericTourRoute && !useCustomerApi) {
+      if (!authSession) return <AuthPage mode="login" next={`${pathname}${search}`} />
+      return <div className="empty-state"><h1>고객 계정이 필요한 상품이에요.</h1><p>서버 여행상품 조회와 신청은 고객 계정으로 이용할 수 있어요.</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 목록으로</AppLink><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div></div>
     }
     if (apiTourRequested && apiTourLoading) return <p className="notice" role="status">서버에서 여행상품 상세를 불러오는 중입니다.</p>
     if (apiTourRequested && apiTourError) return <div className="empty-state"><Icon name="compass" size={36} /><h1>여행상품을 불러오지 못했어요.</h1><p>{apiTourError}</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 목록으로</AppLink><button className="button primary" type="button" onClick={() => setApiTourRetry(value => value + 1)}>다시 시도</button></div></div>
@@ -360,7 +401,9 @@ function CutyApp() {
           }}
           onContinue={() => {
             updateDraft(draft)
-            navigate(`/tours/${tour.id}/checkout${search}`)
+            const params = new URLSearchParams(search)
+            if (bookingId) params.set('update', '1')
+            navigate(`/tours/${tour.id}/checkout${params.size ? `?${params}` : ''}`)
           }}
         />
       )
@@ -370,6 +413,7 @@ function CutyApp() {
         <CheckoutPage
           tour={tour}
           draft={draft}
+          onDraftChange={updateDraft}
           onPreview={() => navigate(`/tours/${tour.id}/preview${search}`)}
         />
       )

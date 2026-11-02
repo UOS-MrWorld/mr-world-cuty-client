@@ -16,7 +16,7 @@ export function safeNextPath(value?: string) {
 
 export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: string }) {
   const signup = mode === 'signup'
-  const { enterDemo } = useDemoSession()
+  const { enterDemo, exitDemo } = useDemoSession()
   const auth = useAuth()
   const [accountType, setAccountType] = useState<'customer' | 'staff'>('customer')
   const [message, setMessage] = useState('')
@@ -59,6 +59,9 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
           loginId: String(values.get('account') ?? ''),
           password: String(values.get('password') ?? ''),
         })
+        // 실제 인증과 DEMO 상태가 동시에 남으면 DEMO 데이터가 API보다
+        // 우선될 수 있으므로 로그인 성공 시 시연 상태를 반드시 정리한다.
+        exitDemo()
         const target = destination.startsWith('/staff') && session.role !== 'STAFF'
           ? '/my-trips'
           : session.role === 'STAFF' && !destination.startsWith('/staff') ? '/staff/tours' : destination
@@ -102,12 +105,12 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
       {message && <p className="notice" role="status">{message}</p>}
       {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
       <p className="auth-switch">{signup ? '이미 계정이 있으신가요?' : 'CUTY가 처음이신가요?'} <AppLink href={`${signup ? '/login' : '/signup'}${linkSuffix}`}>{signup ? '로그인' : '회원가입'}</AppLink></p>
-      <div className="demo-entry">
+      {!auth.session && <div className="demo-entry">
         <span className="demo-badge">DEMO</span><h3>화면을 먼저 체험해 보세요.</h3>
         <p>계정 인증 없이 화면 흐름을 확인하는 시연입니다. 개인정보·결제 입력은 메모리에만 남고 새로고침하면 사라집니다.</p>
         <button className="button primary" type="button" onClick={() => { enterDemo('customer'); navigate(destination.startsWith('/staff') ? '/my-trips' : destination) }}>고객 시연 모드 <Icon name="arrow" size={18} /></button>
         <button className="button secondary" type="button" onClick={() => { enterDemo('staff'); navigate(destination.startsWith('/staff/') ? destination : '/staff/tours') }}>직원 화면 시연 <Icon name="arrow" size={18} /></button>
-      </div>
+      </div>}
     </section>
   </div>
 }
