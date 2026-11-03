@@ -75,11 +75,12 @@ function CutyApp() {
   const route = useRoute()
   const routeTransitioning = useRouteTransitioning()
   const useCustomerApi = authSession?.role === 'CUSTOMER'
+  const customerDemoActive = !authSession && demoSession?.role === 'customer'
   const pathname = route.split('?')[0].replace(/\/$/, '') || '/'
   const search = window.location.search
   const match = pathname.match(/^\/tours\/([^/]+)(?:\/(configure|checkout|preview))?$/)
   const routeTourId = match?.[1]
-  const staticTour = !useCustomerApi && routeTourId ? tours.find((item) => item.id === routeTourId) : undefined
+  const staticTour = customerDemoActive && routeTourId ? tours.find((item) => item.id === routeTourId) : undefined
   const screen = match?.[2]
   const isStaff = /^\/staff\/(?:tours(?:\/new|\/[^/]+\/edit)?|inventory|customers)$/.test(pathname)
   const isLanding = pathname === '/'
@@ -147,13 +148,13 @@ function CutyApp() {
   const previousPath = useRef<string | null>(null)
   const visibleCartIds = useCustomerApi
     ? cartIds.filter(id => /^\d+$/.test(id))
-    : cartIds.filter(id => !/^\d+$/.test(id))
+    : customerDemoActive ? cartIds.filter(id => !/^\d+$/.test(id)) : []
   const savedApiTourIds = Array.from(new Set([
     ...visibleCartIds,
     ...storedDrafts.map(item => String(item.tourId ?? '')),
   ].filter(id => /^\d+$/.test(id))))
   const savedApiTourKey = savedApiTourIds.sort((a, b) => Number(a) - Number(b)).join(',')
-  const availableSavedTours = useCustomerApi ? savedApiTours : tours
+  const availableSavedTours = useCustomerApi ? savedApiTours : customerDemoActive ? tours : []
   const draftEntries = availableSavedTours.flatMap((item) => {
     const stored = storedDrafts.find((draft) => draft.tourId === item.id)
     return stored ? [{ tour: item, draft: normalizeDraft(item, stored) }] : []
@@ -347,17 +348,29 @@ function CutyApp() {
     }
     if (pathname === '/') return <LandingPage onMoodChange={setHomeMood} />
     if (pathname === '/tours') {
+      if (!useCustomerApi && !customerDemoActive) {
+        if (!authSession && !demoSession) return <AuthPage mode="login" next={`${pathname}${search}`} />
+        return <div className="empty-state"><h1>고객 계정이 필요한 화면이에요.</h1><p>서버 여행상품은 고객 계정으로 로그인한 뒤 확인할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div>
+      }
       return <ExplorePage cartIds={visibleCartIds} onCartToggle={toggleCart} useApi={useCustomerApi} />
     }
     if (pathname === '/my-trips') {
       return <MyTripsPage draftEntries={draftEntries} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
     }
     if (pathname === '/cart' || pathname === '/saved') {
+      if (!useCustomerApi && !customerDemoActive) {
+        if (!authSession && !demoSession) return <AuthPage mode="login" next={`${pathname}${search}`} />
+        return <div className="empty-state"><h1>고객 계정이 필요한 화면이에요.</h1><p>서버 상품 장바구니는 고객 계정으로 확인할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div>
+      }
       return <CartPage cartIds={visibleCartIds} onCartToggle={toggleCart} availableTours={availableSavedTours} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
     }
     const numericTourRoute = Boolean(routeTourId && /^\d+$/.test(routeTourId))
     if (useCustomerApi && routeTourId && !numericTourRoute) {
       return <div className="empty-state"><Icon name="compass" size={36} /><h1>서버에 등록된 여행상품이 아니에요.</h1><p>실제 고객 계정에서는 서버가 제공하는 여행상품만 확인할 수 있어요.</p><AppLink className="button primary" href="/tours">서버 여행상품 보기</AppLink></div>
+    }
+    if (routeTourId && !numericTourRoute && !customerDemoActive) {
+      if (!authSession && !demoSession) return <AuthPage mode="login" next={`${pathname}${search}`} />
+      return <div className="empty-state"><h1>고객 계정이 필요한 상품이에요.</h1><p>예시 상품은 고객 시연 모드에서만 확인할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div>
     }
     if (numericTourRoute && !useCustomerApi) {
       if (!authSession) return <AuthPage mode="login" next={`${pathname}${search}`} />
