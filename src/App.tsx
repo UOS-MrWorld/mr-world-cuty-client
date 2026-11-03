@@ -74,19 +74,19 @@ function CutyApp() {
   const { session: demoSession, bookings, exitDemo } = useDemoSession()
   const route = useRoute()
   const routeTransitioning = useRouteTransitioning()
+  const useCustomerApi = authSession?.role === 'CUSTOMER'
   const pathname = route.split('?')[0].replace(/\/$/, '') || '/'
   const search = window.location.search
   const match = pathname.match(/^\/tours\/([^/]+)(?:\/(configure|checkout|preview))?$/)
   const routeTourId = match?.[1]
-  const staticTour = routeTourId ? tours.find((item) => item.id === routeTourId) : undefined
+  const staticTour = !useCustomerApi && routeTourId ? tours.find((item) => item.id === routeTourId) : undefined
   const screen = match?.[2]
   const isStaff = /^\/staff\/(?:tours(?:\/new|\/[^/]+\/edit)?|inventory|customers)$/.test(pathname)
   const isLanding = pathname === '/'
   const isAuth = pathname === '/login' || pathname === '/signup'
   const reducedMotion = useReducedMotion()
   const [homeMood, setHomeMood] = useState<GlobeMood>('honeymoon')
-  // 실제 로그인 세션이 있으면 DEMO 세션보다 항상 우선한다.
-  const useCustomerApi = authSession?.role === 'CUSTOMER'
+  // 실제 로그인 세션이 있으면 DEMO 세션과 예시 상품보다 항상 우선한다.
   const apiTourRequested = Boolean(useCustomerApi && routeTourId && /^\d+$/.test(routeTourId))
   const [apiTour, setApiTour] = useState<ReturnType<typeof toDisplayTour> | undefined>()
   const [apiTourLoading, setApiTourLoading] = useState(false)
@@ -145,12 +145,15 @@ function CutyApp() {
   const [voiceFeedback, setVoiceFeedback] = useState('')
   const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const previousPath = useRef<string | null>(null)
+  const visibleCartIds = useCustomerApi
+    ? cartIds.filter(id => /^\d+$/.test(id))
+    : cartIds.filter(id => !/^\d+$/.test(id))
   const savedApiTourIds = Array.from(new Set([
-    ...cartIds,
+    ...visibleCartIds,
     ...storedDrafts.map(item => String(item.tourId ?? '')),
   ].filter(id => /^\d+$/.test(id))))
   const savedApiTourKey = savedApiTourIds.sort((a, b) => Number(a) - Number(b)).join(',')
-  const availableSavedTours = [...tours, ...savedApiTours]
+  const availableSavedTours = useCustomerApi ? savedApiTours : tours
   const draftEntries = availableSavedTours.flatMap((item) => {
     const stored = storedDrafts.find((draft) => draft.tourId === item.id)
     return stored ? [{ tour: item, draft: normalizeDraft(item, stored) }] : []
@@ -344,15 +347,18 @@ function CutyApp() {
     }
     if (pathname === '/') return <LandingPage onMoodChange={setHomeMood} />
     if (pathname === '/tours') {
-      return <ExplorePage cartIds={cartIds} onCartToggle={toggleCart} useApi={useCustomerApi} />
+      return <ExplorePage cartIds={visibleCartIds} onCartToggle={toggleCart} useApi={useCustomerApi} />
     }
     if (pathname === '/my-trips') {
       return <MyTripsPage draftEntries={draftEntries} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
     }
     if (pathname === '/cart' || pathname === '/saved') {
-      return <CartPage cartIds={cartIds} onCartToggle={toggleCart} availableTours={availableSavedTours} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
+      return <CartPage cartIds={visibleCartIds} onCartToggle={toggleCart} availableTours={availableSavedTours} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
     }
     const numericTourRoute = Boolean(routeTourId && /^\d+$/.test(routeTourId))
+    if (useCustomerApi && routeTourId && !numericTourRoute) {
+      return <div className="empty-state"><Icon name="compass" size={36} /><h1>서버에 등록된 여행상품이 아니에요.</h1><p>실제 고객 계정에서는 서버가 제공하는 여행상품만 확인할 수 있어요.</p><AppLink className="button primary" href="/tours">서버 여행상품 보기</AppLink></div>
+    }
     if (numericTourRoute && !useCustomerApi) {
       if (!authSession) return <AuthPage mode="login" next={`${pathname}${search}`} />
       return <div className="empty-state"><h1>고객 계정이 필요한 상품이에요.</h1><p>서버 여행상품 조회와 신청은 고객 계정으로 이용할 수 있어요.</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 목록으로</AppLink><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div></div>
@@ -428,7 +434,7 @@ function CutyApp() {
         draft={draft}
         onChange={updateDraft}
         onContinue={() => navigate(`/tours/${tour.id}/configure${search}`)}
-        inCart={cartIds.includes(tour.id)}
+        inCart={visibleCartIds.includes(tour.id)}
         onCartToggle={() => toggleCart(tour.id)}
       />
     )
@@ -442,7 +448,7 @@ function CutyApp() {
         <div className="header-main">
           <AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink>
           <nav className="main-nav" aria-label="주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/tours" aria-current={pathname === '/tours' || tour ? 'page' : undefined}>여행 둘러보기</AppLink><AppLink href="/my-trips" aria-current={pathname === '/my-trips' ? 'page' : undefined}>내 여행</AppLink></nav>
-          <nav className="utility-nav" aria-label="보조 메뉴">{!isStaff && <AppLink href="/cart" aria-label={`장바구니 ${cartIds.length}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{cartIds.length > 0 && <b>{cartIds.length}</b>}</AppLink>}{authSession ? <button className="session-pill" onClick={() => void logout()} title="로그아웃">{authSession.memberName} 로그아웃</button> : demoSession ? <button className="session-pill" onClick={exitDemo} title="시연 정보와 개인정보를 지우고 시연을 종료합니다">{demoSession.role === 'staff' ? '직원' : '고객'} 시연 종료</button> : <AppLink href={`/login?next=${encodeURIComponent(isAuth ? '/my-trips' : route)}`}>로그인</AppLink>}<AppLink href="/staff/tours" className="staff-entry" aria-current={isStaff ? 'page' : undefined}>직원 화면</AppLink></nav>
+          <nav className="utility-nav" aria-label="보조 메뉴">{!isStaff && <AppLink href="/cart" aria-label={`장바구니 ${visibleCartIds.length}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{visibleCartIds.length > 0 && <b>{visibleCartIds.length}</b>}</AppLink>}{authSession ? <button className="session-pill" onClick={() => void logout()} title="로그아웃">{authSession.memberName} 로그아웃</button> : demoSession ? <button className="session-pill" onClick={exitDemo} title="시연 정보와 개인정보를 지우고 시연을 종료합니다">{demoSession.role === 'staff' ? '직원' : '고객'} 시연 종료</button> : <AppLink href={`/login?next=${encodeURIComponent(isAuth ? '/my-trips' : route)}`}>로그인</AppLink>}<AppLink href="/staff/tours" className="staff-entry" aria-current={isStaff ? 'page' : undefined}>직원 화면</AppLink></nav>
         </div>
         {!isLanding && !isStaff && !isAuth && pathname !== '/tours' && pathname !== '/my-trips' && <nav className="category-nav" aria-label="여행 테마 메뉴">{themes.map(item => {
           const href = item.id === 'all' ? '/tours' : `/tours?theme=${item.id}`
