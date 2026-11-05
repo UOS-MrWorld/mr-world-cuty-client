@@ -25,7 +25,7 @@ body { background:linear-gradient(150deg,#f5f9fa 0%,#fcfaf6 44%,#f1f7f4 100%); }
 .detail-photo { border-radius:26px; }
 .notice,.staff-notice { border:0; background:linear-gradient(110deg,#eaf2f3b3,#f7f7ee9c); border-radius:18px; color:#657c88; }
 .notice-error { background:#fff0e9; color:#995640; }
-.notice.notice-error { background:#ef4444; border:0; color:#fff; }
+.notice.notice-error { background: transparent; border: 0; color: #dc2626; padding-inline: 0; }
 .field input,.field select,.field textarea,.catalog-search input,.catalog-search select { background:#ffffffb5; border:0; box-shadow:inset 0 1px 4px #5474870b,0 3px 12px #8aabb20a; border-radius:14px; color:var(--ink); }
 .field input:focus,.field select:focus,.field textarea:focus { outline:2px solid #80b3c6; outline-offset:2px; }
 .choice-card { border:0; border-radius:20px; background:#f8faf8; box-shadow:0 5px 18px #7899a20c; }
