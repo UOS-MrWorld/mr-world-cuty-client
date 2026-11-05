@@ -24,12 +24,14 @@ function adjustment(value: number) {
   return value === 0 ? '추가금 없음' : `${value > 0 ? '+' : '−'} ${formatPrice(Math.abs(value))}원 / 1인`
 }
 
-export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
+export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCart, onCartToggle }: {
   tour: Tour
   draft: TravelDraft
   onChange: (draft: TravelDraft) => void
   onContinue: () => void
   onSave: () => void
+  inCart: boolean
+  onCartToggle: () => void
 }) {
   const dateInput = useRef<HTMLInputElement>(null)
   const [dateError, setDateError] = useState(false)
@@ -198,20 +200,20 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
           <section className="surface-card">
             <h2>추가 옵션</h2>
             <div className="choice-grid">
-              <label className={`choice-card ${draft.champagne || champagneIncluded ? 'selected' : ''}`}>
-                <input type="checkbox" checked={draft.champagne || champagneIncluded} disabled={champagneIncluded || (tour.source === 'api' && !champagneOption)} onChange={(event) => update({ champagne: event.target.checked })} />
+              <label className={`choice-card ${draft.champagneQuantity > 0 || champagneIncluded ? 'selected' : ''}`}>
                 <strong>샴페인</strong>
                 <small>{champagneIncluded ? '프리미엄 기본 포함 · 추가금 0원' : champagneOption ? `+ ${formatPrice(champagneOption.price)}원 / 예약` : '+ 50,000원 / 1인'}</small>
-                {(draft.champagne || champagneIncluded) && <span className="selection-label">{champagneIncluded ? '기본 제공' : '선택됨'}</span>}
+                <input aria-label="샴페인 수량" type="number" min="0" max="100" step="1" value={draft.champagneQuantity} disabled={champagneIncluded || (tour.source === 'api' && !champagneOption)} onChange={(event) => update({ champagneQuantity: Number(event.target.value) })} />
+                {(draft.champagneQuantity > 0 || champagneIncluded) && <span className="selection-label">{champagneIncluded ? '기본 제공' : `${draft.champagneQuantity}개 선택`}</span>}
               </label>
-              <label className={`choice-card ${draft.coffee ? 'selected' : ''}`}>
-                <input type="checkbox" checked={draft.coffee} disabled={tour.source === 'api' && !coffeeOption} onChange={(event) => update({ coffee: event.target.checked })} />
+              <label className={`choice-card ${draft.coffeeQuantity > 0 ? 'selected' : ''}`}>
                 <strong>커피</strong>
                 <small>{coffeeOption ? `+ ${formatPrice(coffeeOption.price)}원 / 예약` : '+ 10,000원 / 1인'}</small>
-                {draft.coffee && <span className="selection-label">선택됨</span>}
+                <input aria-label="커피 수량" type="number" min="0" max="100" step="1" value={draft.coffeeQuantity} disabled={tour.source === 'api' && !coffeeOption} onChange={(event) => update({ coffeeQuantity: Number(event.target.value) })} />
+                {draft.coffeeQuantity > 0 && <span className="selection-label">{draft.coffeeQuantity}개 선택</span>}
               </label>
             </div>
-            <p className="muted">{tour.source === 'api' ? '음료 수량은 현재 각 1개이며 예약 전체 기준으로 과금됩니다.' : '예시 기준: 음료 옵션은 1인당 과금됩니다.'}</p>
+            <p className="muted">수량은 0~100개에서 선택합니다. 서버 상품의 음료는 예약 전체 기준으로 과금됩니다.</p>
           </section>
         </div>
 
@@ -224,7 +226,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
             <div><dt>호텔</dt><dd>{hotelLabels[draft.hotel]}{draft.hotel !== defaults.hotel ? ' · 변경' : ' · 기본'}</dd></div>
             <div><dt>교통</dt><dd>{getTransportDescription(tour, draft)}{draft.transport !== defaults.transport ? ' · 변경' : ' · 기본'}</dd></div>
             <div><dt>식사</dt><dd>{mealLabels[draft.meal]}{draft.meal !== defaults.meal ? ' · 변경' : ' · 기본'}</dd></div>
-            <div><dt>추가 구성</dt><dd>{[champagneIncluded ? '샴페인 기본 포함' : draft.champagne ? '샴페인' : '', draft.coffee ? '커피' : ''].filter(Boolean).join(' · ') || '선택 없음'}</dd></div>
+            <div><dt>추가 구성</dt><dd>{[champagneIncluded ? '샴페인 기본 포함' : draft.champagneQuantity ? `샴페인 ${draft.champagneQuantity}개` : '', draft.coffeeQuantity ? `커피 ${draft.coffeeQuantity}개` : ''].filter(Boolean).join(' · ') || '선택 없음'}</dd></div>
           </dl>
           {tour.source === 'api' ? <div className="price-breakdown" aria-live="polite" aria-atomic="true">
             {quoteLoading ? <p className="muted">서버에서 가격을 계산하는 중입니다.</p> : quoteError ? <p className="field-error" role="alert">{quoteError}</p> : quote && <>
@@ -241,6 +243,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
           </div>}
           <div className="action-row">
             <button className="button primary" type="submit" disabled={tour.source === 'api' && (!quote || quoteLoading || Boolean(quoteError))}>신청 내용 확인하기</button>
+            <button className="button secondary" type="button" disabled={tour.source === 'api' && (!quote || quoteLoading || Boolean(quoteError))} onClick={onCartToggle}>{inCart ? '장바구니에서 빼기' : '장바구니 담기'}</button>
             <button className="button secondary" type="button" onClick={onSave}>구성 저장하기</button>
           </div>
           <p className="muted">선택 내용은 이 브라우저에 자동 저장됩니다.</p>

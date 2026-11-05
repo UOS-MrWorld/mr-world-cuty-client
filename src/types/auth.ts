@@ -20,6 +20,7 @@ export interface LoginResponse {
   accessToken: string
   refreshToken: string
   tokenType: 'Bearer'
+  accessTokenExpiresAt: string
 }
 
 export interface SignupResponse {
@@ -37,6 +38,7 @@ export interface RefreshTokenRequest {
 
 export interface TokenResponse {
   accessToken: string
+  accessTokenExpiresAt: string
 }
 
 export interface AuthSession {
