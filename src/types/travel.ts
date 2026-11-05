@@ -29,8 +29,8 @@ export interface TravelDraft {
   meal: TravelMeal
   date: string
   travelers: number
-  champagne: boolean
-  coffee: boolean
+  champagneQuantity: number
+  coffeeQuantity: number
 }
 
 export type TravelGrade = 'classic' | 'grand' | 'premium'

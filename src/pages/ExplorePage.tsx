@@ -9,9 +9,8 @@ import { apiThemeByLocalTheme, toDisplayTour } from '../data/tourApiAdapter'
 import { navigate } from '../hooks/useRoute'
 import type { ThemeId } from '../types/travel'
 
-export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
+export default function ExplorePage({ cartIds, useApi = false }: {
   cartIds: string[]
-  onCartToggle: (id: string) => void
   useApi?: boolean
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -32,6 +31,8 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
   const departureDate = params.get('date')?.trim() ?? ''
   const startDateFrom = params.get('from')?.trim() ?? ''
   const startDateTo = params.get('to')?.trim() ?? ''
+  const durationValues = ['', 'short', 'medium', 'long']
+  const budgetValues = ['', '1000000', '2000000', '4000000']
 
   useEffect(() => {
     if (!useApi) {
@@ -73,6 +74,10 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
       .filter(tour => !cartOnly || cartIds.includes(tour.id))
       .filter(tour => !startDateFrom || (tour.startDate ?? '') >= startDateFrom)
       .filter(tour => !startDateTo || (tour.startDate ?? '') <= startDateTo)
+      .filter(tour => {
+        const days = getTourDays(tour)
+        return !duration || duration === 'short' ? !duration || days <= 4 : duration === 'medium' ? days >= 5 && days <= 7 : days >= 8
+      })
       .sort((a, b) => sort === 'price-asc' ? a.price - b.price : sort === 'price-desc' ? b.price - a.price : sort === 'duration' ? getTourDays(a) - getTourDays(b) : 0)
   }, [apiTours, cartIds, cartOnly, params, sort, startDateFrom, startDateTo, useApi])
 
@@ -88,7 +93,7 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
     theme !== 'all' ? { key: 'theme', label: themeLabels[theme] } : null,
     !useApi && region !== 'all' ? { key: 'region', label: regions.find(item => item.id === region)!.label } : null,
     budget ? { key: 'budget', label: `${Number(budget) / 10000}만원 이하` } : null,
-    !useApi && duration ? { key: 'duration', label: duration === 'short' ? '4일 이하' : duration === 'medium' ? '5~7일' : '8일 이상' } : null,
+    duration ? { key: 'duration', label: duration === 'short' ? '4일 이하' : duration === 'medium' ? '5~7일' : '8일 이상' } : null,
     search ? { key: 'q', label: search } : null,
     startDateFrom || startDateTo ? { key: 'date-range', label: `${startDateFrom || '시작'} ~ ${startDateTo || '종료'}` } : null,
     cartOnly ? { key: 'view', label: '장바구니' } : null,
@@ -111,8 +116,8 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
         </div>
         <div id="catalog-filter-fields" className={`filter-fields${filtersOpen ? ' is-open' : ''}`}>
           <fieldset><legend>여행 테마</legend><div>{themes.map(item => <label key={item.id}><input type="radio" name="theme" checked={theme === item.id} onChange={() => updateFilters({theme:item.id})} /><span>{themeLabels[item.id]}</span>{!useApi && <small>{tours.filter(tour => item.id === 'all' || tour.theme === item.id).length}</small>}</label>)}</div></fieldset>
-          {!useApi && <fieldset><legend>여행 기간</legend><div>{[{value:'',label:'전체'},{value:'short',label:'4일 이하'},{value:'medium',label:'5~7일'},{value:'long',label:'8일 이상'}].map(item => <label key={item.value}><input type="radio" name="duration" checked={duration === item.value} onChange={() => updateFilters({duration:item.value})} /><span>{item.label}</span></label>)}</div></fieldset>}
-          <fieldset><legend>예산 <small>1인 기본 금액</small></legend><div>{[{value:'',label:'전체'},{value:'1000000',label:'100만원 이하'},{value:'2000000',label:'200만원 이하'},{value:'4000000',label:'400만원 이하'}].map(item => <label key={item.value}><input type="radio" name="budget" checked={budget === item.value} onChange={() => updateFilters({budget:item.value})} /><span>{item.label}</span></label>)}</div></fieldset>
+          <fieldset className="range-filter"><legend>여행 기간</legend><output>{duration === 'short' ? '4일 이하' : duration === 'medium' ? '5~7일' : duration === 'long' ? '8일 이상' : '전체'}</output><input aria-label="여행 기간" type="range" min="0" max="3" step="1" value={durationValues.indexOf(duration)} onChange={event => updateFilters({duration:durationValues[Number(event.target.value)]})} /><div className="range-labels" aria-hidden="true"><span>전체</span><span>4일 이하</span><span>5~7일</span><span>8일 이상</span></div></fieldset>
+          <fieldset className="range-filter"><legend>예산 <small>1인 기본 금액</small></legend><output>{budget ? `${Number(budget) / 10000}만원 이하` : '전체'}</output><input aria-label="예산" type="range" min="0" max="3" step="1" value={budgetValues.indexOf(budget)} onChange={event => updateFilters({budget:budgetValues[Number(event.target.value)]})} /><div className="range-labels" aria-hidden="true"><span>전체</span><span>100만원</span><span>200만원</span><span>400만원</span></div></fieldset>
           <label className="saved-filter"><input type="checkbox" checked={cartOnly} onChange={() => updateFilters({view:cartOnly ? null : 'cart'})} /><span>장바구니 상품만</span></label>
         </div>
       </form>
@@ -122,7 +127,7 @@ export default function ExplorePage({ cartIds, onCartToggle, useApi = false }: {
         {activeFilters.length > 0 && <div className="applied-filters" aria-label="적용한 검색 조건">{activeFilters.map(item => <button key={item.key} onClick={() => item.key === 'date-range' ? updateFilters({from:null,to:null}) : updateFilters({[item.key]:null})} aria-label={`${item.label} 조건 해제`}>{item.label}<Icon name="close" size={13} /></button>)}</div>}
         {loading ? <p className="notice" role="status">서버에서 여행상품을 불러오는 중입니다.</p>
           : errorMessage ? <div className="empty-state"><Icon name="compass" size={32} /><h2>여행상품을 불러오지 못했어요.</h2><p>{errorMessage}</p><button className="button secondary" type="button" onClick={() => setRetryNonce(value => value + 1)}>다시 시도</button></div>
-            : filtered.length ? <div className="product-list">{filtered.map(tour => <TourCard key={tour.id} tour={tour} inCart={cartIds.includes(tour.id)} onCartToggle={() => onCartToggle(tour.id)} href={`/tours/${tour.id}${window.location.search}`} />)}</div> : <div className="empty-state"><Icon name="search" size={32} /><h2>검색된 상품이 없습니다</h2><p>상품명이나 상세 조건을 변경해 주세요.</p><AppLink className="button secondary" href="/tours">검색 조건 초기화</AppLink></div>}
+            : filtered.length ? <div className="product-list">{filtered.map(tour => <TourCard key={tour.id} tour={tour} href={`/tours/${tour.id}${window.location.search}`} />)}</div> : <div className="empty-state"><Icon name="search" size={32} /><h2>검색된 상품이 없습니다</h2><p>상품명이나 상세 조건을 변경해 주세요.</p><AppLink className="button secondary" href="/tours">검색 조건 초기화</AppLink></div>}
       </section>
     </>
   )

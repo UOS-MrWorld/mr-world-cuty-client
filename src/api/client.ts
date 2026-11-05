@@ -49,7 +49,7 @@ apiClient.interceptors.response.use(
       refreshPromise ??= refreshClient
         .post<TokenResponse>('/auth/refresh', { refreshToken })
         .then(response => {
-          setAccessToken(response.data.accessToken)
+          setAccessToken(response.data.accessToken, response.data.accessTokenExpiresAt)
           return response.data.accessToken
         })
         .finally(() => { refreshPromise = null })

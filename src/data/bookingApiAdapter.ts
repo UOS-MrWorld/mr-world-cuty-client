@@ -17,10 +17,11 @@ export function findDrinkOption(tour: Tour, name: 'COFFEE' | 'CHAMPAGNE') {
 
 export function toQuoteRequest(tour: Tour, draft: TravelDraft): QuoteRequest {
   const drinkOptions = [
-    draft.coffee ? findDrinkOption(tour, 'COFFEE') : undefined,
-    draft.champagne ? findDrinkOption(tour, 'CHAMPAGNE') : undefined,
-  ].filter((option): option is NonNullable<typeof option> => Boolean(option))
-    .map(option => ({ optionId: option.id, quantity: 1 }))
+    { option: findDrinkOption(tour, 'COFFEE'), quantity: draft.coffeeQuantity },
+    { option: findDrinkOption(tour, 'CHAMPAGNE'), quantity: draft.champagneQuantity },
+  ].filter((selection): selection is { option: NonNullable<typeof selection.option>; quantity: number } =>
+    Boolean(selection.option) && selection.quantity > 0)
+    .map(selection => ({ optionId: selection.option.id, quantity: selection.quantity }))
 
   return {
     tourLevel: apiGrade[draft.grade],
@@ -41,7 +42,7 @@ export function toBookingRequest(tour: Tour, draft: TravelDraft): BookingRequest
 export function fromBookingDetail(tour: Tour, booking: BookingDetailResponse): TravelDraft {
   const champagne = findDrinkOption(tour, 'CHAMPAGNE')
   const coffee = findDrinkOption(tour, 'COFFEE')
-  const selectedIds = new Set(booking.drinkOptions.map(option => option.optionId))
+  const selected = new Map(booking.drinkOptions.map(option => [option.optionId, option.quantity]))
   return {
     tourId: tour.id,
     grade: localGrade[booking.tourLevel],
@@ -50,8 +51,8 @@ export function fromBookingDetail(tour: Tour, booking: BookingDetailResponse): T
     transport: localTransport[booking.transport],
     date: booking.tour.startDate,
     travelers: booking.guestCount,
-    champagne: Boolean(champagne && selectedIds.has(champagne.id)),
-    coffee: Boolean(coffee && selectedIds.has(coffee.id)),
+    champagneQuantity: champagne ? selected.get(champagne.id) ?? 0 : 0,
+    coffeeQuantity: coffee ? selected.get(coffee.id) ?? 0 : 0,
   }
 }
 

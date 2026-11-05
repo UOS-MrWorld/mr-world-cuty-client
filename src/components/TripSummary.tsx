@@ -47,9 +47,9 @@ export function TripSummary({
         <div><dt>식사</dt><dd>{mealLabels[draft.meal]}</dd></div>
         <div>
           <dt>샴페인</dt>
-          <dd>{tour.source !== 'api' && draft.grade === 'premium' ? '기본 포함' : draft.champagne ? '추가 선택' : '선택 안 함'}</dd>
+          <dd>{tour.source !== 'api' && draft.grade === 'premium' ? '기본 포함' : draft.champagneQuantity ? `${draft.champagneQuantity}개` : '선택 안 함'}</dd>
         </div>
-        <div><dt>커피</dt><dd>{draft.coffee ? '추가 선택' : '선택 안 함'}</dd></div>
+        <div><dt>커피</dt><dd>{draft.coffeeQuantity ? `${draft.coffeeQuantity}개` : '선택 안 함'}</dd></div>
       </dl>
 
       {quote ? <dl className="price-breakdown">
