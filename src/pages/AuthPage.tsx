@@ -91,10 +91,10 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
             <label className="field" htmlFor="auth-address">주소<input id="auth-address" name="address" autoComplete="off" required maxLength={160} /></label>
             <label className="field" htmlFor="auth-contact">연락처<input id="auth-contact" name="contact" type="tel" autoComplete="tel" required pattern={contactPattern} placeholder="010-0000-0000" /><small>하이픈을 입력해도 서버에는 숫자만 전송됩니다.</small></label>
           </>}
+          {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
           <button className="button primary" type="submit" disabled={submitting}>{submitting ? '처리 중…' : signup ? '회원가입' : '로그인'}</button>
         </form>
       {message && <p className="notice" role="status">{message}</p>}
-      {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
       <p className="auth-switch">{signup ? '이미 계정이 있으신가요?' : 'CUTY가 처음이신가요?'} <AppLink href={`${signup ? '/login' : '/signup'}${linkSuffix}`}>{signup ? '로그인' : '회원가입'}</AppLink></p>
     </section>
   </div>
