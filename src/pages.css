@@ -185,7 +185,7 @@
 .flow-summary .action-row { flex-direction: column; align-items: stretch; }
 .notice { font-size: 12px; padding: 14px 16px; background: #f6f8fb; border: 1px solid #e6ebf1; color: #6d798a; line-height: 1.75; margin: 0 0 24px; border-radius: 3px; }
 .notice strong { color: #445166; font-weight: 600; }
-.notice-error { color: #a34e3e; background: #fff8f5; border-color: #efddd4; }
+.notice-error { color: #fff; background: #ef4444; border: 0; }
 .surface-card > .notice { margin: 20px 0 0; }
 .flow-summary > .notice { margin-top: 20px; margin-bottom: 0; font-size: 11px; }
 .flow-main > .notice { margin: 0; }

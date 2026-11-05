@@ -25,6 +25,7 @@
 .field input, .field select, .field textarea { border-radius: 8px; border-color: #dbe7ec; }
 .field textarea { padding: 12px; resize: vertical; }
 .notice { background: #f4f8fb; border-color: #e3edf3; border-radius: 10px; }
+.notice-error { background: #ef4444; border: 0; color: #fff; }
 .choice-card { border-radius: 10px; }
 .choice-card.selected { border-color: #8ec0d8; background: #f2f9fc; }
 .summary-total strong, .price-total strong { color: #367a9e; }
