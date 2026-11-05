@@ -1,7 +1,7 @@
 /* 직원 화면은 텍스트 중심의 별도 업무 공간으로 구성합니다. */
 .staff-workspace {
   --staff-ink: #274254;
-  --staff-muted: #647c8a;
+  --staff-muted: #506976;
   --staff-blue: #397daf;
   --staff-coral: #d9826b;
   display: grid;
@@ -42,6 +42,7 @@
 .staff-workspace .staff-button.primary { background: linear-gradient(120deg, #579ac4, #397bab); color: white; box-shadow: 0 5px 15px #4083ae1c; }
 .staff-workspace .staff-button.soft { background: #e7eff6; color: #47718c; }
 .staff-workspace .staff-button:hover { filter: brightness(.97); }
+.staff-workspace .staff-button:disabled, .staff-workspace .staff-text-action:disabled { opacity: .55; cursor: not-allowed; }
 .staff-workspace .staff-button:focus-visible, .staff-workspace button:focus-visible, .staff-workspace a:focus-visible, .staff-workspace input:focus-visible, .staff-workspace textarea:focus-visible, .staff-workspace select:focus-visible, .staff-workspace .staff-table-scroll:focus-visible { outline: 2px solid #3b82b4; outline-offset: 3px; }
 .staff-preview-note { margin-bottom: 22px; padding: 18px 22px; border-radius: 22px; background: linear-gradient(115deg, #fff2eacc, #ffffff9c); }
 .staff-preview-note > strong { font-size: 12px; font-weight: 600; color: #a3614e; }
@@ -59,6 +60,11 @@
 .staff-workspace .staff-table td { padding: 22px 20px; border: 0; border-bottom: 1px solid #eaf0f4; background: transparent; white-space: nowrap; }
 .staff-workspace .staff-table tr:last-child td { border-bottom: 0; }
 .staff-workspace .staff-table tbody tr:hover { background: #f8fbfe; }
+.staff-workspace .staff-table input,
+.staff-workspace .staff-table select { min-height: 39px; padding: 8px 10px; border: 1px solid #b9cbd7; border-radius: 9px; background: #fff; color: var(--staff-ink); }
+.staff-workspace .staff-table input[type='number'] { width: 100px; }
+.staff-workspace .staff-table tr.inventory-shortage { background: #fff7f2; }
+.staff-workspace .staff-table tr.inventory-shortage input { border-color: #bd624c; box-shadow: 0 0 0 2px #f7d8ce; }
 .staff-workspace .staff-table td strong { font-size: 12px; font-weight: 600; }
 .staff-workspace .staff-product { display: flex; gap: 12px; align-items: center; min-width: 205px; }
 .staff-workspace .staff-product img { width: 52px; height: 55px; border-radius: 12px; object-fit: cover; }

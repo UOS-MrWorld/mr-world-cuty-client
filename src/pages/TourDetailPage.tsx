@@ -6,10 +6,8 @@ import { getEarliestDepartureDate, getEstimate, gradeLabels, isOpenTravelDate, m
 import { formatPrice } from '../data/travel'
 import type { Tour, TravelDraft } from '../types/travel'
 
-export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onChange, onContinue }: {
+export default function TourDetailPage({ tour, draft, onChange, onContinue }: {
   tour: Tour
-  inCart: boolean
-  onCartToggle: () => void
   draft: TravelDraft
   onChange: (draft: TravelDraft) => void
   onContinue: () => void
@@ -74,7 +72,6 @@ export default function TourDetailPage({ tour, inCart, onCartToggle, draft, onCh
             <div className="summary-total"><span>{draft.travelers}명 {tour.source === 'api' ? '기본가 합계' : '예상 합계'}</span><strong>{formatPrice(tour.source === 'api' ? tour.price * draft.travelers : estimate.total)}<small>원</small></strong></div>
             <button className="button primary" type="submit">등급·옵션 선택<Icon name="arrow" size={17} /></button>
           </form>
-          <button className={`button secondary cart-toggle-button${inCart ? ' is-in-cart' : ''}`} type="button" onClick={onCartToggle} aria-pressed={inCart}>{inCart ? '장바구니에 담김' : '장바구니 담기'}<Icon name="cart" size={17} /></button>
         </aside>
       </div>
       <div className="mobile-detail-bar"><div><small>1인 예시 가격</small><strong>{formatPrice(tour.price)}원~</strong></div><a className="button primary" href="#detail-booking">일정·인원 선택</a></div>

@@ -42,7 +42,7 @@ src/
 └── types/        # 공통 UI 타입
 ```
 
-현재는 **FE 화면과 고객 API를 단계적으로 연결하는 중**이다. JWT 인증, 고객 상품 목록·검색·상세, Quote 옵션 가격, PENDING 예약 생성, Mock 결제, 예약 상세·취소, 예약 목록·여행 내역, 회원정보 조회·수정은 실제 서버 API를 사용한다. 별도 Voice AI 서비스의 음성 검색·상품 선택·옵션 구성·단계 이동도 연결했으며, 결제는 음성으로 실행하지 않는다. 직원 화면 실데이터 전환은 다음 연동 단계다. 로그인하지 않았거나 DEMO 모드를 선택하면 기존 샘플 화면을 사용한다.
+JWT 인증, 고객 상품 목록·검색·상세, Quote 옵션 가격, PENDING 예약 생성, 테스트 결제, 예약 상세·취소, 예약 목록·여행 내역, 회원정보 조회·수정과 직원 상품·재고·고객 등급 관리가 실제 서버 API에 연결돼 있다. 별도 Voice AI 서비스의 음성 검색·상품 선택·옵션 구성·단계 이동도 연결했으며, 결제는 음성으로 실행하지 않는다. 로그인하지 않은 사용자는 로그인 화면으로 이동한다.
 
 홈의 3D 장면은 Three.js와 React Three Fiber를 사용하며 지연 로드한다. Liquid Glass 셰이더의 출처와 MIT 라이선스는 `src/vendor/liquid-glass`에 보관한다.
 
@@ -53,11 +53,11 @@ npm ci
 npm run dev
 ```
 
-검증: `npm run build`, `npm run lint`. 실제 API를 확인할 때는 `.env.example`을 복사해 `VITE_API_BASE_URL`과 `VITE_VOICE_API_BASE_URL`을 설정하고 백엔드·Voice 서버를 함께 실행한다. DEMO 화면은 서버 없이도 확인할 수 있다.
+검증: `npm run build`, `npm run lint`. 실제 API를 확인할 때는 `.env.example`을 복사해 `VITE_API_BASE_URL`과 `VITE_VOICE_API_BASE_URL`을 설정하고 백엔드·Voice 서버를 함께 실행한다.
 
-고객 API를 화면에서 직접 확인하는 실행 순서와 예상 문구는 [고객 API 브라우저 확인 가이드](docs/api-browser-test-guide.md)에 정리했다. `DEMO` 시연과 실제 로그인 API 흐름을 구분하고, Quote → PENDING → 결제 실패·재시도 → 승인 → 취소·환불까지 같은 순서로 재현할 수 있다.
+고객 API를 화면에서 직접 확인하는 실행 순서와 예상 문구는 [고객 API 브라우저 확인 가이드](docs/api-browser-test-guide.md)에 정리했다. Quote → PENDING → 결제 실패·재시도 → 승인 → 취소·환불 순서로 재현할 수 있다.
 
-EC2 통합 배포에서는 Spring 서버가 이 저장소의 `main`을 빌드해 같은 origin에서 정적 화면과 `/api/v1`을 함께 제공한다. 따라서 배포 빌드는 `VITE_API_BASE_URL`을 별도로 지정하지 않고 기본 상대 경로 `/api/v1`을 사용한다. Mock 상품·장바구니·저장 구성은 사용자가 명시적으로 고객 시연 모드를 선택한 경우에만 표시한다. 일반 방문자는 로그인 안내를 보고, 실제 고객 로그인 중에는 서버 상품만 표시한다.
+EC2 통합 배포에서는 Spring 서버가 이 저장소의 `main`을 빌드해 같은 origin에서 정적 화면과 `/api/v1`을 함께 제공한다. 따라서 배포 빌드는 `VITE_API_BASE_URL`을 별도로 지정하지 않고 기본 상대 경로 `/api/v1`을 사용한다. 고객 로그인 중에는 서버 상품만 표시한다.
 
 ### api/
 
@@ -75,4 +75,4 @@ EC2 통합 배포에서는 Spring 서버가 이 저장소의 `main`을 빌드해
 
 모든 요청은 `api/client.ts`의 axios 인스턴스(`apiClient`)를 거친다. JWT는 여기서 자동으로 헤더에 붙으므로 각 도메인 파일에서 직접 토큰을 다룰 필요는 없다.
 
-확정된 요청·응답 계약은 `types/*Api.ts`에 도메인별로 정의한다. 화면 시연 모델과 서버 DTO는 직접 섞지 않고 변환 계층을 통해 연결한다.
+확정된 요청·응답 계약은 `types/*Api.ts`에 도메인별로 정의하고 변환 계층을 통해 화면 모델과 연결한다.

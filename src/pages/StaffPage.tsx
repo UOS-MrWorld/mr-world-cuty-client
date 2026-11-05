@@ -1,137 +1,220 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { createInventory, getInventories, updateInventory } from '../api/inventory'
+import { getCustomers, updateCustomerLoyaltyGrades } from '../api/customer'
+import { createTour, getStaffTour, getStaffTours, updateTour } from '../api/tour'
 import { AppLink } from '../components/AppLink'
-import { PreviewDialog } from '../components/PreviewDialog'
-import { CustomerForm, InventoryForm, ProductEditor } from '../components/staff/StaffForms'
-import { formatPrice } from '../data/travel'
-import { themeLabels } from '../data/catalogue'
-import { staffCustomers, staffInventory, staffProducts, staffStateLabels } from '../data/staff'
 import { navigate } from '../hooks/useRoute'
-import type { StaffFeedback } from '../types/staff'
+import type { ApiLoyaltyGrade, ApiTheme, ApiTransport } from '../types/api'
+import type { CustomerSummaryResponse, InventoryResponse } from '../types/staffApi'
+import type { StaffTourSummaryResponse, TourCreateRequest } from '../types/tourApi'
 
 type Section = 'tours' | 'inventory' | 'customers'
-type PendingLeave = { kind: 'navigate'; href: string; external: boolean } | { kind: 'close' }
-const nav: { href: string; label: string; section: Section; description: string }[] = [
-  { href: '/staff/tours', label: '상품 관리', section: 'tours', description: '여행과 기본 구성' },
-  { href: '/staff/inventory', label: '물품·재고 관리', section: 'inventory', description: '제공 물품과 수량' },
-  { href: '/staff/customers', label: '고객 관리', section: 'customers', description: '고객 정보와 이용 이력' },
+const nav = [
+  { href: '/staff/tours', label: '상품 관리', description: '여행과 기본 구성' },
+  { href: '/staff/inventory', label: '물품·재고 관리', description: '제공 물품과 수량' },
+  { href: '/staff/customers', label: '고객 관리', description: '단골 등급 일괄 변경' },
 ]
+const loyaltyLabels: Record<ApiLoyaltyGrade, string> = { NORMAL: '일반', VIP: 'VIP' }
+const themeLabels: Record<ApiTheme, string> = { HONEYMOON: '허니문', HEALING: '효도·힐링', GOLF: '골프', TREKKING: '트레킹' }
 
 export default function StaffPage({ path }: { path: string }) {
-  const [products, setProducts] = useState(staffProducts)
-  const [items, setItems] = useState(staffInventory)
-  const [customers, setCustomers] = useState(staffCustomers)
-  const [searchBySection, setSearchBySection] = useState({ tours: '', inventory: '', customers: '' })
-  const [feedback, setFeedback] = useState<StaffFeedback | null>(null)
-  const [inventoryEdit, setInventoryEdit] = useState<number | 'new' | null>(null)
-  const [customerEdit, setCustomerEdit] = useState<number | 'new' | null>(null)
-  const [dirty, setDirty] = useState(false)
-  const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null)
-  const discardAccepted = useRef(false)
   const section: Section = path.startsWith('/staff/inventory') ? 'inventory' : path.startsWith('/staff/customers') ? 'customers' : 'tours'
-  const currentNav = nav.find(item => item.section === section)!
-  const search = searchBySection[section]
-  const normalizedSearch = search.trim().toLocaleLowerCase('ko')
-  const matchedProducts = products.filter(product => `${product.title} ${product.location} ${themeLabels[product.theme]}`.toLocaleLowerCase('ko').includes(normalizedSearch))
-  const matchedItems = items.filter(item => `${item.name} ${item.kind} ${themeLabels[item.theme]}`.toLocaleLowerCase('ko').includes(normalizedSearch))
-  const matchedCustomers = customers.filter(customer => `${customer.name} ${customer.contact}`.toLocaleLowerCase('ko').includes(normalizedSearch))
-  const selectedInventory = items.find(item => item.id === inventoryEdit)
-  const selectedCustomer = customers.find(customer => customer.id === customerEdit)
-  const editId = path.match(/^\/staff\/tours\/([^/]+)\/edit$/)?.[1]
-  const editedProduct = products.find(product => product.id === editId)
-  const editingProduct = path === '/staff/tours/new' || !!editedProduct
-  const matchingCount = section === 'tours' ? matchedProducts.length : section === 'inventory' ? matchedItems.length : matchedCustomers.length
-
-  useEffect(() => {
-    const heading = document.querySelector<HTMLElement>('.staff-content h1')
-    heading?.setAttribute('tabindex', '-1')
-    heading?.focus({ preventScroll: true })
-  }, [path])
-
-  useEffect(() => {
-    if (!dirty) return
-    discardAccepted.current = false
-    function warnBeforeUnload(event: BeforeUnloadEvent) { if (!discardAccepted.current) event.preventDefault() }
-    function guardNavigation(event: MouseEvent) {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-      const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null
-      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return
-      const next = new URL(anchor.href, window.location.href)
-      if (!['http:', 'https:'].includes(next.protocol)) return
-      if (next.href === window.location.href || (next.origin === window.location.origin && next.pathname === window.location.pathname && next.search === window.location.search && next.hash)) return
-      event.preventDefault()
-      event.stopPropagation()
-      const external = next.origin !== window.location.origin
-      setPendingLeave({ kind: 'navigate', href: external ? next.href : `${next.pathname}${next.search}${next.hash}`, external })
-    }
-    window.addEventListener('beforeunload', warnBeforeUnload)
-    document.addEventListener('click', guardNavigation, true)
-    return () => {
-      window.removeEventListener('beforeunload', warnBeforeUnload)
-      document.removeEventListener('click', guardNavigation, true)
-    }
-  }, [dirty])
-
-  function closePanel() {
-    if (dirty) { setPendingLeave({ kind: 'close' }); return }
-    setInventoryEdit(null)
-    setCustomerEdit(null)
-  }
-
-  function discardChanges() {
-    const pending = pendingLeave
-    if (!pending) return
-    discardAccepted.current = true
-    setDirty(false)
-    setPendingLeave(null)
-    if (pending.kind === 'close') {
-      setInventoryEdit(null)
-      setCustomerEdit(null)
-    } else if (pending.external) {
-      window.location.assign(pending.href)
-    } else {
-      navigate(pending.href)
-    }
-  }
-
   return <div className="staff-workspace">
-    <aside className="staff-sidebar"><div className="staff-space-title"><p>CUTY</p><h2>여행 운영</h2><span>직원 업무 화면 초안</span></div><nav aria-label="직원 업무">{nav.map(item => <AppLink key={item.href} href={item.href} aria-current={section === item.section ? 'page' : undefined}><strong>{item.label}</strong><span>{item.description}</span></AppLink>)}</nav><div className="staff-sidebar-note"><p>미리보기 공간</p><span>직원 인증과 서버 저장을 연결하기 전, 화면과 입력 흐름을 확인합니다.</span><AppLink href="/">고객 홈으로</AppLink></div></aside>
+    <aside className="staff-sidebar">
+      <div className="staff-space-title"><p>CUTY</p><h2>여행 운영</h2><span>실제 서버 업무 화면</span></div>
+      <nav aria-label="직원 업무">{nav.map(item => <AppLink key={item.href} href={item.href} aria-current={item.href.includes(section) ? 'page' : undefined}><strong>{item.label}</strong><span>{item.description}</span></AppLink>)}</nav>
+      <div className="staff-sidebar-note"><p>STAFF 전용</p><span>변경 내용은 서버에 저장됩니다.</span><AppLink href="/">고객 홈으로</AppLink></div>
+    </aside>
     <div className="staff-content">
-      {editingProduct ? <ProductEditor key={path} product={editedProduct} onDirtyChange={setDirty} onApply={value => {
-        setProducts(current => current.some(product => product.id === value.id) ? current.map(product => product.id === value.id ? value : product) : [...current, value])
-        setFeedback({ kind: 'success', message: `${value.title}의 변경 내용을 현재 초안 목록에 반영했습니다. 실제 상품·신청·서버는 변경되지 않았습니다.` })
-        navigate('/staff/tours')
-      }} /> : editId ? <section className="staff-sheet staff-empty"><h1>상품을 찾을 수 없습니다</h1><p>초안 상품은 직원 영역을 벗어나거나 새로고침하면 초기화됩니다.</p><AppLink className="staff-button primary" href="/staff/tours">상품 목록으로</AppLink></section> : <>
-        <div className="staff-page-heading"><div><p className="staff-kicker">CUTY 직원 업무</p><h1>{currentNav.label}</h1><p>{section === 'tours' ? '여행의 기본 구성부터 선택 조건까지 한곳에서.' : section === 'inventory' ? '여행에 필요한 물품과 변경 전후 수량을 확인하세요.' : '고객 정보, 여행 이력, 단골 정보를 연결해 확인하세요.'}</p></div>{section === 'tours' ? <AppLink className="staff-button primary" href="/staff/tours/new">상품 등록</AppLink> : <button className="staff-button primary" onClick={() => { setDirty(false); if (section === 'inventory') setInventoryEdit('new'); else setCustomerEdit('new') }}>{section === 'inventory' ? '물품 등록' : '고객 등록'}</button>}</div>
-        <div className="staff-preview-note"><strong>샘플 데이터로 확인하는 초안</strong><p>변경은 현재 미리보기의 메모리에만 유지합니다. 새로고침하거나 직원 영역을 벗어나면 초기화되며 서버·브라우저 저장소에는 저장하지 않습니다.</p></div>
-        {feedback && <p className={`staff-message ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>{feedback.message}</p>}
-        <section className="staff-sheet staff-list-sheet"><div className="staff-toolbar"><label className="staff-search"><span className="sr-only">{currentNav.label} 검색</span><input type="search" value={search} onChange={event => setSearchBySection(current => ({ ...current, [section]: event.target.value }))} placeholder={section === 'tours' ? '상품명, 여행지 또는 테마 검색' : section === 'inventory' ? '물품명, 종류 또는 테마 검색' : '고객명 또는 연락처 검색'} /></label><span>{matchingCount}개 {section === 'customers' ? '화면 예시 고객' : '초안 항목'}</span></div>
-          <div className="staff-table-scroll" tabIndex={0} aria-label={`${currentNav.label} 표 영역`}><table className="staff-table"><caption className="sr-only">{currentNav.label} 목록 · 화면 예시</caption>
-            {section === 'tours' ? <><thead><tr><th>여행 상품</th><th>테마</th><th>기간</th><th>1인 기본 가격</th><th>운영 상태</th><th>관리</th></tr></thead><tbody>{matchedProducts.map(product => <tr key={product.id}><td><div className="staff-product"><img src={product.image} alt="" loading="lazy" /><div><strong>{product.title}</strong><small>{product.location}</small></div></div></td><td>{themeLabels[product.theme]}</td><td>{product.duration}</td><td className="staff-number">{formatPrice(product.price)}원</td><td><span className={`staff-state ${product.state}`}>{staffStateLabels[product.state]}</span></td><td><AppLink className="staff-text-action" href={`/staff/tours/${product.id}/edit`}>수정</AppLink></td></tr>)}</tbody></> : section === 'inventory' ? <><thead><tr><th>물품명</th><th>종류</th><th>테마</th><th>현재 수량 · 예시</th><th>관리</th></tr></thead><tbody>{matchedItems.map(item => <tr key={item.id}><td><strong>{item.name}</strong></td><td>{item.kind}</td><td>{themeLabels[item.theme]}</td><td className="staff-number">{formatPrice(item.quantity)}개</td><td><button className="staff-text-action" onClick={() => { setDirty(false); setInventoryEdit(item.id) }}>입고·수량 수정</button></td></tr>)}</tbody></> : <><thead><tr><th>고객명</th><th>연락처</th><th>이용 이력</th><th>단골 등급·할인율</th><th>관리</th></tr></thead><tbody>{matchedCustomers.map(customer => <tr key={customer.id}><td><strong>{customer.name}</strong><small className="staff-subtext">화면 예시</small></td><td>{customer.contact || '미입력'}</td><td>{customer.history.length ? `${customer.history.length}건 · 화면 예시` : '표시할 예시 없음'}</td><td><span className="staff-state">정책 확인 전</span></td><td><button className="staff-text-action" onClick={() => { setDirty(false); setCustomerEdit(customer.id) }}>상세·수정</button></td></tr>)}</tbody></>}
-          </table></div>
-          {matchingCount === 0 && <div className="staff-empty"><h2>검색 결과가 없습니다</h2><p>다른 검색어를 입력하거나 조건을 지워 주세요.</p><button className="staff-button soft" onClick={() => setSearchBySection(current => ({ ...current, [section]: '' }))}>검색 초기화</button></div>}
-        </section>
-        <p className="staff-bottom-note">{section === 'tours' ? '이미 신청한 여행은 신청 당시 구성과 가격을 유지하고, 상품 수정은 새 신청부터 적용하는 흐름으로 설계합니다.' : section === 'inventory' ? '물품 신규 등록과 기존 물품 입고는 별도 입력 흐름입니다. 재고 차감과 실시간 창고 연동은 연결 전입니다.' : '단골 기준·할인율·직원 직접 수정 권한은 정책 확정 후 연결합니다. 표시된 이력은 화면 예시입니다.'}</p>
-      </>}
-      {inventoryEdit !== null && <PreviewDialog title={selectedInventory ? '입고·수량 수정' : '신규 물품 등록'} onClose={closePanel}><InventoryForm item={selectedInventory} onDirtyChange={setDirty} onApply={(value, previous) => {
-        setItems(current => current.some(item => item.id === value.id) ? current.map(item => item.id === value.id ? value : item) : [...current, value])
-        setFeedback({ kind: 'success', message: `${value.name}: ${formatPrice(previous)}개 → ${formatPrice(value.quantity)}개로 초안에 반영했습니다. 실제 창고·서버 재고는 변경되지 않았습니다.` })
-        setInventoryEdit(null)
-      }} /></PreviewDialog>}
-      {customerEdit !== null && <PreviewDialog title={selectedCustomer ? '고객 상세·수정' : '고객 등록'} onClose={closePanel}><CustomerForm customer={selectedCustomer} onDirtyChange={setDirty} onApply={value => {
-        setCustomers(current => current.some(customer => customer.id === value.id) ? current.map(customer => customer.id === value.id ? value : customer) : [...current, value])
-        setFeedback({ kind: 'success', message: `${value.name}의 초안 정보를 반영했습니다. 입력 내용은 현재 화면의 메모리에만 있으며 서버·브라우저 저장소에는 저장하지 않습니다.` })
-        setCustomerEdit(null)
-      }} /></PreviewDialog>}
-      {pendingLeave && <PreviewDialog title="변경 내용을 버릴까요?" onClose={() => setPendingLeave(null)}>
-        <div className="staff-leave-confirmation">
-          <p>아직 초안에 적용하지 않은 변경 내용이 있습니다. {pendingLeave.kind === 'close' ? '지금 닫으면' : '다른 화면으로 이동하면'} 입력한 변경 내용이 사라집니다.</p>
-          <p className="staff-small-note">계속 수정하거나, 변경 내용을 버리고 {pendingLeave.kind === 'close' ? '닫을 수 있습니다.' : '이동할 수 있습니다.'}</p>
-          <div className="staff-form-actions">
-            <button className="staff-button soft" type="button" onClick={() => setPendingLeave(null)}>계속 수정하기</button>
-            <button className="staff-button primary" type="button" onClick={discardChanges}>변경 버리고 {pendingLeave.kind === 'close' ? '닫기' : '이동'}</button>
-          </div>
-        </div>
-      </PreviewDialog>}
+      {section === 'tours' ? <ToursSection path={path} /> : section === 'inventory' ? <InventorySection /> : <CustomersSection />}
     </div>
   </div>
+}
+
+function Heading({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
+  return <div className="staff-page-heading"><div><p className="staff-kicker">CUTY 직원 업무</p><h1>{title}</h1><p>{description}</p></div>{action}</div>
+}
+
+function LoadingState({ error, retry }: { error: string; retry: () => void }) {
+  return error
+    ? <div className="staff-sheet staff-empty"><h2>정보를 불러오지 못했습니다</h2><p role="alert">{error}</p><button className="staff-button primary" onClick={retry}>다시 시도</button></div>
+    : <p className="staff-message" role="status">서버에서 정보를 불러오는 중입니다.</p>
+}
+
+function ToursSection({ path }: { path: string }) {
+  const editId = path.match(/^\/staff\/tours\/(\d+)\/edit$/)?.[1]
+  if (path === '/staff/tours/new' || editId) return <TourEditor tourId={editId ? Number(editId) : undefined} />
+
+  const [items, setItems] = useState<StaffTourSummaryResponse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [retry, setRetry] = useState(0)
+  useEffect(() => {
+    let active = true
+    setLoading(true); setError('')
+    void getStaffTours({ page: 0, size: 100 }).then(response => { if (active) setItems(response.data.content) })
+      .catch(value => { if (active) setError(value instanceof Error ? value.message : '상품을 불러오지 못했습니다.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [retry])
+
+  return <>
+    <Heading title="상품 관리" description="서버에 저장된 여행상품을 등록하고 수정합니다." action={<AppLink className="staff-button primary" href="/staff/tours/new">상품 등록</AppLink>} />
+    {loading || error ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet">
+      <div className="staff-toolbar"><span>{items.length}개 상품</span></div>
+      <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>상품명</th><th>테마</th><th>출발일</th><th>결제 인원</th><th>상태</th><th>관리</th></tr></thead><tbody>
+        {items.map(item => <tr key={item.tourId}><td><strong>{item.tourName}</strong></td><td>{themeLabels[item.theme]}</td><td>{item.startDate}</td><td className="staff-number">{item.paidGuestCount}명</td><td><span className="staff-state">{item.tourStatus}</span></td><td><AppLink className="staff-text-action" href={`/staff/tours/${item.tourId}/edit`}>수정</AppLink></td></tr>)}
+      </tbody></table></div>
+    </section>}
+  </>
+}
+
+function TourEditor({ tourId }: { tourId?: number }) {
+  const [loading, setLoading] = useState(Boolean(tourId))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [value, setValue] = useState<TourCreateRequest>({
+    theme: 'GOLF', tourName: '', description: '', startDate: '', endDate: '',
+    basePrice: 0, defaultTransport: 'PREMIUM_VAN_10', gifts: [],
+  })
+  useEffect(() => {
+    if (!tourId) return
+    let active = true
+    void getStaffTour(tourId).then(({ data }) => {
+      if (!active) return
+      setValue({
+        theme: data.tour.theme, tourName: data.tour.tourName, description: data.tour.description,
+        startDate: data.tour.startDate, endDate: data.tour.endDate, basePrice: data.tour.basePrice,
+        defaultTransport: data.tour.defaultTransport,
+        gifts: data.gifts.map(gift => ({ itemId: gift.itemId, quantityPerGuest: gift.quantityPerGuest })),
+      })
+    }).catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '상품을 불러오지 못했습니다.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [tourId])
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!event.currentTarget.reportValidity() || saving) return
+    setSaving(true); setError('')
+    const request = tourId
+      ? updateTour(tourId, {
+        tourName: value.tourName, description: value.description, startDate: value.startDate,
+        endDate: value.endDate, basePrice: value.basePrice, defaultTransport: value.defaultTransport, gifts: value.gifts,
+      })
+      : createTour(value)
+    void request.then(() => navigate('/staff/tours'))
+      .catch(reason => setError(reason instanceof Error ? reason.message : '상품을 저장하지 못했습니다.'))
+      .finally(() => setSaving(false))
+  }
+  if (loading) return <LoadingState error={error} retry={() => window.location.reload()} />
+  return <>
+    <Heading title={tourId ? '상품 수정' : '상품 등록'} description="입력한 내용은 서버 상품과 고객 화면에 반영됩니다." action={<AppLink className="staff-button soft" href="/staff/tours">목록으로</AppLink>} />
+    <form className="staff-sheet staff-editor" onSubmit={submit}>
+      <div className="staff-fields two">
+        <label className="staff-field"><span>상품명</span><input required value={value.tourName} onChange={e => setValue(current => ({ ...current, tourName: e.target.value }))} /></label>
+        <label className="staff-field"><span>테마</span><select disabled={Boolean(tourId)} value={value.theme} onChange={e => setValue(current => ({ ...current, theme: e.target.value as ApiTheme }))}>{Object.entries(themeLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+        <label className="staff-field"><span>출발일</span><input required type="date" value={value.startDate} onChange={e => setValue(current => ({ ...current, startDate: e.target.value }))} /></label>
+        <label className="staff-field"><span>종료일</span><input required type="date" min={value.startDate} value={value.endDate} onChange={e => setValue(current => ({ ...current, endDate: e.target.value }))} /></label>
+        <label className="staff-field"><span>1인 기본 가격</span><input required min="1" step="1" type="number" value={value.basePrice} onChange={e => setValue(current => ({ ...current, basePrice: Number(e.target.value) }))} /></label>
+        <label className="staff-field"><span>기본 교통</span><select value={value.defaultTransport} onChange={e => setValue(current => ({ ...current, defaultTransport: e.target.value as ApiTransport }))}><option value="PREMIUM_CAR_2">2인 전용 차량</option><option value="PREMIUM_VAN_10">10인승 밴</option></select></label>
+      </div>
+      <label className="staff-field"><span>상품 설명</span><textarea rows={5} value={value.description ?? ''} onChange={e => setValue(current => ({ ...current, description: e.target.value }))} /></label>
+      {error && <p className="staff-message error" role="alert">{error}</p>}
+      <div className="staff-form-actions"><button className="staff-button primary" disabled={saving}>{saving ? '저장 중…' : '서버에 저장'}</button></div>
+    </form>
+  </>
+}
+
+function InventorySection() {
+  const [items, setItems] = useState<InventoryResponse[]>([])
+  const [quantities, setQuantities] = useState<Record<number, number>>({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const [retry, setRetry] = useState(0)
+  const focusedShortage = useRef(false)
+  useEffect(() => {
+    let active = true
+    setLoading(true); setError('')
+    void getInventories({ page: 0, size: 100 }).then(({ data }) => {
+      if (!active) return
+      setItems(data.content)
+      setQuantities(Object.fromEntries(data.content.map(item => [item.itemId, item.quantity])))
+      const first = data.content.find(item => item.quantity < item.requiredQuantity)
+      if (first && !focusedShortage.current) {
+        focusedShortage.current = true
+        window.requestAnimationFrame(() => document.getElementById(`inventory-quantity-${first.itemId}`)?.focus())
+      }
+    }).catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '재고를 불러오지 못했습니다.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [retry])
+  const shortages = items.filter(item => item.quantity < item.requiredQuantity)
+  async function save(item: InventoryResponse) {
+    setError(''); setMessage('')
+    try {
+      await updateInventory(item.itemId, { quantity: quantities[item.itemId] })
+      setMessage(`${item.itemName} 수량을 저장했습니다.`)
+      setRetry(value => value + 1)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '수량을 저장하지 못했습니다.') }
+  }
+  async function register(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = event.currentTarget
+    if (!form.reportValidity()) return
+    const values = new FormData(form)
+    try {
+      await createInventory({ itemName: String(values.get('itemName')), quantity: Number(values.get('quantity')) })
+      form.reset(); setMessage('새 물품을 등록했습니다.'); setRetry(value => value + 1)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '물품을 등록하지 못했습니다.') }
+  }
+  return <>
+    <Heading title="물품·재고 관리" description="부족 재고를 확인하고 현재 수량을 바로 보충합니다." />
+    <form className="staff-sheet staff-fields two" onSubmit={register}><label className="staff-field"><span>새 물품명</span><input name="itemName" required /></label><label className="staff-field"><span>초기 수량</span><input name="quantity" type="number" min="0" step="1" required /></label><button className="staff-button primary">물품 등록</button></form>
+    {shortages.length > 0 && <p className="staff-message error" role="alert">재고가 부족한 물품이 {shortages.length}개 있습니다. 첫 번째 부족 수량 입력으로 이동했습니다.</p>}
+    {message && <p className="staff-message" role="status">{message}</p>}
+    {error && !loading && <p className="staff-message error" role="alert">{error}</p>}
+    {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet"><div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>물품명</th><th>현재 수량</th><th>사용 예정</th><th>상태</th><th>저장</th></tr></thead><tbody>
+      {items.map(item => { const shortage = item.quantity < item.requiredQuantity; return <tr key={item.itemId} className={shortage ? 'inventory-shortage' : ''}><td><strong>{item.itemName}</strong></td><td><input id={`inventory-quantity-${item.itemId}`} aria-label={`${item.itemName} 현재 수량`} type="number" min="0" step="1" value={quantities[item.itemId] ?? 0} onChange={event => setQuantities(current => ({ ...current, [item.itemId]: Number(event.target.value) }))} /></td><td>{item.requiredQuantity}개</td><td>{shortage ? <span className="staff-state paused">부족 {item.requiredQuantity - item.quantity}개</span> : <span className="staff-state preview">충분</span>}</td><td><button className="staff-text-action" onClick={() => void save(item)} disabled={quantities[item.itemId] === item.quantity}>수량 저장</button></td></tr> })}
+    </tbody></table></div></section>}
+  </>
+}
+
+function CustomersSection() {
+  const [customers, setCustomers] = useState<CustomerSummaryResponse[]>([])
+  const [changes, setChanges] = useState<Record<number, ApiLoyaltyGrade>>({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const [retry, setRetry] = useState(0)
+  useEffect(() => {
+    let active = true
+    setLoading(true); setError('')
+    void getCustomers({ page: 0, size: 100 }).then(({ data }) => { if (active) { setCustomers(data.content); setChanges({}) } })
+      .catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '고객 목록을 불러오지 못했습니다.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [retry])
+  const changedEntries = Object.entries(changes)
+  async function saveAll() {
+    if (!changedEntries.length || saving) return
+    setSaving(true); setError(''); setMessage('')
+    try {
+      const { data } = await updateCustomerLoyaltyGrades({
+        changes: changedEntries.map(([customerId, loyaltyGrade]) => ({ customerId: Number(customerId), loyaltyGrade })),
+      })
+      setMessage(`${data.updatedCount}명의 단골 등급을 저장했습니다.`)
+      setRetry(value => value + 1)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '등급을 저장하지 못했습니다.') }
+    finally { setSaving(false) }
+  }
+  return <>
+    <Heading title="고객 관리" description="고객별 단골 등급만 수정하고 변경사항을 한 번에 저장합니다." action={<button className="staff-button primary" disabled={!changedEntries.length || saving} onClick={() => void saveAll()}>{saving ? '저장 중…' : `변경사항 일괄 저장 (${changedEntries.length})`}</button>} />
+    {message && <p className="staff-message" role="status">{message}</p>}
+    {error && !loading && <p className="staff-message error" role="alert">{error}</p>}
+    {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet"><div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>고객명</th><th>현재 등급</th><th>변경 등급</th></tr></thead><tbody>
+      {customers.map(customer => <tr key={customer.customerId}><td><strong>{customer.name}</strong></td><td>{loyaltyLabels[customer.loyaltyGrade]}</td><td><select aria-label={`${customer.name} 단골 등급`} value={changes[customer.customerId] ?? customer.loyaltyGrade} onChange={event => { const grade = event.target.value as ApiLoyaltyGrade; setChanges(current => { const next = { ...current }; if (grade === customer.loyaltyGrade) delete next[customer.customerId]; else next[customer.customerId] = grade; return next }) }}><option value="NORMAL">일반</option><option value="VIP">VIP</option></select></td></tr>)}
+    </tbody></table></div></section>}
+  </>
 }
