@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { AppLink } from '../components/AppLink'
 import { BrandMark } from '../components/BrandMark'
-import { Icon } from '../components/Icon'
 import { contactPattern } from '../data/bookingPolicy'
 import { useAuth } from '../hooks/useAuth'
 import { navigate } from '../hooks/useRoute'
@@ -73,9 +72,8 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
     <section className="auth-intro">
       <BrandMark large />
       <p className="eyebrow">CURATE YOUR TRAVEL</p>
-      <h1>{signup ? <>여행의 시작,<br />CUTY와 함께.</> : <>다시 만나서<br />반가워요.</>}</h1>
+      <h1>{signup ? '여행의 시작, CUTY와 함께.' : '여행을 시작해 보세요.'}</h1>
       <p>고른 여행을 이어서 구성하고,<br />신청한 여행과 출발 상태를 한곳에서 확인하세요.</p>
-      <AppLink className="text-link" href="/tours">여행 먼저 둘러보기 <Icon name="arrow" size={17} /></AppLink>
     </section>
     <section className="auth-card surface-card" aria-labelledby="auth-form-heading">
       <h2 id="auth-form-heading">{signup ? '회원가입' : '로그인'}</h2>
@@ -85,7 +83,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
         <button type="button" aria-pressed={accountType === 'staff'} onClick={() => { setAccountType('staff'); setMessage('') }}>직원</button>
       </div>}
       <form className="auth-form" onSubmit={submit}>
-          <label className="field" htmlFor="auth-account">계정<input id="auth-account" name="account" autoComplete={signup ? 'off' : 'username'} required minLength={4} maxLength={20} pattern="([a-zA-Z0-9_]|-){4,20}" placeholder="영문·숫자 4~20자" /></label>
+          <label className="field" htmlFor="auth-account">아이디<input id="auth-account" name="account" autoComplete={signup ? 'off' : 'username'} required minLength={4} maxLength={20} pattern="([a-zA-Z0-9_]|-){4,20}" placeholder="영문·숫자 4~20자" /></label>
           <label className="field" htmlFor="auth-password">비밀번호<input id="auth-password" name="password" type="password" autoComplete={signup ? 'new-password' : 'current-password'} required minLength={8} maxLength={64} placeholder="8자 이상" /></label>
           {signup && <>
             <label className="field" htmlFor="auth-confirm">비밀번호 확인<input id="auth-confirm" name="passwordConfirm" type="password" autoComplete="new-password" required minLength={8} onInput={event => event.currentTarget.setCustomValidity('')} /></label>
@@ -93,7 +91,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
             <label className="field" htmlFor="auth-address">주소<input id="auth-address" name="address" autoComplete="off" required maxLength={160} /></label>
             <label className="field" htmlFor="auth-contact">연락처<input id="auth-contact" name="contact" type="tel" autoComplete="tel" required pattern={contactPattern} placeholder="010-0000-0000" /><small>하이픈을 입력해도 서버에는 숫자만 전송됩니다.</small></label>
           </>}
-          <button className="button primary" type="submit" disabled={submitting}>{submitting ? '처리 중…' : signup ? '회원가입' : '로그인'} {!submitting && <Icon name="arrow" size={18} />}</button>
+          <button className="button primary" type="submit" disabled={submitting}>{submitting ? '처리 중…' : signup ? '회원가입' : '로그인'}</button>
         </form>
       {message && <p className="notice" role="status">{message}</p>}
       {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
