@@ -111,7 +111,7 @@ export default function ExplorePage({ cartIds, useApi = false }: {
           {!useApi && <label><span>여행지</span><select name="region" defaultValue={region}>{regions.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>}
           <label className="catalog-keyword"><span>상품명·키워드</span><input name="q" type="search" aria-label="상품명·키워드" defaultValue={search} placeholder={useApi ? '상품명 또는 설명을 입력하세요' : '여행지 또는 상품명을 입력하세요'} /></label>
           <button className="button primary" type="submit"><Icon name="search" size={18} />검색</button>
-          <button className="mobile-filter-toggle" type="button" aria-expanded={filtersOpen} aria-controls="catalog-filter-fields" onClick={() => setFiltersOpen(open => !open)}>{filtersOpen ? '상세 조건 닫기' : '상세 조건'}</button>
+          <button className="mobile-filter-toggle" type="button" aria-expanded={filtersOpen} aria-controls="catalog-filter-fields" onClick={() => setFiltersOpen(open => !open)}>{filtersOpen ? '필터 닫기' : '필터'}</button>
           <AppLink className="catalog-filter-reset" href="/tours">초기화</AppLink>
         </div>
         <div id="catalog-filter-fields" className={`filter-fields${filtersOpen ? ' is-open' : ''}`}>
