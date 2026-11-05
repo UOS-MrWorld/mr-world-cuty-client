@@ -59,8 +59,8 @@ export function getGradeDefaults(tour: Tour, grade: TravelGrade) {
   return {
     ...gradeDefaults[grade],
     transport: (tour.apiConfiguration?.defaultTransport ?? (tour.theme === 'romance' ? 'private' : 'van')) as TravelTransport,
-    champagne: false,
-    coffee: false,
+    champagneQuantity: 0,
+    coffeeQuantity: 0,
   }
 }
 
@@ -108,8 +108,8 @@ export function normalizeDraft(tour: Tour, value?: unknown): TravelDraft {
       ? tour.startDate
       : typeof raw.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '',
     travelers,
-    champagne: grade !== 'premium' && raw.champagne === true,
-    coffee: raw.coffee === true,
+    champagneQuantity: grade === 'premium' ? 0 : normalizeQuantity(raw.champagneQuantity, raw.champagne),
+    coffeeQuantity: normalizeQuantity(raw.coffeeQuantity, raw.coffee),
   }
 }
 
@@ -120,8 +120,8 @@ export function getEstimate(tour: Tour, draft: TravelDraft) {
   const optionsPerPerson = hotelPrices[selection.hotel] - hotelPrices[defaults.hotel]
     + mealPrices[selection.meal] - mealPrices[defaults.meal]
     + transportPrices[selection.transport] - transportPrices[defaults.transport]
-    + (selection.champagne ? 50000 : 0)
-    + (selection.coffee ? 10000 : 0)
+    + selection.champagneQuantity * 50000
+    + selection.coffeeQuantity * 10000
   const perPerson = basePerPerson + optionsPerPerson
   return {
     base: basePerPerson * selection.travelers,
@@ -129,6 +129,11 @@ export function getEstimate(tour: Tour, draft: TravelDraft) {
     total: perPerson * selection.travelers,
     perPerson,
   }
+}
+
+function normalizeQuantity(value: unknown, legacy: unknown) {
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return Math.min(100, Math.max(0, value))
+  return legacy === true ? 1 : 0
 }
 
 function localDate(date: Date) {

@@ -52,15 +52,16 @@ export function applyVoiceConfiguration(tour: Tour, draft: TravelDraft, params: 
       const quantity = (selection as Record<string, unknown>).quantity
       const option = tour.apiConfiguration.drinkOptions.find(item => item.id === optionId)
       if (!option || typeof quantity !== 'number') continue
-      if (option.name.toUpperCase().includes('CHAMPAGNE') || option.name.includes('샴페인')) patch.champagne = quantity > 0
-      if (option.name.toUpperCase().includes('COFFEE') || option.name.includes('커피')) patch.coffee = quantity > 0
+      if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity > 100) continue
+      if (option.name.toUpperCase().includes('CHAMPAGNE') || option.name.includes('샴페인')) patch.champagneQuantity = quantity
+      if (option.name.toUpperCase().includes('COFFEE') || option.name.includes('커피')) patch.coffeeQuantity = quantity
     }
   }
   return normalizeDraft(tour, { ...draft, ...patch })
 }
 
 export function voiceSummary(draft: TravelDraft) {
-  return `${draft.travelers}명, ${gradeLabels[draft.grade]}, ${hotelLabels[draft.hotel]}, ${transportLabels[draft.transport]}, ${mealLabels[draft.meal]}${draft.champagne ? ', 샴페인' : ''}${draft.coffee ? ', 커피' : ''}`
+  return `${draft.travelers}명, ${gradeLabels[draft.grade]}, ${hotelLabels[draft.hotel]}, ${transportLabels[draft.transport]}, ${mealLabels[draft.meal]}${draft.champagneQuantity ? `, 샴페인 ${draft.champagneQuantity}개` : ''}${draft.coffeeQuantity ? `, 커피 ${draft.coffeeQuantity}개` : ''}`
 }
 
 export function apiTourLevels(tour?: Tour): ApiTourLevel[] {

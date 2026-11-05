@@ -5,10 +5,9 @@ import { themeLabels } from '../data/catalogue'
 import { gradeLabels, minimumGrade, themeBenefits } from '../data/configuration'
 import type { Tour } from '../types/travel'
 
-export function TourCard({ tour, inCart, onCartToggle, href = `/tours/${tour.id}` }: {
+export function TourCard({ tour, onRemove, href = `/tours/${tour.id}` }: {
   tour: Tour
-  inCart: boolean
-  onCartToggle: () => void
+  onRemove?: () => void
   href?: string
 }) {
   return (
@@ -18,10 +17,8 @@ export function TourCard({ tour, inCart, onCartToggle, href = `/tours/${tour.id}
         <AppLink href={href} aria-label={`${tour.title} 상세 보기`}>
           <img src={tour.image} alt={tour.imageAlt} loading="lazy" />
         </AppLink>
-        <button className={`save-button cart-button ${inCart ? 'saved' : ''}`} onClick={onCartToggle}
-          aria-pressed={inCart} aria-label={`${tour.title} ${inCart ? '장바구니에서 빼기' : '장바구니에 담기'}`}>
-          <Icon name="cart" size={18} />
-        </button>
+        {onRemove && <button className="save-button cart-button saved" onClick={onRemove}
+          aria-label={`${tour.title} 장바구니에서 빼기`}><Icon name="close" size={18} /></button>}
       </div>
       <div className="product-content">
         <p className="product-meta">{tour.source === 'api' ? `${tour.startDate} 출발` : tour.location}<span>{themeLabels[tour.theme]}</span></p>

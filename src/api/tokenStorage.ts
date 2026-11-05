@@ -3,11 +3,13 @@ import type { AuthSession } from '../types/auth'
 const ACCESS_TOKEN_KEY = 'accessToken'
 const REFRESH_TOKEN_KEY = 'refreshToken'
 const AUTH_SESSION_KEY = 'cuty:auth-session:v1'
+const ACCESS_EXPIRES_AT_KEY = 'cuty:access-expires-at:v1'
 export const authChangeEvent = 'cuty:auth-change'
 
 let memoryAccessToken: string | null = null
 let memoryRefreshToken: string | null = null
 let memorySession: AuthSession | null = null
+let memoryAccessExpiresAt: string | null = null
 
 function notifyAuthChange() {
   window.dispatchEvent(new Event(authChangeEvent))
@@ -21,12 +23,23 @@ export function getAccessToken() {
   }
 }
 
-export function setAccessToken(accessToken: string) {
+export function setAccessToken(accessToken: string, accessTokenExpiresAt?: string) {
   memoryAccessToken = accessToken
+  if (accessTokenExpiresAt) memoryAccessExpiresAt = accessTokenExpiresAt
   try {
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+    if (accessTokenExpiresAt) localStorage.setItem(ACCESS_EXPIRES_AT_KEY, accessTokenExpiresAt)
   } catch {
     // 저장소를 사용할 수 없어도 현재 탭의 인증 요청은 계속할 수 있습니다.
+  }
+  notifyAuthChange()
+}
+
+export function getAccessTokenExpiresAt() {
+  try {
+    return localStorage.getItem(ACCESS_EXPIRES_AT_KEY) ?? memoryAccessExpiresAt
+  } catch {
+    return memoryAccessExpiresAt
   }
 }
 
@@ -50,14 +63,16 @@ export function getStoredAuthSession() {
   }
 }
 
-export function storeAuth(session: AuthSession, accessToken: string, refreshToken: string) {
+export function storeAuth(session: AuthSession, accessToken: string, refreshToken: string, accessTokenExpiresAt: string) {
   memorySession = session
   memoryAccessToken = accessToken
   memoryRefreshToken = refreshToken
+  memoryAccessExpiresAt = accessTokenExpiresAt
   try {
     localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session))
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+    localStorage.setItem(ACCESS_EXPIRES_AT_KEY, accessTokenExpiresAt)
   } catch {
     // 저장소를 사용할 수 없으면 현재 탭의 메모리 세션만 유지합니다.
   }
@@ -68,10 +83,12 @@ export function clearStoredAuth() {
   memorySession = null
   memoryAccessToken = null
   memoryRefreshToken = null
+  memoryAccessExpiresAt = null
   try {
     localStorage.removeItem(AUTH_SESSION_KEY)
     localStorage.removeItem(ACCESS_TOKEN_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
+    localStorage.removeItem(ACCESS_EXPIRES_AT_KEY)
   } catch {
     // 메모리 세션은 이미 지웠습니다.
   }
