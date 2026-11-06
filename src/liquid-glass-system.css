@@ -1050,6 +1050,7 @@ input, select { accent-color: var(--aurora-violet); }
 .voice-neon-cta.is-compact::after,
 .voice-neon-cta.is-compact .voice-neon-halo { width: min(110%, 280px); }
 .app-footer > .voice-neon-cta { display: flex; margin: 22px auto 32px; }
+.home-footer > .voice-neon-cta.is-floating { margin-bottom: 32px; }
 
 /* Voice dialog shares the same blue → violet signal. */
 .voice-state strong { color: var(--aurora-accent); }
@@ -1165,6 +1166,7 @@ input, select { accent-color: var(--aurora-violet); }
   .home-footer > small { display: none; }
   .voice-neon-cta.is-compact .voice-neon-copy strong { font-size: 10px; }
   .app-footer > .voice-neon-cta { margin-block: 20px 28px; }
+  .home-footer > .voice-neon-cta.is-floating { margin-bottom: 28px; }
 }
 
 @media (max-width: 400px) {
@@ -2610,3 +2612,7 @@ html[data-route-transition='entering'] .app-footer { animation: cuty-route-arriv
   touch-action: manipulation;
 }
 .home-footer .voice-neon-cta.is-compact > * { pointer-events: none; }
+.home-footer .voice-neon-cta.is-floating {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
