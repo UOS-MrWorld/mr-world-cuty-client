@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",
+    "@ricky0123/vad-web": "^0.0.31",
     "axios": "^1.20.0",
+    "onnxruntime-web": "^1.31.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "^0.186.1"
@@ -26,6 +28,7 @@
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "vite-plugin-static-copy": "^4.1.1"
   }
 }
