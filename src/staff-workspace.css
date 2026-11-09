@@ -79,6 +79,22 @@
 .staff-bottom-note { color: #7b909e; font-size: 11px; line-height: 1.9; margin: 19px 4px 0; }
 .staff-message { margin: 0 0 20px; padding: 18px 22px; border-radius: 20px; background: #e4f2ef; color: #4e7a6b; font-size: 12px; line-height: 1.9; }
 .staff-message.error { color: #a66356; background: #fff0e9; }
+.staff-loyalty-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-bottom: 18px; }
+.staff-loyalty-overview > div { position: relative; min-width: 0; padding: 22px 20px 21px; border-radius: 22px; background: #ffffffb8; box-shadow: 0 10px 30px #7195ac08; }
+.staff-loyalty-overview span { display: grid; place-items: center; width: 27px; height: 27px; margin-bottom: 18px; border-radius: 9px; color: #377aa7; background: #e4f1fa; font-size: 11px; font-weight: 700; }
+.staff-loyalty-overview strong { display: block; font-size: 13px; font-weight: 600; }
+.staff-loyalty-overview p { margin: 8px 0 0; color: var(--staff-muted); font-size: 10px; line-height: 1.8; }
+.staff-loyalty-sheet { padding: 25px 0 0 !important; overflow: hidden; }
+.staff-loyalty-sheet .staff-section-heading { padding: 0 25px; }
+.staff-loyalty-sheet .staff-section-heading > div h2 { margin-top: 7px; }
+.staff-loyalty-table td { height: 84px; }
+.staff-loyalty-table td strong { display: inline-block; }
+.staff-loyalty-table td small { display: block; margin-top: 6px; color: #8195a3; font-size: 10px; line-height: 1.6; }
+.staff-loyalty-table .staff-loyalty-empty { height: 110px; color: var(--staff-muted); text-align: center; }
+.staff-grade-badge { display: inline-flex; margin-left: 8px; padding: 5px 8px; border-radius: 8px; color: #745fbd; background: #eeeafd; font-size: 9px; vertical-align: middle; }
+.staff-loyalty-notice { margin-top: 18px; padding: 20px 23px; border-radius: 21px; background: linear-gradient(115deg, #fff2eacc, #ffffff9c); }
+.staff-loyalty-notice strong { color: #a3614e; font-size: 12px; }
+.staff-loyalty-notice p { margin: 7px 0 0; color: #806f68; font-size: 11px; line-height: 1.85; }
 .staff-workspace .staff-empty { display: grid; justify-items: center; gap: 12px; padding: 45px 22px; text-align: center; }
 .staff-empty h1, .staff-empty h2, .staff-empty p { margin: 0; }
 .staff-empty h2 { font-size: 18px; font-weight: 600; }
@@ -170,6 +186,10 @@
   .staff-workspace .staff-page-heading > .staff-button { padding: 11px 14px; font-size: 11px; }
   .staff-workspace .staff-sheet { padding: 21px 18px; border-radius: 23px; }
   .staff-workspace .staff-list-sheet { padding: 18px 0 0; }
+  .staff-loyalty-overview { grid-template-columns: 1fr; }
+  .staff-loyalty-overview > div { padding: 18px; }
+  .staff-loyalty-overview span { margin-bottom: 12px; }
+  .staff-loyalty-sheet .staff-section-heading { padding: 0 18px; }
   .staff-workspace .staff-toolbar { margin: 0 17px 18px; align-items: stretch; flex-direction: column; gap: 10px; }
   .staff-workspace .staff-toolbar > span { font-size: 10px; }
   .staff-search { width: 100%; }
