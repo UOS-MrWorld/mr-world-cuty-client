@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createInventory, getInventories, updateInventory } from '../api/inventory'
-import { getCustomers, updateCustomerLoyaltyGrades } from '../api/customer'
+import { getLoyaltyPolicy } from '../api/customer'
 import { createTour, getStaffTour, getStaffTours, updateTour } from '../api/tour'
 import { AppLink } from '../components/AppLink'
 import { navigate } from '../hooks/useRoute'
 import type { ApiLoyaltyGrade, ApiTheme, ApiTransport } from '../types/api'
-import type { CustomerSummaryResponse, InventoryResponse } from '../types/staffApi'
+import type { InventoryResponse, LoyaltyPolicyResponse } from '../types/staffApi'
 import type { StaffTourSummaryResponse, TourCreateRequest } from '../types/tourApi'
 
 type Section = 'tours' | 'inventory' | 'customers'
 const nav = [
   { href: '/staff/tours', label: '상품 관리', description: '여행과 기본 구성' },
   { href: '/staff/inventory', label: '물품·재고 관리', description: '제공 물품과 수량' },
-  { href: '/staff/customers', label: '고객 관리', description: '단골 등급 일괄 변경' },
+  { href: '/staff/customers', label: '등급 관리', description: '여행 횟수 기준 정책' },
 ]
 const loyaltyLabels: Record<ApiLoyaltyGrade, string> = { NORMAL: '일반', VIP: 'VIP' }
 const themeLabels: Record<ApiTheme, string> = { HONEYMOON: '허니문', HEALING: '효도·힐링', GOLF: '골프', TREKKING: '트레킹' }
@@ -181,40 +181,39 @@ function InventorySection() {
 }
 
 function CustomersSection() {
-  const [customers, setCustomers] = useState<CustomerSummaryResponse[]>([])
-  const [changes, setChanges] = useState<Record<number, ApiLoyaltyGrade>>({})
+  const [policies, setPolicies] = useState<LoyaltyPolicyResponse['policies']>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
   const [retry, setRetry] = useState(0)
   useEffect(() => {
     let active = true
     setLoading(true); setError('')
-    void getCustomers({ page: 0, size: 100 }).then(({ data }) => { if (active) { setCustomers(data.content); setChanges({}) } })
-      .catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '고객 목록을 불러오지 못했습니다.') })
+    void getLoyaltyPolicy().then(({ data }) => { if (active) setPolicies(data.policies) })
+      .catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '등급 기준을 불러오지 못했습니다.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [retry])
-  const changedEntries = Object.entries(changes)
-  async function saveAll() {
-    if (!changedEntries.length || saving) return
-    setSaving(true); setError(''); setMessage('')
-    try {
-      const { data } = await updateCustomerLoyaltyGrades({
-        changes: changedEntries.map(([customerId, loyaltyGrade]) => ({ customerId: Number(customerId), loyaltyGrade })),
-      })
-      setMessage(`${data.updatedCount}명의 단골 등급을 저장했습니다.`)
-      setRetry(value => value + 1)
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '등급을 저장하지 못했습니다.') }
-    finally { setSaving(false) }
-  }
+  const sortedPolicies = [...policies].sort((first, second) => first.requiredTourCount - second.requiredTourCount)
   return <>
-    <Heading title="고객 관리" description="고객별 단골 등급만 수정하고 변경사항을 한 번에 저장합니다." action={<button className="staff-button primary" disabled={!changedEntries.length || saving} onClick={() => void saveAll()}>{saving ? '저장 중…' : `변경사항 일괄 저장 (${changedEntries.length})`}</button>} />
-    {message && <p className="staff-message" role="status">{message}</p>}
+    <Heading title="등급 관리" description="완료한 여행 횟수에 따라 고객 등급이 자동으로 변경됩니다." />
     {error && !loading && <p className="staff-message error" role="alert">{error}</p>}
-    {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet"><div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>고객명</th><th>현재 등급</th><th>변경 등급</th></tr></thead><tbody>
-      {customers.map(customer => <tr key={customer.customerId}><td><strong>{customer.name}</strong></td><td>{loyaltyLabels[customer.loyaltyGrade]}</td><td><select aria-label={`${customer.name} 단골 등급`} value={changes[customer.customerId] ?? customer.loyaltyGrade} onChange={event => { const grade = event.target.value as ApiLoyaltyGrade; setChanges(current => { const next = { ...current }; if (grade === customer.loyaltyGrade) delete next[customer.customerId]; else next[customer.customerId] = grade; return next }) }}><option value="NORMAL">일반</option><option value="VIP">VIP</option></select></td></tr>)}
-    </tbody></table></div></section>}
+    {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <>
+      <section className="staff-loyalty-overview" aria-label="등급 운영 방식">
+        <div><span>1</span><strong>여행 완료</strong><p>결제한 여행이 완료 상태가 되면 횟수에 포함됩니다.</p></div>
+        <div><span>2</span><strong>횟수 재계산</strong><p>같은 여행을 여러 번 예약해도 한 번으로 계산합니다.</p></div>
+        <div><span>3</span><strong>등급 자동 반영</strong><p>충족한 기준 중 가장 높은 등급으로 변경됩니다.</p></div>
+      </section>
+      <section className="staff-sheet staff-loyalty-sheet">
+        <div className="staff-section-heading"><div><p className="staff-kicker">현재 서버 정책</p><h2>등급별 적용 기준</h2></div><span>개별 고객을 직접 지정하지 않습니다.</span></div>
+        <div className="staff-table-scroll" tabIndex={0}><table className="staff-table staff-loyalty-table"><caption className="sr-only">완료 여행 횟수에 따른 고객 등급과 할인율</caption><thead><tr><th scope="col">고객 등급</th><th scope="col">완료 여행 기준</th><th scope="col">할인율</th><th scope="col">등급 반영</th></tr></thead><tbody>
+          {sortedPolicies.map(policy => <tr key={policy.grade}><td><strong>{loyaltyLabels[policy.grade]}</strong>{policy.grade === 'VIP' && <span className="staff-grade-badge">우수 고객</span>}</td><td><strong>{policy.requiredTourCount}회 이상</strong><small>결제 후 완료된 서로 다른 여행</small></td><td><strong>{policy.discountRate}%</strong><small>{policy.discountRate ? '등급 할인 기준' : '기본 할인 없음'}</small></td><td><span className="staff-state preview">자동 산정</span></td></tr>)}
+          {!sortedPolicies.length && <tr><td className="staff-loyalty-empty" colSpan={4}>등록된 등급 기준이 없습니다.</td></tr>}
+        </tbody></table></div>
+      </section>
+      <aside className="staff-loyalty-notice">
+        <strong>운영 안내</strong>
+        <p>등급 기준과 할인율은 서버에 고정된 정책입니다. 여행 완료 시 등급은 자동으로 다시 계산되며, 현재 API에서는 정책 조회만 지원합니다.</p>
+      </aside>
+    </>}
   </>
 }
