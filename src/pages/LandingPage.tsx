@@ -13,7 +13,7 @@ import { HeroDatePicker } from '../components/HeroDatePicker'
 import { HeroSelect } from '../components/HeroSelect'
 import type { GlobeMood } from '../types/landing'
 
-export default function LandingPage({ onMoodChange }: { onMoodChange?: (mood: GlobeMood) => void }) {
+export default function LandingPage({ onMoodChange, showSearch = true }: { onMoodChange?: (mood: GlobeMood) => void; showSearch?: boolean }) {
   const [active,setActive]=useState(0)
   const [focused,setFocused]=useState(false)
   const [searching,setSearching]=useState(false)
@@ -29,13 +29,13 @@ export default function LandingPage({ onMoodChange }: { onMoodChange?: (mood: Gl
   return <div className={`landing-experience mood-${mood.id}`}>
     <section className="landing-hero" aria-label="CUTY 테마 여행">
       <div className="landing-copy"><AppLink className="landing-hero-brand" href="/" aria-label="CUTY 홈"><BrandMark large/></AppLink><h1 key={mood.id}>{mood.title}</h1><p className="landing-description" key={`${mood.id}-description`}>{mood.description}</p><AppLink className="landing-guide-link" href="/tours"><strong>Curate Your Travel</strong><span>여행 둘러보기 ↗</span></AppLink></div>
-      <form className="landing-search" role="search" aria-label="여행 조건 검색" onFocusCapture={()=>setFocused(true)} onBlurCapture={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))setFocused(false)}} onSubmit={e=>{e.preventDefault();setSearching(true)}}>
+      {showSearch && <form className="landing-search" role="search" aria-label="여행 조건 검색" onFocusCapture={()=>setFocused(true)} onBlurCapture={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))setFocused(false)}} onSubmit={e=>{e.preventDefault();setSearching(true)}}>
         <HeroSelect className="hero-search-theme" label="어떤 여행" name="theme" value={searchTheme} onChange={setSearchTheme} options={themes.map(t=>({value:t.id,label:themeLabels[t.id]}))}/>
         <HeroDatePicker className="hero-search-date" label="출발 희망일" name="date" min={getEarliestDepartureDate()} value={searchDate} onChange={setSearchDate}/>
         <label className="hero-search-people"><span>함께할 인원</span><input type="number" name="travelers" min="1" step="1" value={travelers} readOnly={searchTheme==='romance'} onChange={event=>setTravelers(event.currentTarget.value)} aria-describedby={searchTheme==='romance'?'landing-honeymoon-help':undefined}/>{searchTheme==='romance'&&<small id="landing-honeymoon-help">허니문은 2명 신청</small>}</label>
         <label className="hero-search-keyword"><span>떠나고 싶은 곳</span><input type="search" name="q" placeholder="여행지·상품명" aria-label="여행지·상품명"/></label>
         <button type="submit" className="hero-search-submit" disabled={searching}>여행 찾기<Icon name="search" size={20}/></button>
-      </form>
+      </form>}
       <p className="sr-only" aria-live="polite">{mood.label} 스노우볼. {mood.scene}</p>
       {searching&&<div className="hero-search-loading"><PlaneLoader/></div>}
     </section>

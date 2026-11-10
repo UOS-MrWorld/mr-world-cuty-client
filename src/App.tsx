@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { getTour as requestTour } from './api/tour'
+import { getTravelHistory } from './api/booking'
 import { AppLink } from './components/AppLink'
 import { BrandMark } from './components/BrandMark'
 import { FlowSteps } from './components/FlowSteps'
@@ -26,6 +27,7 @@ import { useReducedMotion } from './hooks/useReducedMotion'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import type { GlobeMood } from './types/landing'
 import type { VoiceResponse, VoiceScreenContext, VoiceTourContext } from './types/voiceApi'
+import type { TravelHistoryResponse } from './types/bookingApi'
 const SnowGlobe = lazy(() => import('./components/SnowGlobe'))
 const StaffPage = lazy(() => import('./pages/StaffPage'))
 
@@ -79,12 +81,13 @@ function CutyApp() {
   const match = pathname.match(/^\/tours\/([^/]+)(?:\/(configure|checkout|preview))?$/)
   const routeTourId = match?.[1]
   const screen = match?.[2]
-  const isStaff = /^\/staff\/(?:tours(?:\/new|\/[^/]+\/edit)?|inventory|customers)$/.test(pathname)
+  const isStaff = /^\/staff\/(?:tours(?:\/new|\/\d+(?:\/edit)?)?|inventory|customers(?:\/\d+)?)$/.test(pathname)
   const isLanding = pathname === '/'
   const isAuth = pathname === '/login' || pathname === '/signup'
   const authOnly = !authSession && (isLanding || isAuth)
   const reducedMotion = useReducedMotion()
   const [homeMood, setHomeMood] = useState<GlobeMood>('honeymoon')
+  const [loginTravelHistory, setLoginTravelHistory] = useState<TravelHistoryResponse[] | null>(null)
   const apiTourRequested = Boolean(useCustomerApi && routeTourId && /^\d+$/.test(routeTourId))
   const [apiTour, setApiTour] = useState<ReturnType<typeof toDisplayTour> | undefined>()
   const [apiTourLoading, setApiTourLoading] = useState(false)
@@ -219,6 +222,23 @@ function CutyApp() {
   useEffect(() => {
     setVoicePendingAction(null)
   }, [route])
+
+  useEffect(() => {
+    if (authSession?.role !== 'CUSTOMER' || !accessTokenExpiresAt) {
+      setLoginTravelHistory(null)
+      return
+    }
+    const storageKey = `cuty:travel-history-popup:${authSession.memberId}:${accessTokenExpiresAt}`
+    if (window.sessionStorage.getItem(storageKey)) return
+    window.sessionStorage.setItem(storageKey, 'requested')
+    let active = true
+    void getTravelHistory({ page: 0, size: 6 }).then(response => {
+      if (active && response.data.content.length) setLoginTravelHistory(response.data.content)
+    }).catch(() => {
+      // 로그인 흐름은 유지하고 이전 여행 탭에서 다시 조회할 수 있게 둔다.
+    })
+    return () => { active = false }
+  }, [accessTokenExpiresAt, authSession])
 
   useEffect(() => {
     if (!authSession || !accessTokenExpiresAt) {
@@ -361,7 +381,7 @@ function CutyApp() {
       if (!authSession || authSession.role !== 'STAFF') return <div className="empty-state"><h1>직원 권한이 필요한 화면이에요.</h1><p>고객 계정에서는 상품·재고·고객 정보를 관리할 수 없어요.</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 둘러보기</AppLink><AppLink className="button primary" href={`/login?next=${encodeURIComponent(pathname)}`}>직원 계정으로 로그인</AppLink></div></div>
       return <Suspense fallback={<p role="status">직원 화면을 불러오는 중입니다.</p>}><StaffPage path={pathname} /></Suspense>
     }
-    if (pathname === '/') return <LandingPage onMoodChange={setHomeMood} />
+    if (pathname === '/') return <LandingPage onMoodChange={setHomeMood} showSearch={authSession?.role !== 'STAFF'} />
     if (pathname === '/tours') {
       return <ExplorePage cartIds={visibleCartIds} useApi={useCustomerApi} />
     }
@@ -518,6 +538,11 @@ function CutyApp() {
           <small>© Mr.CUTY.</small>
       </footer>)}
       {canUseVoice && voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display="floating" onClose={closeVoice} />}
+      {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={() => setLoginTravelHistory(null)}>
+        <p className="login-history-intro">완료된 여행 목록입니다. 전체 내역은 내 여행에서 확인할 수 있어요.</p>
+        <div className="login-history-list">{loginTravelHistory.map(item => <article key={item.bookingId}><img src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><strong>{item.tourName}</strong><span>{item.startDate} ~ {item.endDate}</span><small>결제 금액 {item.paidAmount.toLocaleString('ko-KR')}원</small></div></article>)}</div>
+        <div className="action-row"><button className="button secondary" type="button" onClick={() => setLoginTravelHistory(null)}>닫기</button><button className="button primary" type="button" onClick={() => { setLoginTravelHistory(null); navigate('/my-trips?tab=history') }}>이전 여행 전체 보기</button></div>
+      </PreviewDialog>}
       {sessionWarning && <PreviewDialog title="세션을 연장하시겠습니까?" onClose={() => setSessionWarning(false)}>
         <p>로그인 세션이 5분 안에 만료됩니다. 작업을 계속하려면 세션을 연장해 주세요.</p>
         {sessionError && <p className="notice notice-error" role="alert">{sessionError}</p>}

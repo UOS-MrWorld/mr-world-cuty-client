@@ -2,6 +2,7 @@ import { apiClient } from './client'
 import type { ApiLoyaltyGrade, PageResponse } from '../types/api'
 import type {
   CustomerListParams,
+  CustomerDetailResponse,
   CustomerSummaryResponse,
   DiscountResponse,
   LoyaltyGradeBatchUpdateRequest,
@@ -11,6 +12,9 @@ import type {
 
 export const getCustomers = (params?: CustomerListParams) =>
   apiClient.get<PageResponse<CustomerSummaryResponse>>('/staff/customers', { params })
+
+export const getCustomerDetail = (customerId: number) =>
+  apiClient.get<CustomerDetailResponse>(`/staff/customers/${customerId}`)
 
 export const getLoyaltyPolicy = () =>
   apiClient.get<LoyaltyPolicyResponse>('/staff/loyalty-policy')

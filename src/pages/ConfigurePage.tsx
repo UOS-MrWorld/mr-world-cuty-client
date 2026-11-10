@@ -177,7 +177,8 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                 {(Object.keys(mealLabels) as TravelMeal[]).map((meal) => (
                   <label key={meal} className={`choice-card ${draft.meal === meal ? 'selected' : ''}`}>
                     <input type="radio" name="meal" checked={draft.meal === meal} onChange={() => update({ meal })} />
-                    <strong>{mealLabels[meal]}</strong>
+                    <strong>{meal === 'steak' ? '고급 레스토랑' : mealLabels[meal]}</strong>
+                    {meal === 'steak' && <small>스테이크와 샴페인 포함</small>}
                     {draft.meal === meal && <span className="selection-label">선택됨</span>}
                   </label>
                 ))}

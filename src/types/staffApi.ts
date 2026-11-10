@@ -15,6 +15,12 @@ export interface CustomerSummaryResponse {
   loyaltyDiscountApplied: boolean
 }
 
+export interface CustomerDetailResponse extends CustomerSummaryResponse {
+  loginId: string
+  address: string
+  loyaltyDiscountAppliedAt: LocalDateTimeString | null
+}
+
 export interface LoyaltyPolicyResponse {
   policies: Array<{
     grade: ApiLoyaltyGrade
