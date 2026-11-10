@@ -261,31 +261,47 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
 .login-history-list small { margin-top: 4px; color: var(--cuty-vivid-blue); font-size: 10px; font-weight: 750; }
 .login-history-list + .action-row { justify-content: flex-end; margin-top: 20px; }
 
-.home-welcome-message {
+.home-welcome-transition {
   position: fixed;
-  z-index: 120;
-  top: clamp(110px, 17vh, 180px);
-  left: 50%;
-  width: max-content;
-  max-width: calc(100vw - 40px);
-  padding: 13px 22px;
-  border-radius: 999px;
-  color: #fff;
-  background: rgb(12 113 246 / .92);
-  box-shadow: 0 14px 38px rgb(5 70 166 / .28);
-  font-size: clamp(14px, 1.35vw, 19px);
-  font-weight: 780;
-  letter-spacing: -.025em;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px;
+  background: rgb(24 92 184 / .3);
+  -webkit-backdrop-filter: blur(14px) saturate(.82);
+  backdrop-filter: blur(14px) saturate(.82);
   pointer-events: none;
-  transform: translateX(-50%);
-  animation: home-welcome-float 1.9s cubic-bezier(.2, .72, .2, 1) both;
+  animation: home-welcome-screen 2.6s ease both;
 }
 
-@keyframes home-welcome-float {
-  0% { opacity: 0; transform: translate(-50%, -18px); }
-  20% { opacity: 1; transform: translate(-50%, 0); }
-  72% { opacity: 1; transform: translate(-50%, -4px); }
-  100% { opacity: 0; transform: translate(-50%, -11px); }
+.home-welcome-transition p {
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(20px, 3vw, 42px);
+  font-weight: 780;
+  line-height: 1.35;
+  letter-spacing: -.045em;
+  text-align: center;
+  text-shadow: 0 4px 24px rgb(7 47 113 / .32);
+  clip-path: inset(0 100% 0 0);
+  animation: home-welcome-copy 2.6s cubic-bezier(.2, .72, .2, 1) both;
+}
+
+@keyframes home-welcome-screen {
+  0% { opacity: 0; }
+  14%, 76% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes home-welcome-copy {
+  0%, 12% { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateY(7px); }
+  52% { opacity: 1; clip-path: inset(0 0 0 0); transform: translateY(0); }
+  76% { opacity: 1; clip-path: inset(0 0 0 0); transform: translateY(0); }
+  100% { opacity: 0; clip-path: inset(0 0 0 0); transform: translateY(-5px); }
 }
 
 .auth-main .auth-card {
@@ -415,10 +431,17 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
   :is(.surface-card, .booking-panel, .flow-summary.surface-card, .catalog-filterbar) {
     background: #fff;
   }
+  .home-welcome-transition {
+    background: rgb(31 91 181 / .94);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-welcome-message { animation: home-welcome-fade 1.2s ease both; }
+  .home-welcome-transition,
+  .home-welcome-transition p { animation: home-welcome-fade 1.3s ease both; }
+  .home-welcome-transition p { clip-path: none; transform: none; }
 }
 
 @keyframes home-welcome-fade {

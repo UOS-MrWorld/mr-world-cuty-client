@@ -291,7 +291,7 @@ function CutyApp() {
     homeWelcomeTimerRef.current = window.setTimeout(() => {
       setShowHomeWelcome(false)
       homeWelcomeTimerRef.current = null
-    }, reducedMotion ? 1200 : 1900)
+    }, reducedMotion ? 1300 : 2600)
   }
 
   function handleVoiceResponse(response: VoiceResponse) {
@@ -556,7 +556,7 @@ function CutyApp() {
           <small>© Mr.CUTY.</small>
       </footer>)}
       {canUseVoice && voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display="floating" onClose={closeVoice} />}
-      {showHomeWelcome && <div className="home-welcome-message" role="status" aria-live="polite">새로운 목적지로 출발해보아요</div>}
+      {showHomeWelcome && <div className="home-welcome-transition" role="status" aria-live="polite"><p>새로운 목적지로 출발해보아요</p></div>}
       {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={closeLoginTravelHistory}>
         <p className="login-history-intro">완료된 여행 목록입니다. 전체 내역은 내 여행에서 확인할 수 있어요.</p>
         <div className="login-history-list">{loginTravelHistory.map(item => <article key={item.bookingId}><img src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><strong>{item.tourName}</strong><span>{item.startDate} ~ {item.endDate}</span><small>결제 금액 {item.paidAmount.toLocaleString('ko-KR')}원</small></div></article>)}</div>
