@@ -3,12 +3,16 @@ import type { ApiLoyaltyGrade, LocalDateTimeString, PagingParams } from './api'
 export interface CustomerListParams extends PagingParams {
   keyword?: string
   loyaltyGrade?: ApiLoyaltyGrade
+  discountApplied?: boolean
 }
 
 export interface CustomerSummaryResponse {
   customerId: number
   name: string
+  phoneNum: string
+  completedTourCount: number
   loyaltyGrade: ApiLoyaltyGrade
+  loyaltyDiscountApplied: boolean
 }
 
 export interface LoyaltyPolicyResponse {
@@ -17,6 +21,12 @@ export interface LoyaltyPolicyResponse {
     requiredTourCount: number
     discountRate: number
   }>
+}
+
+export interface DiscountResponse {
+  targetCount: number
+  appliedCount: number
+  skippedCount: number
 }
 
 export interface LoyaltyGradeBatchUpdateRequest {
