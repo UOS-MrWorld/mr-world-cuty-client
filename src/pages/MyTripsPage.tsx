@@ -112,6 +112,10 @@ interface SavedDraftEntry {
   draft: TravelDraft
 }
 
+function SavedDraftCard({ tour, draft }: SavedDraftEntry) {
+  return <article className="draft-card surface-card"><img src={tour.image} alt={tour.imageAlt} /><div className="draft-card-main"><h2>{tour.title}</h2><p className="muted">{draft.date || '출발일 미선택'} · {tour.duration} · {draft.travelers}명 · {gradeLabels[draft.grade]}</p><strong>최신 금액은 구성 화면에서 확인해 주세요.</strong></div><div className="draft-card-actions"><span className="status-pill draft-action-box">구성 중</span><AppLink className="button secondary draft-action-box" href={`/tours/${tour.id}/configure`}>이어서 구성 <Icon name="arrow" size={17} /></AppLink></div></article>
+}
+
 export function MyTripsPage({ draftEntries, savedToursLoading, savedToursError, onRetrySavedTours }: {
   draftEntries: SavedDraftEntry[]
   savedToursLoading: boolean
@@ -138,9 +142,7 @@ export function MyTripsPage({ draftEntries, savedToursLoading, savedToursError, 
       {tab === 'drafts' && <>
         {savedToursLoading && <p className="notice" role="status">담은 상품을 불러오는 중입니다.</p>}
         {savedToursError && <p className="notice notice-error" role="alert">{savedToursError} <button className="text-link" type="button" onClick={onRetrySavedTours}>다시 시도</button></p>}
-        {draftEntries.length ? <div className="draft-list">{draftEntries.map(({ tour, draft }) =>
-          <article className="draft-card surface-card" key={tour.id}><img src={tour.image} alt={tour.imageAlt} /><div className="draft-card-main"><h2>{tour.title}</h2><p className="muted">{draft.date || '출발일 미선택'} · {tour.duration} · {draft.travelers}명 · {gradeLabels[draft.grade]}</p><strong>최신 금액은 구성 화면에서 확인해 주세요.</strong></div><div className="draft-card-actions"><span className="status-pill draft-action-box">구성 중</span><AppLink className="button secondary draft-action-box" href={`/tours/${tour.id}/configure`}>이어서 구성 <Icon name="arrow" size={17} /></AppLink></div></article>
-        )}</div> : !savedToursLoading && <div className="empty-state"><Icon name="cart" size={36} /><h2>장바구니가 비어 있어요.</h2><p>상품을 고르고 일정·등급·옵션을 담아 보세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
+        {draftEntries.length ? <div className="draft-list">{draftEntries.map(entry => <SavedDraftCard key={entry.tour.id} {...entry} />)}</div> : !savedToursLoading && <div className="empty-state"><Icon name="cart" size={36} /><h2>장바구니가 비어 있어요.</h2><p>상품을 고르고 일정·등급·옵션을 담아 보세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
       </>}
       {authSession?.role === 'CUSTOMER' && (tab === 'bookings' || tab === 'history') && <ApiTripsPanel tab={tab} />}
       {authSession?.role === 'CUSTOMER' && tab === 'profile' && <ApiProfilePanel />}
@@ -149,19 +151,24 @@ export function MyTripsPage({ draftEntries, savedToursLoading, savedToursError, 
   </>
 }
 
-export function CartPage({ cartIds, onCartToggle, availableTours, savedToursLoading, savedToursError, onRetrySavedTours }: {
+export function CartPage({ cartIds, onCartToggle, availableTours, draftEntries, savedToursLoading, savedToursError, onRetrySavedTours }: {
   cartIds: string[]
   onCartToggle: (id: string) => void
   availableTours: Tour[]
+  draftEntries: SavedDraftEntry[]
   savedToursLoading: boolean
   savedToursError: string
   onRetrySavedTours: () => void
 }) {
-  const cartItems = availableTours.filter(tour => cartIds.includes(tour.id))
+  const draftIds = new Set(draftEntries.map(entry => entry.tour.id))
+  const cartItems = availableTours.filter(tour => cartIds.includes(tour.id) && !draftIds.has(tour.id))
+  const hasItems = draftEntries.length > 0 || cartItems.length > 0
   return <>
     <div className="page-heading"><p className="eyebrow">여행 관리</p><h1>장바구니</h1><p>담은 여행을 확인하고 상품 구성으로 이어가세요.</p></div>
     {savedToursLoading && <p className="notice" role="status">담은 상품을 불러오는 중입니다.</p>}
     {savedToursError && <p className="notice notice-error" role="alert">{savedToursError} <button className="text-link" type="button" onClick={onRetrySavedTours}>다시 시도</button></p>}
-    {cartItems.length ? <div className="product-list">{cartItems.map(tour => <TourCard key={tour.id} tour={tour} onRemove={() => onCartToggle(tour.id)} />)}</div> : !savedToursLoading && <div className="empty-state"><Icon name="cart" size={36} /><h2>장바구니가 비어 있어요.</h2><p>여행 구성을 마친 뒤 장바구니에 담아 주세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
+    {draftEntries.length > 0 && <div className="draft-list">{draftEntries.map(entry => <SavedDraftCard key={entry.tour.id} {...entry} />)}</div>}
+    {cartItems.length > 0 && <div className="product-list">{cartItems.map(tour => <TourCard key={tour.id} tour={tour} onRemove={() => onCartToggle(tour.id)} />)}</div>}
+    {!hasItems && !savedToursLoading && <div className="empty-state"><Icon name="cart" size={36} /><h2>장바구니가 비어 있어요.</h2><p>여행 구성을 마친 뒤 장바구니에 담아 주세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
   </>
 }
