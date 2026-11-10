@@ -88,6 +88,7 @@ function CutyApp() {
   const reducedMotion = useReducedMotion()
   const [homeMood, setHomeMood] = useState<GlobeMood>('honeymoon')
   const [loginTravelHistory, setLoginTravelHistory] = useState<TravelHistoryResponse[] | null>(null)
+  const [showHomeWelcome, setShowHomeWelcome] = useState(false)
   const apiTourRequested = Boolean(useCustomerApi && routeTourId && /^\d+$/.test(routeTourId))
   const [apiTour, setApiTour] = useState<ReturnType<typeof toDisplayTour> | undefined>()
   const [apiTourLoading, setApiTourLoading] = useState(false)
@@ -147,6 +148,7 @@ function CutyApp() {
   const [sessionWarning, setSessionWarning] = useState(false)
   const [sessionError, setSessionError] = useState('')
   const voiceTriggerRef = useRef<HTMLButtonElement>(null)
+  const homeWelcomeTimerRef = useRef<number | null>(null)
   const previousPath = useRef<string | null>(null)
   const visibleCartIds = useCustomerApi ? cartIds.filter(id => /^\d+$/.test(id)) : []
   const savedApiTourIds = Array.from(new Set([
@@ -223,6 +225,10 @@ function CutyApp() {
     setVoicePendingAction(null)
   }, [route])
 
+  useEffect(() => () => {
+    if (homeWelcomeTimerRef.current !== null) window.clearTimeout(homeWelcomeTimerRef.current)
+  }, [])
+
   useEffect(() => {
     if (authSession?.role !== 'CUSTOMER' || !accessTokenExpiresAt) {
       setLoginTravelHistory(null)
@@ -275,6 +281,17 @@ function CutyApp() {
   function closeVoice() {
     setVoiceOpen(false)
     window.requestAnimationFrame(() => voiceTriggerRef.current?.focus())
+  }
+
+  function closeLoginTravelHistory() {
+    setLoginTravelHistory(null)
+    if (pathname !== '/') navigate('/')
+    if (homeWelcomeTimerRef.current !== null) window.clearTimeout(homeWelcomeTimerRef.current)
+    setShowHomeWelcome(true)
+    homeWelcomeTimerRef.current = window.setTimeout(() => {
+      setShowHomeWelcome(false)
+      homeWelcomeTimerRef.current = null
+    }, reducedMotion ? 1200 : 1900)
   }
 
   function handleVoiceResponse(response: VoiceResponse) {
@@ -539,10 +556,11 @@ function CutyApp() {
           <small>© Mr.CUTY.</small>
       </footer>)}
       {canUseVoice && voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display="floating" onClose={closeVoice} />}
-      {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={() => setLoginTravelHistory(null)}>
+      {showHomeWelcome && <div className="home-welcome-message" role="status" aria-live="polite">새로운 목적지로 출발해보아요</div>}
+      {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={closeLoginTravelHistory}>
         <p className="login-history-intro">완료된 여행 목록입니다. 전체 내역은 내 여행에서 확인할 수 있어요.</p>
         <div className="login-history-list">{loginTravelHistory.map(item => <article key={item.bookingId}><img src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><strong>{item.tourName}</strong><span>{item.startDate} ~ {item.endDate}</span><small>결제 금액 {item.paidAmount.toLocaleString('ko-KR')}원</small></div></article>)}</div>
-        <div className="action-row"><button className="button secondary" type="button" onClick={() => setLoginTravelHistory(null)}>닫기</button><button className="button primary" type="button" onClick={() => { setLoginTravelHistory(null); navigate('/my-trips?tab=history') }}>이전 여행 전체 보기</button></div>
+        <div className="action-row"><button className="button secondary" type="button" onClick={closeLoginTravelHistory}>닫기</button><button className="button primary" type="button" onClick={() => { setLoginTravelHistory(null); navigate('/my-trips?tab=history') }}>이전 여행 전체 보기</button></div>
       </PreviewDialog>}
       {sessionWarning && <PreviewDialog title="세션을 연장하시겠습니까?" onClose={() => setSessionWarning(false)}>
         <p>로그인 세션이 5분 안에 만료됩니다. 작업을 계속하려면 세션을 연장해 주세요.</p>

@@ -261,6 +261,33 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
 .login-history-list small { margin-top: 4px; color: var(--cuty-vivid-blue); font-size: 10px; font-weight: 750; }
 .login-history-list + .action-row { justify-content: flex-end; margin-top: 20px; }
 
+.home-welcome-message {
+  position: fixed;
+  z-index: 120;
+  top: clamp(110px, 17vh, 180px);
+  left: 50%;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  padding: 13px 22px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgb(12 113 246 / .92);
+  box-shadow: 0 14px 38px rgb(5 70 166 / .28);
+  font-size: clamp(14px, 1.35vw, 19px);
+  font-weight: 780;
+  letter-spacing: -.025em;
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: home-welcome-float 1.9s cubic-bezier(.2, .72, .2, 1) both;
+}
+
+@keyframes home-welcome-float {
+  0% { opacity: 0; transform: translate(-50%, -18px); }
+  20% { opacity: 1; transform: translate(-50%, 0); }
+  72% { opacity: 1; transform: translate(-50%, -4px); }
+  100% { opacity: 0; transform: translate(-50%, -11px); }
+}
+
 .auth-main .auth-card {
   border: 1px solid #fff;
   background: #fff;
@@ -388,4 +415,13 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
   :is(.surface-card, .booking-panel, .flow-summary.surface-card, .catalog-filterbar) {
     background: #fff;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-welcome-message { animation: home-welcome-fade 1.2s ease both; }
+}
+
+@keyframes home-welcome-fade {
+  0%, 100% { opacity: 0; }
+  18%, 75% { opacity: 1; }
 }
