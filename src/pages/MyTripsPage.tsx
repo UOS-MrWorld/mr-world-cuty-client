@@ -13,7 +13,7 @@ import type { BookingSummaryResponse, TravelHistoryResponse } from '../types/boo
 import type { MemberInfoResponse } from '../types/memberApi'
 
 type MyTripsTab = 'drafts' | 'bookings' | 'history' | 'profile'
-const tabLabels: Record<MyTripsTab, string> = { drafts: '저장한 구성', bookings: '신청한 여행', history: '이전 여행', profile: '개인정보' }
+const tabLabels: Record<MyTripsTab, string> = { drafts: '장바구니', bookings: '신청한 여행', history: '이전 여행', profile: '개인정보' }
 const tabIds = Object.keys(tabLabels) as MyTripsTab[]
 const bookingStatusLabels = { PENDING: '결제 전', PAID: '결제 완료', CANCELLED: '예약 취소' }
 const tourStatusLabels = { RECRUITING: '예약한 여행 · 모집 중', CONFIRMED: '예약한 여행 · 출발 확정', COMPLETED: '완료한 여행', CANCELLED: '취소된 여행' }
@@ -136,12 +136,12 @@ export function MyTripsPage({ draftEntries, savedToursLoading, savedToursError, 
     <div className="collection-tabs my-trips-tabs" role="tablist" aria-label="내 여행 분류">{tabIds.map((id, index) => <button id={`my-trips-tab-${id}`} role="tab" type="button" aria-selected={tab === id} aria-controls={`my-trips-panel-${id}`} tabIndex={tab === id ? 0 : -1} key={id} onClick={() => switchTab(id)} onKeyDown={event => tabKeyDown(event, index)}>{tabLabels[id]}{counts[id] !== undefined && <b>{counts[id]}</b>}</button>)}</div>
     <div role="tabpanel" id={`my-trips-panel-${tab}`} aria-labelledby={`my-trips-tab-${tab}`} className="my-trips-panel" tabIndex={0}>
       {tab === 'drafts' && <>
-        <p className="notice">저장한 구성은 이 브라우저에 보관됩니다.</p>
-        {savedToursLoading && <p className="notice" role="status">저장한 서버 상품을 불러오는 중입니다.</p>}
+        <p className="notice">담은 구성은 이 브라우저에 보관됩니다.</p>
+        {savedToursLoading && <p className="notice" role="status">담은 상품을 불러오는 중입니다.</p>}
         {savedToursError && <p className="notice notice-error" role="alert">{savedToursError} <button className="text-link" type="button" onClick={onRetrySavedTours}>다시 시도</button></p>}
         {draftEntries.length ? <div className="draft-list">{draftEntries.map(({ tour, draft }) =>
-          <article className="draft-card surface-card" key={tour.id}><img src={tour.image} alt={tour.imageAlt} /><div><span className="status-pill">구성 중</span><h2>{tour.title}</h2><p className="muted">{draft.date || '출발일 미선택'} · {tour.duration} · {draft.travelers}명 · {gradeLabels[draft.grade]}</p><strong>서버에서 최신 금액 확인</strong></div><AppLink className="button secondary" href={`/tours/${tour.id}/configure`}>이어서 구성 <Icon name="arrow" size={17} /></AppLink></article>
-        )}</div> : !savedToursLoading && <div className="empty-state"><Icon name="compass" size={36} /><h2>저장한 여행이 없어요.</h2><p>상품을 고르고 일정·등급·옵션을 저장해 보세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
+          <article className="draft-card surface-card" key={tour.id}><img src={tour.image} alt={tour.imageAlt} /><div><span className="status-pill">구성 중</span><h2>{tour.title}</h2><p className="muted">{draft.date || '출발일 미선택'} · {tour.duration} · {draft.travelers}명 · {gradeLabels[draft.grade]}</p><strong>최신 금액은 구성 화면에서 확인해 주세요.</strong></div><AppLink className="button secondary" href={`/tours/${tour.id}/configure`}>이어서 구성 <Icon name="arrow" size={17} /></AppLink></article>
+        )}</div> : !savedToursLoading && <div className="empty-state"><Icon name="cart" size={36} /><h2>장바구니가 비어 있어요.</h2><p>상품을 고르고 일정·등급·옵션을 담아 보세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
       </>}
       {authSession?.role === 'CUSTOMER' && (tab === 'bookings' || tab === 'history') && <ApiTripsPanel tab={tab} />}
       {authSession?.role === 'CUSTOMER' && tab === 'profile' && <ApiProfilePanel />}
@@ -161,7 +161,7 @@ export function CartPage({ cartIds, onCartToggle, availableTours, savedToursLoad
   const cartItems = availableTours.filter(tour => cartIds.includes(tour.id))
   return <>
     <div className="page-heading"><p className="eyebrow">여행 관리</p><h1>장바구니</h1><p>담은 여행을 확인하고 상품 구성으로 이어가세요.</p></div>
-    {savedToursLoading && <p className="notice" role="status">담은 서버 상품을 불러오는 중입니다.</p>}
+    {savedToursLoading && <p className="notice" role="status">담은 상품을 불러오는 중입니다.</p>}
     {savedToursError && <p className="notice notice-error" role="alert">{savedToursError} <button className="text-link" type="button" onClick={onRetrySavedTours}>다시 시도</button></p>}
     {cartItems.length ? <div className="product-list">{cartItems.map(tour => <TourCard key={tour.id} tour={tour} onRemove={() => onCartToggle(tour.id)} />)}</div> : !savedToursLoading && <div className="empty-state"><Icon name="cart" size={36} /><h2>장바구니가 비어 있어요.</h2><p>여행 구성을 마친 뒤 장바구니에 담아 주세요.</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>}
   </>

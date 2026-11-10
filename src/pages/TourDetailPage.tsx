@@ -58,7 +58,7 @@ export default function TourDetailPage({ tour, draft, onChange, onContinue }: {
           </section>
         </div>
         <aside className="flow-summary booking-panel" aria-labelledby="booking-panel-title">
-          <div className="booking-panel-header"><h2 id="booking-panel-title">일정·인원 선택</h2><span>{tour.source === 'api' ? '서버 상품' : '예시 상품'}</span></div>
+          <div className="booking-panel-header"><h2 id="booking-panel-title">일정·인원 선택</h2>{tour.source !== 'api' && <span>예시 상품</span>}</div>
           <div className="starting-price"><small>{gradeLabels[minimumGrade(tour)]} 기본 구성 · 1인</small><p><strong>{formatPrice(tour.price)}</strong>원~</p></div>
           <form id="detail-booking" noValidate onSubmit={event => {
             event.preventDefault()
@@ -66,7 +66,7 @@ export default function TourDetailPage({ tour, draft, onChange, onContinue }: {
             onContinue()
           }}>
             <label className="field" htmlFor="detail-date">{tour.source === 'api' ? '출발일' : '출발 희망일'}<input ref={dateInput} id="detail-date" type="date" min={tour.source === 'api' ? undefined : getEarliestDepartureDate()} value={draft.date} readOnly={tour.source === 'api'} required aria-invalid={dateError || undefined} aria-describedby={dateError ? 'detail-date-error' : 'detail-date-help'} onInput={event => { update({date:event.currentTarget.value}); setDateError(false) }} /></label>
-            {dateError ? <p className="field-error" id="detail-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p> : <p id="detail-date-help" className="summary-note">{tour.source === 'api' ? '서버에 등록된 출발일이며 변경할 수 없습니다.' : '모집 마감은 출발 7일 전이에요.'}</p>}
+            {dateError ? <p className="field-error" id="detail-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p> : <p id="detail-date-help" className="summary-note">{tour.source === 'api' ? '출발일은 변경할 수 없습니다.' : '모집 마감은 출발 7일 전이에요.'}</p>}
             <label className="field" htmlFor="detail-travelers">여행 인원<input id="detail-travelers" type="number" min="1" step="1" value={draft.travelers} readOnly={tour.theme === 'romance'} onChange={event => update({travelers:Number(event.currentTarget.value)})} /></label>
             <p className="summary-note">{tour.theme === 'romance' ? '허니문 예약은 2명' : '일반 투어 예약 인원 상한 없음'} · 전체 결제 인원 3명 이상이면 마감일에 출발 확정</p>
             <div className="summary-total"><span>{draft.travelers}명 {tour.source === 'api' ? '기본가 합계' : '예상 합계'}</span><strong>{formatPrice(tour.source === 'api' ? tour.price * draft.travelers : estimate.total)}<small>원</small></strong></div>

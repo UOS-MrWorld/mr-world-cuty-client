@@ -57,11 +57,11 @@ export function BookingPreviewPage({ tour }: { tour: Tour; draft: TravelDraft })
     }
   }
 
-  if (loading) return <p className="notice" role="status">서버에서 예약 상세를 불러오는 중입니다.</p>
+  if (loading) return <p className="notice" role="status">예약 상세를 불러오는 중입니다.</p>
   if (!booking) return <div className="empty-state"><Icon name="compass" size={36} /><h1>예약 상세를 불러오지 못했어요.</h1><p>{errorMessage}</p><AppLink className="button secondary" href="/my-trips?tab=bookings">예약 목록으로</AppLink></div>
 
   return <>
-    <div className="page-heading"><p className="eyebrow">예약 상세</p><h1>{booking.tour.tourName}</h1><p>예약·결제·출발 상태를 서버 기준으로 확인합니다.</p></div>
+    <div className="page-heading"><p className="eyebrow">예약 상세</p><h1>{booking.tour.tourName}</h1><p>예약·결제·출발 상태를 확인하세요.</p></div>
     {notice && <p className="notice" role="status">{notice}</p>}
     {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
     <div className="flow-layout"><div className="flow-main">

@@ -20,10 +20,6 @@ import { findDrinkOption, toQuoteRequest } from '../data/bookingApiAdapter'
 import type { QuoteResponse } from '../types/tourApi'
 import type { HotelGrade, Tour, TravelDraft, TravelGrade, TravelMeal, TravelTransport } from '../types/travel'
 
-function adjustment(value: number) {
-  return value === 0 ? '추가금 없음' : `${value > 0 ? '+' : '−'} ${formatPrice(Math.abs(value))}원 / 1인`
-}
-
 export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCart, onCartToggle }: {
   tour: Tour
   draft: TravelDraft
@@ -41,7 +37,6 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
   const [quoteError, setQuoteError] = useState('')
   const estimate = getEstimate(tour, draft)
   const defaults = getGradeDefaults(tour, draft.grade)
-  const defaultEstimate = getEstimate(tour, { ...draft, ...defaults })
   const champagneOption = findDrinkOption(tour, 'CHAMPAGNE')
   const coffeeOption = findDrinkOption(tour, 'COFFEE')
   const champagneIncluded = tour.source !== 'api' && draft.grade === 'premium'
@@ -67,10 +62,6 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
 
   function update(value: Partial<TravelDraft>) {
     onChange(normalizeDraft(tour, { ...draft, ...value }))
-  }
-
-  function difference(value: Partial<TravelDraft>) {
-    return getEstimate(tour, { ...draft, ...defaults, ...value }).perPerson - defaultEstimate.perPerson
   }
 
   return (
@@ -102,7 +93,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                     update({ date: event.currentTarget.value })
                     setDateError(false)
                   }} />
-                <small id="travel-date-help" className="muted">{tour.source === 'api' ? '서버에 등록된 출발일 · 출발 7일 전 모집 마감' : '출발 7일 전 모집 마감 · 실제 출발 일정은 별도 확인이 필요합니다.'}</small>
+                <small id="travel-date-help" className="muted">출발 7일 전 모집 마감</small>
                 {dateError && <p className="field-error" id="travel-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p>}
               </div>
               <div className="field">
@@ -139,18 +130,17 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                       <strong>{gradeLabels[grade]}{draft.grade === grade && <span className="selection-label"> · 선택됨</span>}</strong>
                       <span>{hotelLabels[gradeDefaults[grade].hotel]}</span>
                       <span>{mealLabels[gradeDefaults[grade].meal]}{tour.source !== 'api' && grade === 'premium' ? ' · 샴페인 포함' : ''}</span>
-                      <small>{unavailable ? '이 상품에서 선택할 수 없는 등급' : tour.source === 'api' ? '선택 후 서버에서 금액 계산' : `${formatPrice(price)}원 / 1인`}</small>
+                      <small>{unavailable ? '선택할 수 없는 등급' : tour.source === 'api' ? `${hotelLabels[gradeDefaults[grade].hotel]} · ${mealLabels[gradeDefaults[grade].meal]}` : `${formatPrice(price)}원 / 1인`}</small>
                     </label>
                   )
                 })}
               </div>
             </fieldset>
-            <p className="notice" role="status">{changeNotice || (tour.source === 'api' ? '선택한 구성은 서버 Quote로 즉시 계산됩니다.' : '표시 금액은 예시 가격입니다.')}</p>
+            {changeNotice && <p className="notice" role="status">{changeNotice}</p>}
           </section>
 
           <section className="surface-card">
             <h2>호텔·교통·식사</h2>
-            <p className="muted">{tour.source === 'api' ? '선택 가능 범위와 금액은 서버 Quote 응답을 따릅니다.' : '등급 기본 구성 대비 변경 금액이 표시됩니다. 실제 선택 가능 범위와 차액은 확정 전입니다.'}</p>
             <fieldset className="option-fieldset">
               <legend>호텔</legend>
               <div className="choice-grid">
@@ -158,7 +148,6 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                   <label key={hotel} className={`choice-card ${draft.hotel === hotel ? 'selected' : ''}`}>
                     <input type="radio" name="hotel" checked={draft.hotel === hotel} onChange={() => update({ hotel })} />
                     <strong>{hotelLabels[hotel]}</strong>
-                    <small>{hotel === defaults.hotel ? '등급 기본 구성' : tour.source === 'api' ? '서버 Quote에 반영' : adjustment(difference({ hotel }))}</small>
                     {draft.hotel === hotel && <span className="selection-label">선택됨</span>}
                   </label>
                 ))}
@@ -175,7 +164,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                     <label key={transport} className={`choice-card ${draft.transport === transport ? 'selected' : ''} ${reason ? 'unavailable' : ''}`}>
                       <input type="radio" name="transport" disabled={Boolean(reason)} checked={draft.transport === transport} onChange={() => update({ transport })} />
                       <strong>{tour.theme === 'romance' && transport === 'private' ? `커플별 2인 전용 차량 · ${draft.travelers / 2}대` : transportLabels[transport]}</strong>
-                      <small>{reason || (transport === defaults.transport ? '테마 기본 구성' : tour.source === 'api' ? '서버 Quote에 반영' : adjustment(difference({ transport })))}</small>
+                      {reason && <small>{reason}</small>}
                       {draft.transport === transport && <span className="selection-label">선택됨</span>}
                     </label>
                   )
@@ -189,7 +178,6 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                   <label key={meal} className={`choice-card ${draft.meal === meal ? 'selected' : ''}`}>
                     <input type="radio" name="meal" checked={draft.meal === meal} onChange={() => update({ meal })} />
                     <strong>{mealLabels[meal]}</strong>
-                    <small>{meal === defaults.meal ? '등급 기본 구성' : tour.source === 'api' ? '서버 Quote에 반영' : adjustment(difference({ meal }))}</small>
                     {draft.meal === meal && <span className="selection-label">선택됨</span>}
                   </label>
                 ))}
@@ -213,7 +201,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                 {draft.coffeeQuantity > 0 && <span className="selection-label">{draft.coffeeQuantity}개 선택</span>}
               </label>
             </div>
-            <p className="muted">수량은 0~100개에서 선택합니다. 서버 상품의 음료는 예약 전체 기준으로 과금됩니다.</p>
+            <p className="muted">수량은 0~100개에서 선택하며 예약 전체 기준으로 계산됩니다.</p>
           </section>
         </div>
 
@@ -229,7 +217,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
             <div><dt>추가 구성</dt><dd>{[champagneIncluded ? '샴페인 기본 포함' : draft.champagneQuantity ? `샴페인 ${draft.champagneQuantity}개` : '', draft.coffeeQuantity ? `커피 ${draft.coffeeQuantity}개` : ''].filter(Boolean).join(' · ') || '선택 없음'}</dd></div>
           </dl>
           {tour.source === 'api' ? <div className="price-breakdown" aria-live="polite" aria-atomic="true">
-            {quoteLoading ? <p className="muted">서버에서 가격을 계산하는 중입니다.</p> : quoteError ? <p className="field-error" role="alert">{quoteError}</p> : quote && <>
+            {quoteLoading ? <p className="muted">가격을 계산하는 중입니다.</p> : quoteError ? <p className="field-error" role="alert">{quoteError}</p> : quote && <>
               <div><span>기본 금액</span><strong>{formatPrice(quote.basePrice)}원</strong></div>
               <div><span>옵션 금액</span><strong>{formatPrice(quote.optionPrice)}원</strong></div>
               <div><span>단골 할인</span><strong>{quote.discountRate}%</strong></div>
@@ -251,7 +239,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
             <summary>테마 기본 제공 사항</summary>
             <ul>{themeBenefits[tour.theme].map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
           </details>
-          <p className="notice">{tour.source === 'api' ? '다음 단계에서 PENDING 예약을 만든 뒤 Mock 결제를 진행합니다.' : '예시 상품입니다. 실제 신청·결제는 진행되지 않습니다.'}</p>
+          {tour.source !== 'api' && <p className="notice">예시 상품입니다. 실제 신청·결제는 진행되지 않습니다.</p>}
         </aside>
         <div className="mobile-configure-bar" aria-label="예상 금액과 다음 단계">
           <div><small>{draft.travelers}명 · {gradeLabels[draft.grade]} · {tour.source === 'api' ? '결제 예정 금액' : '예상 합계'}</small><strong>{formatPrice(quote?.expectedPaymentAmount ?? estimate.total)}원</strong></div>

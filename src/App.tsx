@@ -193,7 +193,7 @@ function CutyApp() {
       const loaded = results.flatMap(result => result.status === 'fulfilled' ? [toDisplayTour(result.value.data)] : [])
       setSavedApiTours(loaded)
       if (loaded.length !== savedApiTourIds.length) {
-        setSavedApiError('일부 저장한 서버 상품을 불러오지 못했습니다.')
+        setSavedApiError('일부 저장한 상품을 불러오지 못했습니다.')
       }
     }).finally(() => {
       if (active) setSavedApiLoading(false)
@@ -370,7 +370,7 @@ function CutyApp() {
     }
     if (pathname === '/cart' || pathname === '/saved') {
       if (!useCustomerApi) {
-        return <div className="empty-state"><h1>고객 계정이 필요한 화면이에요.</h1><p>서버 상품 장바구니는 고객 계정으로 확인할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div>
+        return <div className="empty-state"><h1>고객 계정이 필요한 화면이에요.</h1><p>장바구니는 고객 계정으로 확인할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div>
       }
       return <CartPage cartIds={visibleCartIds} onCartToggle={toggleCart} availableTours={availableSavedTours} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
     }
@@ -379,15 +379,15 @@ function CutyApp() {
       return <AuthPage mode="login" next={`${pathname}${search}`} />
     }
     if (useCustomerApi && routeTourId && !numericTourRoute) {
-      return <div className="empty-state"><Icon name="compass" size={36} /><h1>서버에 등록된 여행상품이 아니에요.</h1><p>실제 고객 계정에서는 서버가 제공하는 여행상품만 확인할 수 있어요.</p><AppLink className="button primary" href="/tours">서버 여행상품 보기</AppLink></div>
+      return <div className="empty-state"><Icon name="compass" size={36} /><h1>등록된 여행상품이 아니에요.</h1><p>여행상품 목록에서 다시 선택해 주세요.</p><AppLink className="button primary" href="/tours">여행상품 보기</AppLink></div>
     }
     if (routeTourId && !numericTourRoute) {
-      return <div className="empty-state"><h1>등록된 상품을 찾을 수 없어요.</h1><p>상품 목록에서 서버에 등록된 여행을 다시 선택해 주세요.</p><AppLink className="button primary" href="/tours">여행 목록으로</AppLink></div>
+      return <div className="empty-state"><h1>등록된 상품을 찾을 수 없어요.</h1><p>상품 목록에서 여행을 다시 선택해 주세요.</p><AppLink className="button primary" href="/tours">여행 목록으로</AppLink></div>
     }
     if (numericTourRoute && !useCustomerApi) {
-      return <div className="empty-state"><h1>고객 계정이 필요한 상품이에요.</h1><p>서버 여행상품 조회와 신청은 고객 계정으로 이용할 수 있어요.</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 목록으로</AppLink><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div></div>
+      return <div className="empty-state"><h1>고객 계정이 필요한 상품이에요.</h1><p>여행상품 조회와 신청은 고객 계정으로 이용할 수 있어요.</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 목록으로</AppLink><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div></div>
     }
-    if (apiTourRequested && apiTourLoading) return <p className="notice" role="status">서버에서 여행상품 상세를 불러오는 중입니다.</p>
+    if (apiTourRequested && apiTourLoading) return <p className="notice" role="status">여행상품 상세를 불러오는 중입니다.</p>
     if (apiTourRequested && apiTourError) return <div className="empty-state"><Icon name="compass" size={36} /><h1>여행상품을 불러오지 못했어요.</h1><p>{apiTourError}</p><div className="action-row"><AppLink className="button secondary" href="/tours">여행 목록으로</AppLink><button className="button primary" type="button" onClick={() => setApiTourRetry(value => value + 1)}>다시 시도</button></div></div>
     if (!tour || !draft) {
       return (
@@ -471,7 +471,7 @@ function CutyApp() {
         <div className="header-main">
           <AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink>
           <nav className="main-nav" aria-label="주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/tours" aria-current={pathname === '/tours' || tour ? 'page' : undefined}>여행 둘러보기</AppLink><AppLink href="/my-trips" aria-current={pathname === '/my-trips' ? 'page' : undefined}>내 여행</AppLink></nav>
-          <nav className="utility-nav" aria-label="보조 메뉴">{authSession?.role === 'CUSTOMER' && <AppLink href="/cart" aria-label={`장바구니 ${visibleCartIds.length}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{visibleCartIds.length > 0 && <b>{visibleCartIds.length}</b>}</AppLink>}{authSession ? <button className="session-pill" onClick={() => void logout()} title="로그아웃">{authSession.memberName} 로그아웃</button> : <AppLink href={`/login?next=${encodeURIComponent(route)}`}>로그인</AppLink>}<AppLink href="/staff/tours" className="staff-entry" aria-current={isStaff ? 'page' : undefined}>직원 화면</AppLink></nav>
+          <nav className="utility-nav" aria-label="보조 메뉴">{authSession?.role === 'CUSTOMER' && <AppLink href="/cart" aria-label={`장바구니 ${visibleCartIds.length}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{visibleCartIds.length > 0 && <b>{visibleCartIds.length}</b>}</AppLink>}{authSession ? <button className="session-pill" onClick={() => void logout()} title="로그아웃">{authSession.memberName} 로그아웃</button> : <AppLink href={`/login?next=${encodeURIComponent(route)}`}>로그인</AppLink>}</nav>
         </div>
         {!isLanding && !isStaff && !isAuth && pathname !== '/tours' && pathname !== '/my-trips' && <nav className="category-nav" aria-label="여행 테마 메뉴">{themes.map(item => {
           const href = item.id === 'all' ? '/tours' : `/tours?theme=${item.id}`
@@ -510,7 +510,7 @@ function CutyApp() {
       </main>
 
       {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} /></footer> : <footer className={`site-footer app-footer${voiceOpen ? ' is-voice-open' : ''}`}>
-          <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink><nav aria-label="하단 메뉴"><AppLink href="/tours">전체 여행</AppLink><AppLink href="/my-trips">내 여행</AppLink><AppLink href="/cart">장바구니</AppLink></nav></div>
+          <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink></div>
           <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} />
           <p>Mr.CUTY · 테마여행 상품 구성 서비스</p>
           <small>© Mr.CUTY.</small>

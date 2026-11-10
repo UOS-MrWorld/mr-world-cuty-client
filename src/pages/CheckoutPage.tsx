@@ -22,6 +22,10 @@ function quoteRequestKey(request: ReturnType<typeof toQuoteRequest>) {
   })
 }
 
+function discountedPaymentAmount(totalPrice: number, discountRate: number) {
+  return Math.floor(totalPrice * (100 - discountRate) / 100)
+}
+
 function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: TravelDraft; onDraftChange: (draft: TravelDraft) => void }) {
   const search = new URLSearchParams(window.location.search)
   const requestedBookingId = search.get('booking')
@@ -39,6 +43,9 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
   const currentRequest = toQuoteRequest(tour, draft)
   const currentSelectionKey = quoteRequestKey(currentRequest)
   const selectionChanged = Boolean(booking && serverSelectionKey && serverSelectionKey !== currentSelectionKey)
+  const bookingPaymentAmount = booking
+    ? discountedPaymentAmount(booking.totalPrice, booking.discountRate)
+    : 0
 
   useEffect(() => {
     let active = true
@@ -79,14 +86,14 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
         bookingStatus: detail.bookingStatus,
         totalPrice: detail.totalPrice,
         discountRate: detail.discountRate,
-        expectedPaymentAmount: Math.floor(detail.totalPrice * (100 - detail.discountRate) / 100),
+        expectedPaymentAmount: discountedPaymentAmount(detail.totalPrice, detail.discountRate),
       })
       setServerSelectionKey(quoteRequestKey(quoteRequestFromBooking(detail)))
       if (!updatingExisting) onDraftChange(fromBookingDetail(tour, detail))
     }).catch(error => {
       if (!active) return
       setResumeBlocked(true)
-      setErrorMessage(error instanceof Error ? error.message : 'PENDING 예약을 불러오지 못했습니다.')
+      setErrorMessage(error instanceof Error ? error.message : '예약을 불러오지 못했습니다.')
     }).finally(() => {
       if (active) setRestoring(false)
     })
@@ -128,7 +135,7 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
       params.delete('update')
       navigate(`/tours/${tour.id}/checkout?${params}`)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'PENDING 예약의 구성을 수정하지 못했습니다.')
+      setErrorMessage(error instanceof Error ? error.message : '예약 구성을 수정하지 못했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -147,37 +154,37 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
         params.set('booking', String(data.bookingId))
         navigate(`/tours/${tour.id}/preview?${params}`)
       } else {
-        setErrorMessage('Mock 결제가 거절되었습니다. 예약은 PENDING 상태로 유지되며 카드번호를 바꿔 다시 시도할 수 있습니다.')
+        setErrorMessage('결제가 승인되지 않았습니다. 입력값을 바꿔 다시 시도해 주세요.')
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Mock 결제를 처리하지 못했습니다.')
+      setErrorMessage(error instanceof Error ? error.message : '결제를 처리하지 못했습니다.')
     } finally {
       setProcessing(false)
     }
   }
 
-  if (loading || restoring) return <p className="notice" role="status">서버에서 예약과 결제 예정 금액을 확인하는 중입니다.</p>
-  if (resumeBlocked) return <div className="empty-state"><Icon name="compass" size={36} /><h1>PENDING 예약을 이어가지 못했어요.</h1><p>{errorMessage}</p><div className="action-row"><AppLink className="button secondary" href="/my-trips?tab=bookings">예약 목록으로</AppLink><AppLink className="button primary" href={`/tours/${tour.id}/configure`}>새 구성 시작</AppLink></div></div>
+  if (loading || restoring) return <p className="notice" role="status">예약과 결제 예정 금액을 확인하는 중입니다.</p>
+  if (resumeBlocked) return <div className="empty-state"><Icon name="compass" size={36} /><h1>예약을 이어가지 못했어요.</h1><p>{errorMessage}</p><div className="action-row"><AppLink className="button secondary" href="/my-trips?tab=bookings">예약 목록으로</AppLink><AppLink className="button primary" href={`/tours/${tour.id}/configure`}>새 구성 시작</AppLink></div></div>
   if (!quote) return <div className="empty-state"><Icon name="compass" size={36} /><h1>신청 내용을 확인하지 못했어요.</h1><p>{errorMessage}</p><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성으로 돌아가기</AppLink></div>
 
   return <>
-    <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>{booking ? 'PENDING 예약이 생성됐어요.' : '선택한 구성으로 예약할까요?'}</h1><p>{booking ? 'Mock 카드번호를 입력해 결제 결과를 확인하세요.' : '서버가 계산한 금액과 출발·취소 조건을 확인해 주세요.'}</p></div>
+    <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>{booking ? '예약이 생성됐어요.' : '선택한 구성으로 예약할까요?'}</h1><p>{booking ? '결제 정보를 입력해 예약을 완료하세요.' : '결제 금액과 출발·취소 조건을 확인해 주세요.'}</p></div>
     <div className="flow-layout">
       <div className="flow-main checkout-fields">
         {!booking ? <form className="surface-card" onSubmit={submitBooking}>
           <h2 className="section-title">예약 생성</h2>
-          <dl className="detail-facts"><div><dt>예약 상태</dt><dd>PENDING으로 생성</dd></div><div><dt>할인율</dt><dd>{quote.discountRate}%</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(quote.expectedPaymentAmount)}원</dd></div></dl>
-          <label className="checkout-agreement"><input type="checkbox" required /><span>선택 구성과 서버 계산 금액을 확인했습니다.</span></label>
+          <dl className="detail-facts"><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>할인율</dt><dd>{quote.discountRate}%</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(quote.expectedPaymentAmount)}원</dd></div></dl>
+          <label className="checkout-agreement"><input type="checkbox" required /><span>선택 구성과 결제 금액을 확인했습니다.</span></label>
           {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
-          <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="submit" disabled={processing}>{processing ? '예약 생성 중…' : 'PENDING 예약 생성'}</button></div>
+          <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="submit" disabled={processing}>{processing ? '예약 중…' : '예약하기'}</button></div>
         </form> : <form className="surface-card" onSubmit={submitPayment}>
-          <h2 className="section-title">Mock 카드 결제</h2>
-          <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>{booking.bookingStatus}</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(booking.expectedPaymentAmount)}원</dd></div></dl>
-          <label className="field" htmlFor="api-card-number">Mock 카드번호 <span className="required-mark">필수</span><input id="api-card-number" required autoComplete="off" value={cardNumber} onChange={event => setCardNumber(event.target.value)} placeholder="승인: 1 / 거절: 그 외 값" /><small>실제 카드번호를 입력하지 마세요. 서버 Mock 결제는 숫자 1만 승인합니다.</small></label>
-          {payment && <p className={`notice${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role="status">최근 결제 결과: {payment.paymentStatus} · {formatPrice(payment.amount)}원</p>}
-          {selectionChanged && <div className="notice"><strong>저장한 구성과 PENDING 예약의 구성이 다릅니다.</strong><p>결제 전에 현재 구성을 서버 예약에 반영해 주세요.</p><button className="button secondary" type="button" disabled={processing} onClick={() => void syncBooking()}>{processing ? '예약 수정 중…' : '현재 구성으로 PENDING 예약 수정'}</button></div>}
+          <h2 className="section-title">카드 결제</h2>
+          <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(bookingPaymentAmount)}원</dd></div></dl>
+          <label className="field" htmlFor="api-card-number">카드번호 <span className="required-mark">필수</span><input id="api-card-number" required autoComplete="off" value={cardNumber} onChange={event => setCardNumber(event.target.value)} placeholder="승인 확인용 숫자를 입력하세요" /><small>실제 카드번호는 입력하지 마세요. 숫자 1을 입력하면 승인됩니다.</small></label>
+          {payment && <p className={`notice${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role="status">최근 결제 결과: {payment.paymentStatus === 'SUCCESS' ? '승인' : payment.paymentStatus === 'FAILED' ? '거절' : '환불'} · {formatPrice(payment.amount)}원</p>}
+          {selectionChanged && <div className="notice"><strong>저장한 구성과 예약 내용이 다릅니다.</strong><p>결제 전에 현재 구성으로 예약 내용을 수정해 주세요.</p><button className="button secondary" type="button" disabled={processing} onClick={() => void syncBooking()}>{processing ? '예약 수정 중…' : '현재 구성으로 예약 수정'}</button></div>}
           {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
-          <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><AppLink className="button secondary" href="/my-trips?tab=bookings">내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing || selectionChanged}>{processing ? '결제 처리 중…' : 'Mock 결제 요청'} <Icon name="arrow" size={18} /></button></div>
+          <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><AppLink className="button secondary" href="/my-trips?tab=bookings">내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing || selectionChanged}>{processing ? '결제 처리 중…' : '결제하기'} <Icon name="arrow" size={18} /></button></div>
         </form>}
         <section className="surface-card"><h2 className="section-title">출발·취소 조건</h2><dl className="detail-facts"><div><dt>모집 마감</dt><dd>{getRecruitmentDeadline(draft.date)} · 출발 7일 전</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd></div><div><dt>재고 부족</dt><dd>예약·결제를 차단하지 않음</dd></div></dl></section>
       </div>

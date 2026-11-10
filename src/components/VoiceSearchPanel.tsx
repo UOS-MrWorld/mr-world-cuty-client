@@ -323,7 +323,7 @@ export function VoiceSearchPanel({ context, onResponse, onClose, display = 'wave
         disabled={status === 'starting' || status === 'processing'} aria-label={label} title={label}>
         <span className="voice-input-mic-icon" aria-hidden="true"><Icon name="mic-filled" size={25} /></span>
       </button>
-      <span className={statusClass} role={statusRole}>{statusContent}<span className="voice-privacy-note">음성은 명령 처리를 위해 AI 음성 서버로 전송되며 저장하지 않습니다.</span></span>
+      <span className={statusClass} role={statusRole}>{statusContent}<span className="voice-privacy-note">음성은 명령 처리를 위해 전송되며 저장하지 않습니다.</span></span>
     </>
   }
 
@@ -332,6 +332,6 @@ export function VoiceSearchPanel({ context, onResponse, onClose, display = 'wave
       disabled={status === 'starting' || status === 'processing'} aria-label={label} title={label}>
       {Array.from({ length: BAR_COUNT }, (_, index) => <span key={index} ref={node => { barsRef.current[index] = node }} />)}
     </button>
-    <span className={statusClass} role={statusRole}>{statusContent}<span className="voice-privacy-note">음성은 명령 처리를 위해 AI 음성 서버로 전송되며 저장하지 않습니다.</span></span>
+    <span className={statusClass} role={statusRole}>{statusContent}<span className="voice-privacy-note">음성은 명령 처리를 위해 전송되며 저장하지 않습니다.</span></span>
   </>
 }
