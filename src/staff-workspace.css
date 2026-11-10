@@ -76,12 +76,12 @@
 .staff-workspace .staff-product strong { white-space: normal; display: block; max-width: 215px; line-height: 1.6; }
 .staff-workspace .staff-product small, .staff-workspace .staff-subtext { display: block; margin-top: 5px; color: #8195a3; font-size: 10px; line-height: 1.6; }
 .staff-number { font-variant-numeric: tabular-nums; }
-.staff-workspace .staff-state { display: inline-flex; padding: 7px 11px; border: 0; border-radius: 10px; background: #0878ff; color: #fff; box-shadow: none; font-size: 10px; font-weight: 650; }
-.staff-workspace .staff-state.preview { background: #00a884; color: #fff; }
-.staff-workspace .staff-state.paused { background: #f56f46; color: #fff; }
+.staff-workspace .staff-state { display: inline-flex; padding: 7px 11px; border: 0; border-radius: 10px; background: #e9eef3; color: #5f7180; box-shadow: none; font-size: 10px; font-weight: 650; }
+.staff-workspace .staff-state.preview,
+.staff-workspace .staff-state.paused { background: #e9eef3; color: #5f7180; }
 .staff-workspace .staff-text-action { display: inline-flex; min-height: 35px; align-items: center; padding: 7px 12px; border: 0; border-radius: 9px; background: #0878ff; color: #fff; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 11px; font-weight: 650; cursor: pointer; white-space: nowrap; }
 .staff-workspace .staff-text-action:hover { background: #075bd8; color: #fff; }
-.staff-workspace .staff-tour-list :is(.staff-state, .staff-text-action) {
+.staff-workspace .staff-tour-list .staff-text-action {
   border-color: #0878ff !important;
   background: #0878ff !important;
   color: #fff !important;
