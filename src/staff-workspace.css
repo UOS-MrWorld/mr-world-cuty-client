@@ -149,20 +149,20 @@
 .staff-empty p { font-size: 12px; color: var(--staff-muted); line-height: 1.8; }
 .staff-editor { display: grid; gap: 23px; }
 .staff-gift-editor { padding-top: 22px; border-top: 1px solid #e4edf3; }
-.staff-gift-editor .staff-section-heading { margin-bottom: 17px; }
-.staff-gift-editor .staff-section-heading p { margin: 7px 0 0; color: var(--staff-muted); font-size: 10px; line-height: 1.7; }
-.staff-gift-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
-.staff-gift-card { display: grid; grid-template-columns: minmax(0, 1fr) 130px; align-items: end; gap: 14px; min-width: 0; padding: 17px; border: 1px solid #e0e9f0; border-radius: 18px; background: #f8fafc; }
+.staff-gift-editor .staff-section-heading { margin-bottom: 22px; }
+.staff-gift-editor .staff-section-heading p { margin: 7px 0 0; color: var(--staff-muted); font-size: 12px; line-height: 1.7; }
+.staff-gift-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.staff-gift-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, .34fr); align-items: center; gap: 22px; min-width: 0; min-height: 126px; padding: 22px 24px; border: 1px solid #e0e9f0; border-radius: 18px; background: #f8fafc; }
 .staff-gift-card.selected { border-color: #8ab9d8; background: #eef7fc; }
-.staff-gift-card > label:first-child { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
-.staff-gift-card > label:first-child input { width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--staff-blue); }
+.staff-gift-card > label:first-child { display: flex; align-items: center; align-self: center; gap: 13px; min-width: 0; cursor: pointer; }
+.staff-gift-card > label:first-child input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--staff-blue); }
 .staff-gift-card > label:first-child span { min-width: 0; }
 .staff-gift-card strong, .staff-gift-card small { display: block; }
-.staff-gift-card strong { font-size: 12px; line-height: 1.5; }
-.staff-gift-card small { margin-top: 4px; color: #8195a3; font-size: 9px; }
-.staff-gift-quantity { display: grid; gap: 6px; color: #6f8797; font-size: 9px; }
-.staff-workspace .staff-gift-quantity input { width: 100%; min-width: 0; min-height: 39px; padding: 8px 10px; border: 1px solid #c5d5e1; border-radius: 10px; background: #fff; color: var(--staff-ink); }
-.staff-section-heading { display: flex; gap: 18px; align-items: baseline; justify-content: space-between; margin-bottom: 23px; }
+.staff-gift-card strong { font-size: 14px; line-height: 1.5; }
+.staff-gift-card small { margin-top: 5px; color: #8195a3; font-size: 11px; }
+.staff-gift-quantity { display: grid; align-self: center; gap: 8px; color: #6f8797; font-size: 11px; }
+.staff-workspace .staff-gift-quantity input { width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid #c5d5e1; border-radius: 12px; background: #fff; color: var(--staff-ink); font-size: 13px; }
+.staff-section-heading { display: flex; gap: 18px; align-items: center; justify-content: space-between; margin-bottom: 23px; }
 .staff-section-heading h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.025em; }
 .staff-section-heading > span { font-size: 10px; color: #7f95a4; line-height: 1.7; }
 .staff-fields { display: grid; gap: 18px; min-width: 0; }
@@ -223,6 +223,70 @@
 .staff-panel-empty { display: grid; align-content: center; text-align: center; padding: 35px 20px; min-height: 200px; background: #f4f8fb; border-radius: 22px; margin-top: 15px; }
 .staff-panel-empty h3 { font-size: 14px; font-weight: 600; }
 .staff-panel-empty p { color: #8196a4; font-size: 11px; line-height: 1.9; }
+
+/* 직원 업무 화면은 긴 표와 폼에서도 한눈에 읽히도록 기본 활자를 한 단계 키웁니다. */
+.staff-workspace { font-size: 14px; }
+.staff-space-title p { font-size: 13px; }
+.staff-space-title h2 { font-size: 24px; }
+.staff-space-title > span,
+.staff-workspace .staff-sidebar-note { font-size: 12px; }
+.staff-workspace .staff-sidebar nav a strong { font-size: 16px; }
+.staff-workspace .staff-page-heading h1 { font-size: clamp(29px, 3vw, 36px); }
+.staff-workspace .staff-page-heading p:not(.staff-kicker) { font-size: 14px; }
+.staff-kicker { font-size: 12px; }
+.staff-workspace .staff-button { font-size: 14px; }
+.staff-preview-note > strong,
+.staff-message,
+.staff-empty p { font-size: 13px; }
+.staff-preview-note > p,
+.staff-bottom-note,
+.staff-action-card p,
+.staff-loyalty-notice p { font-size: 12px; }
+.staff-workspace .staff-search input,
+.staff-workspace .staff-table,
+.staff-workspace .staff-table input,
+.staff-workspace .staff-table select { font-size: 13px; }
+.staff-workspace .staff-toolbar > span,
+.staff-workspace .staff-table th,
+.staff-workspace .staff-state,
+.staff-workspace .staff-text-action { font-size: 12px; }
+.staff-workspace .staff-table td strong { font-size: 14px; }
+.staff-workspace .staff-product small,
+.staff-workspace .staff-subtext,
+.staff-loyalty-table td small { font-size: 11px; }
+.staff-status-overview span,
+.staff-action-card dt,
+.staff-loyalty-overview p { font-size: 11px; }
+.staff-status-overview strong { font-size: 17px; }
+.staff-detail-list > div,
+.staff-field { font-size: 13px; }
+.staff-action-card h2 { font-size: 19px; }
+.staff-action-card .staff-action-kicker { font-size: 11px; }
+.staff-action-card dd { font-size: 20px; }
+.staff-loyalty-overview strong { font-size: 15px; }
+.staff-section-heading h2 { font-size: 19px; }
+.staff-section-heading > span { font-size: 12px; }
+.staff-workspace .staff-field input,
+.staff-workspace .staff-field textarea,
+.staff-workspace .staff-field select { font-size: 14px; }
+.staff-workspace .staff-field > small,
+.staff-grade-heading span,
+.staff-small-note,
+.staff-form-actions > span { font-size: 11px; }
+.staff-grade-heading h3,
+.staff-option-card h3,
+.staff-policy-card h2 { font-size: 16px; }
+.staff-policy-card p,
+.staff-panel-intro,
+.staff-panel-tabs > button,
+.staff-loyalty-facts > div { font-size: 12px; }
+.staff-history-item h3,
+.staff-history-item > strong { font-size: 15px; }
+.staff-history-item span,
+.staff-history-item p,
+.staff-history-item > strong small { font-size: 11px; }
+.staff-panel-empty h3 { font-size: 16px; }
+.staff-panel-empty p { font-size: 12px; }
 @media (max-width: 1200px) {
   .staff-workspace { grid-template-columns: 195px minmax(0, 1fr); }
   .staff-workspace .staff-content { padding: 30px 26px 40px; }
