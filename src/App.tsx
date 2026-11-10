@@ -470,7 +470,9 @@ function CutyApp() {
       {!authOnly && <header className={`site-header app-header${isLanding ? ' landing-header' : ''}`}>
         <div className="header-main">
           <AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink>
-          <nav className="main-nav" aria-label="주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/tours" aria-current={pathname === '/tours' || tour ? 'page' : undefined}>여행 둘러보기</AppLink><AppLink href="/my-trips" aria-current={pathname === '/my-trips' ? 'page' : undefined}>내 여행</AppLink></nav>
+          {authSession?.role === 'STAFF'
+            ? <nav className="main-nav" aria-label="직원 주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/staff/tours" aria-current={isStaff ? 'page' : undefined}>여행 운영</AppLink></nav>
+            : <nav className="main-nav" aria-label="고객 주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/tours" aria-current={pathname === '/tours' || tour ? 'page' : undefined}>여행 둘러보기</AppLink><AppLink href="/my-trips" aria-current={pathname === '/my-trips' ? 'page' : undefined}>내 여행</AppLink></nav>}
           <nav className="utility-nav" aria-label="보조 메뉴">{authSession?.role === 'CUSTOMER' && <AppLink href="/cart" aria-label={`장바구니 ${visibleCartIds.length}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{visibleCartIds.length > 0 && <b>{visibleCartIds.length}</b>}</AppLink>}{authSession ? <button className="session-pill" onClick={() => void logout()} title="로그아웃">{authSession.memberName} 로그아웃</button> : <AppLink href={`/login?next=${encodeURIComponent(route)}`}>로그인</AppLink>}</nav>
         </div>
         {!isLanding && !isStaff && !isAuth && pathname !== '/tours' && pathname !== '/my-trips' && <nav className="category-nav" aria-label="여행 테마 메뉴">{themes.map(item => {
