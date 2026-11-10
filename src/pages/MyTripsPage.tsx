@@ -51,7 +51,7 @@ function ApiTripsPanel({ tab }: { tab: 'bookings' | 'history' }) {
 
   return <div className="draft-list">{tab === 'bookings'
     ? bookings.map(booking => <article className="surface-card" key={booking.bookingId}><div><span className="status-pill">{bookingStatusLabels[booking.bookingStatus]}</span><h2>{booking.tourName}</h2><p className="muted">출발일 {booking.startDate}</p><strong>예약 금액 {formatPrice(booking.totalPrice)}원</strong><p className="summary-note">할인율 {booking.discountRate}% · 예약번호 {booking.bookingId}</p></div><AppLink className="button secondary" href={`/tours/${booking.tourId}/preview?booking=${booking.bookingId}`}>예약 상세 <Icon name="arrow" size={17} /></AppLink></article>)
-    : history.map(item => <article className="surface-card" key={item.bookingId}><div><span className="status-pill">{tourStatusLabels[item.tourStatus]}</span><h2>{item.tourName}</h2><p className="muted">{item.startDate} ~ {item.endDate} · {apiTourLevelLabels[item.tourLevel]}</p><strong>결제 금액 {formatPrice(item.paidAmount)}원</strong><p className="summary-note">예약번호 {item.bookingId}</p></div></article>)}</div>
+    : history.map(item => <article className="surface-card trip-history-card" key={item.bookingId}><img className="history-thumbnail" src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><span className="status-pill">{tourStatusLabels[item.tourStatus]}</span><h2>{item.tourName}</h2><p className="muted">{item.startDate} ~ {item.endDate} · {apiTourLevelLabels[item.tourLevel]}</p><strong>결제 금액 {formatPrice(item.paidAmount)}원</strong><p className="summary-note">예약번호 {item.bookingId}</p></div></article>)}</div>
 }
 
 function ApiProfilePanel() {
@@ -136,7 +136,6 @@ export function MyTripsPage({ draftEntries, savedToursLoading, savedToursError, 
     <div className="collection-tabs my-trips-tabs" role="tablist" aria-label="내 여행 분류">{tabIds.map((id, index) => <button id={`my-trips-tab-${id}`} role="tab" type="button" aria-selected={tab === id} aria-controls={`my-trips-panel-${id}`} tabIndex={tab === id ? 0 : -1} key={id} onClick={() => switchTab(id)} onKeyDown={event => tabKeyDown(event, index)}>{tabLabels[id]}{counts[id] !== undefined && <b>{counts[id]}</b>}</button>)}</div>
     <div role="tabpanel" id={`my-trips-panel-${tab}`} aria-labelledby={`my-trips-tab-${tab}`} className="my-trips-panel" tabIndex={0}>
       {tab === 'drafts' && <>
-        <p className="notice">담은 구성은 이 브라우저에 보관됩니다.</p>
         {savedToursLoading && <p className="notice" role="status">담은 상품을 불러오는 중입니다.</p>}
         {savedToursError && <p className="notice notice-error" role="alert">{savedToursError} <button className="text-link" type="button" onClick={onRetrySavedTours}>다시 시도</button></p>}
         {draftEntries.length ? <div className="draft-list">{draftEntries.map(({ tour, draft }) =>

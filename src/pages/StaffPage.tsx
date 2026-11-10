@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createInventory, getInventories, updateInventory } from '../api/inventory'
-import { activateLoyaltyDiscountByGrade, getCustomers, getLoyaltyPolicy } from '../api/customer'
+import { activateLoyaltyDiscountByGrade, getCustomers, getLoyaltyPolicy, updateCustomerLoyaltyGrades } from '../api/customer'
 import { createTour, getStaffTour, getStaffTours, updateTour } from '../api/tour'
 import { AppLink } from '../components/AppLink'
 import { navigate } from '../hooks/useRoute'
@@ -12,7 +12,7 @@ type Section = 'tours' | 'inventory' | 'customers'
 const nav = [
   { href: '/staff/tours', label: '상품 관리', description: '여행과 기본 구성' },
   { href: '/staff/inventory', label: '물품·재고 관리', description: '제공 물품과 수량' },
-  { href: '/staff/customers', label: '고객 관리', description: '단골 할인 승인' },
+  { href: '/staff/customers', label: '고객 관리', description: '등급·할인 관리' },
 ]
 const loyaltyLabels: Record<ApiLoyaltyGrade, string> = { NORMAL: '일반', VIP: 'VIP' }
 const themeLabels: Record<ApiTheme, string> = { HONEYMOON: '허니문', HEALING: '효도·힐링', GOLF: '골프', TREKKING: '트레킹' }
@@ -183,8 +183,12 @@ function InventorySection() {
 function CustomersSection() {
   const [customers, setCustomers] = useState<CustomerSummaryResponse[]>([])
   const [policies, setPolicies] = useState<LoyaltyPolicyResponse['policies']>([])
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([])
+  const [gradeEdits, setGradeEdits] = useState<Record<number, ApiLoyaltyGrade>>({})
+  const [discountGrade, setDiscountGrade] = useState<ApiLoyaltyGrade>('VIP')
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [savingGrades, setSavingGrades] = useState(false)
+  const [applyingDiscount, setApplyingDiscount] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [retry, setRetry] = useState(0)
@@ -192,33 +196,73 @@ function CustomersSection() {
     let active = true
     setLoading(true); setError('')
     void Promise.all([getCustomers({ page: 0, size: 100 }), getLoyaltyPolicy()])
-      .then(([customerResponse, policyResponse]) => { if (active) { setCustomers(customerResponse.data.content); setPolicies(policyResponse.data.policies) } })
+      .then(([customerResponse, policyResponse]) => {
+        if (!active) return
+        setCustomers(customerResponse.data.content)
+        setPolicies(policyResponse.data.policies)
+        setGradeEdits(Object.fromEntries(customerResponse.data.content.map(customer => [customer.customerId, customer.loyaltyGrade])))
+        setSelectedCustomerIds([])
+      })
       .catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '고객 정보를 불러오지 못했습니다.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [retry])
   const sortedPolicies = [...policies].sort((first, second) => first.requiredTourCount - second.requiredTourCount)
-  const pendingVipCount = customers.filter(customer => customer.loyaltyGrade === 'VIP' && !customer.loyaltyDiscountApplied).length
-  async function approveVipDiscount() {
-    if (!pendingVipCount || saving) return
-    setSaving(true); setError(''); setMessage('')
+  const selectedChanges = customers.flatMap(customer => selectedCustomerIds.includes(customer.customerId) && gradeEdits[customer.customerId] !== customer.loyaltyGrade
+    ? [{ customerId: customer.customerId, loyaltyGrade: gradeEdits[customer.customerId] }]
+    : [])
+  const discountTargets = customers.filter(customer => customer.loyaltyGrade === discountGrade)
+  const pendingDiscountCount = discountTargets.filter(customer => !customer.loyaltyDiscountApplied).length
+  const allSelected = customers.length > 0 && selectedCustomerIds.length === customers.length
+
+  function toggleCustomer(customerId: number) {
+    setSelectedCustomerIds(current => current.includes(customerId) ? current.filter(id => id !== customerId) : [...current, customerId])
+  }
+
+  async function saveGradeChanges() {
+    if (!selectedChanges.length || savingGrades) return
+    setSavingGrades(true); setError(''); setMessage('')
     try {
-      const { data } = await activateLoyaltyDiscountByGrade('VIP')
-      setMessage(`VIP 단골 할인 승인 완료 · 적용 ${data.appliedCount}명, 기존 적용 ${data.skippedCount}명`)
+      const { data } = await updateCustomerLoyaltyGrades({ changes: selectedChanges })
+      setMessage(`고객 등급 ${data.updatedCount}건을 변경했습니다.`)
+      setRetry(value => value + 1)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '고객 등급을 변경하지 못했습니다.') }
+    finally { setSavingGrades(false) }
+  }
+
+  async function applyDiscount() {
+    if (!pendingDiscountCount || applyingDiscount) return
+    setApplyingDiscount(true); setError(''); setMessage('')
+    try {
+      const { data } = await activateLoyaltyDiscountByGrade(discountGrade)
+      setMessage(`${loyaltyLabels[discountGrade]} 등급 할인 적용 완료 · 대상 ${data.targetCount}명, 새 적용 ${data.appliedCount}명, 기존 적용 ${data.skippedCount}명`)
       setRetry(value => value + 1)
     } catch (reason) { setError(reason instanceof Error ? reason.message : '단골 할인을 승인하지 못했습니다.') }
-    finally { setSaving(false) }
+    finally { setApplyingDiscount(false) }
   }
   return <>
-    <Heading title="고객 관리" description="여행 완료 횟수로 산정된 등급을 확인하고 직원이 단골 할인을 승인합니다." action={<button className="staff-button primary" disabled={!pendingVipCount || saving} onClick={() => void approveVipDiscount()}>{saving ? '승인 중…' : `VIP 할인 승인 (${pendingVipCount})`}</button>} />
+    <Heading title="고객 관리" description="고객 등급을 일괄 변경하고 등급별 할인을 적용합니다." />
     {message && <p className="staff-message" role="status">{message}</p>}
     {error && !loading && <p className="staff-message error" role="alert">{error}</p>}
     {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <>
+      <section className="staff-customer-actions" aria-label="고객 등급과 할인 관리">
+        <article className="staff-action-card">
+          <div><p className="staff-action-kicker">등급 관리</p><h2>고객별 등급 일괄 변경</h2><p>목록에서 고객과 등급을 지정하면 선택한 변경이 한 번에 적용됩니다.</p></div>
+          <dl><div><dt>선택 고객</dt><dd>{selectedCustomerIds.length}명</dd></div><div><dt>변경 예정</dt><dd>{selectedChanges.length}건</dd></div></dl>
+          <button className="staff-button primary" type="button" disabled={!selectedChanges.length || savingGrades} onClick={() => void saveGradeChanges()}>{savingGrades ? '변경 중…' : `등급 변경 (${selectedChanges.length})`}</button>
+        </article>
+        <article className="staff-action-card">
+          <div><p className="staff-action-kicker">할인 관리</p><h2>등급별 할인 적용</h2><p>선택한 등급에서 아직 할인이 적용되지 않은 고객에게 혜택을 적용합니다.</p></div>
+          <label className="staff-field"><span>적용 등급</span><select value={discountGrade} onChange={event => setDiscountGrade(event.target.value as ApiLoyaltyGrade)}>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></label>
+          <dl><div><dt>대상 고객</dt><dd>{discountTargets.length}명</dd></div><div><dt>적용 대기</dt><dd>{pendingDiscountCount}명</dd></div></dl>
+          <button className="staff-button primary" type="button" disabled={!pendingDiscountCount || applyingDiscount} onClick={() => void applyDiscount()}>{applyingDiscount ? '적용 중…' : `${loyaltyLabels[discountGrade]} 할인 적용 (${pendingDiscountCount})`}</button>
+        </article>
+      </section>
       <section className="staff-sheet staff-list-sheet">
-        <div className="staff-toolbar"><span>고객 {customers.length}명 · 승인 대기 {pendingVipCount}명</span></div>
-        <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><caption className="sr-only">고객별 단골 등급과 할인 승인 상태</caption><thead><tr><th scope="col">고객명</th><th scope="col">연락처</th><th scope="col">완료 여행</th><th scope="col">등급</th><th scope="col">할인 상태</th></tr></thead><tbody>
-          {customers.map(customer => <tr key={customer.customerId}><td><strong>{customer.name}</strong></td><td>{customer.phoneNum}</td><td>{customer.completedTourCount}회</td><td><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></td><td><span className={`staff-state ${customer.loyaltyDiscountApplied ? 'preview' : customer.loyaltyGrade === 'VIP' ? 'paused' : ''}`}>{customer.loyaltyDiscountApplied ? '직원 승인 완료' : customer.loyaltyGrade === 'VIP' ? '승인 대기' : '대상 아님'}</span></td></tr>)}
-          {!customers.length && <tr><td className="staff-loyalty-empty" colSpan={5}>표시할 고객이 없습니다.</td></tr>}
+        <div className="staff-toolbar"><span>고객 {customers.length}명 · 등급 변경은 선택한 고객에게만 적용됩니다.</span></div>
+        <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><caption className="sr-only">고객별 단골 등급과 할인 적용 상태</caption><thead><tr><th scope="col"><label className="staff-check"><input type="checkbox" checked={allSelected} onChange={() => setSelectedCustomerIds(allSelected ? [] : customers.map(customer => customer.customerId))} /><span className="sr-only">모든 고객 선택</span></label></th><th scope="col">고객명</th><th scope="col">연락처</th><th scope="col">완료 여행</th><th scope="col">현재 등급</th><th scope="col">변경 등급</th><th scope="col">할인 상태</th></tr></thead><tbody>
+          {customers.map(customer => <tr key={customer.customerId}><td><label className="staff-check"><input type="checkbox" aria-label={`${customer.name} 선택`} checked={selectedCustomerIds.includes(customer.customerId)} onChange={() => toggleCustomer(customer.customerId)} /></label></td><td><strong>{customer.name}</strong></td><td>{customer.phoneNum}</td><td>{customer.completedTourCount}회</td><td><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></td><td><select aria-label={`${customer.name} 변경 등급`} value={gradeEdits[customer.customerId] ?? customer.loyaltyGrade} onChange={event => { setGradeEdits(current => ({ ...current, [customer.customerId]: event.target.value as ApiLoyaltyGrade })); setSelectedCustomerIds(current => current.includes(customer.customerId) ? current : [...current, customer.customerId]) }}>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></td><td><span className={`staff-state ${customer.loyaltyDiscountApplied ? 'preview' : customer.loyaltyGrade === 'VIP' ? 'paused' : ''}`}>{customer.loyaltyDiscountApplied ? '적용 완료' : '적용 전'}</span></td></tr>)}
+          {!customers.length && <tr><td className="staff-loyalty-empty" colSpan={7}>표시할 고객이 없습니다.</td></tr>}
         </tbody></table></div>
       </section>
       <aside className="staff-loyalty-notice">

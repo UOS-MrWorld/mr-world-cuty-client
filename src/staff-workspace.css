@@ -79,6 +79,19 @@
 .staff-bottom-note { color: #7b909e; font-size: 11px; line-height: 1.9; margin: 19px 4px 0; }
 .staff-message { margin: 0 0 20px; padding: 18px 22px; border-radius: 20px; background: #e4f2ef; color: #4e7a6b; font-size: 12px; line-height: 1.9; }
 .staff-message.error { color: #a66356; background: #fff0e9; }
+.staff-customer-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-bottom: 20px; }
+.staff-action-card { display: grid; align-content: start; gap: 20px; min-width: 0; padding: 25px; border: 1px solid #dce7f1; border-radius: 24px; background: #fff; box-shadow: 0 12px 34px #436b8d12; }
+.staff-action-card h2 { margin: 5px 0 8px; font-size: 17px; font-weight: 650; letter-spacing: -.025em; }
+.staff-action-card p { margin: 0; color: var(--staff-muted); font-size: 11px; line-height: 1.8; }
+.staff-action-card .staff-action-kicker { color: #3578a8; font-size: 10px; font-weight: 700; }
+.staff-action-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.staff-action-card dl > div { padding: 15px; border-radius: 15px; background: #f3f7fb; }
+.staff-action-card dt { color: #7a91a2; font-size: 10px; }
+.staff-action-card dd { margin: 6px 0 0; color: #274a66; font-size: 18px; font-weight: 700; }
+.staff-action-card .staff-button { width: 100%; background: #1769e8 !important; box-shadow: none !important; }
+.staff-action-card .staff-button:hover:not(:disabled) { background: #0d55c7 !important; }
+.staff-check { display: inline-flex; align-items: center; justify-content: center; }
+.staff-check input { width: 16px !important; height: 16px; min-height: 0 !important; accent-color: #1769e8; }
 .staff-loyalty-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-bottom: 18px; }
 .staff-loyalty-overview > div { position: relative; min-width: 0; padding: 22px 20px 21px; border-radius: 22px; background: #ffffffb8; box-shadow: 0 10px 30px #7195ac08; }
 .staff-loyalty-overview span { display: grid; place-items: center; width: 27px; height: 27px; margin-bottom: 18px; border-radius: 9px; color: #377aa7; background: #e4f1fa; font-size: 11px; font-weight: 700; }
@@ -187,6 +200,7 @@
   .staff-workspace .staff-sheet { padding: 21px 18px; border-radius: 23px; }
   .staff-workspace .staff-list-sheet { padding: 18px 0 0; }
   .staff-loyalty-overview { grid-template-columns: 1fr; }
+  .staff-customer-actions { grid-template-columns: 1fr; }
   .staff-loyalty-overview > div { padding: 18px; }
   .staff-loyalty-overview span { margin-bottom: 12px; }
   .staff-loyalty-sheet .staff-section-heading { padding: 0 18px; }

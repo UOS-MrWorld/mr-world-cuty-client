@@ -108,7 +108,9 @@ export function normalizeDraft(tour: Tour, value?: unknown): TravelDraft {
       ? tour.startDate
       : typeof raw.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '',
     travelers,
-    champagneQuantity: grade === 'premium' ? 0 : normalizeQuantity(raw.champagneQuantity, raw.champagne),
+    champagneQuantity: grade === 'premium' && tour.source !== 'api'
+      ? 0
+      : normalizeQuantity(raw.champagneQuantity, raw.champagne),
     coffeeQuantity: normalizeQuantity(raw.coffeeQuantity, raw.coffee),
   }
 }
