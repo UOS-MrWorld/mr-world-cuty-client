@@ -323,9 +323,9 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
 
 .catalog-filterbar {
   display: grid;
-  grid-template-columns: minmax(390px, .78fr) minmax(820px, 2.2fr);
+  grid-template-columns: minmax(350px, .85fr) minmax(0, 2fr);
   align-items: center;
-  gap: 30px;
+  gap: 24px;
   min-height: 184px;
   padding: 24px 32px;
 }
@@ -342,7 +342,7 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
 .catalog-filterbar .filter-fields,
 .catalog-filterbar .filter-fields.is-open {
   display: grid;
-  grid-template-columns: minmax(510px, 1.65fr) repeat(2, minmax(250px, 1fr));
+  grid-template-columns: minmax(0, 1.8fr) repeat(2, minmax(0, 1fr));
   align-items: stretch;
   gap: 0;
   margin: 0;
@@ -354,7 +354,7 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
   grid-template-rows: 24px 34px 28px;
   align-items: center;
   min-height: 86px;
-  padding-inline: 28px;
+  padding-inline: 20px;
 }
 .catalog-filterbar .filter-fields fieldset:first-child { padding-left: 0; }
 .catalog-filterbar .filter-fields fieldset legend { grid-row: 1; align-self: start; width: 100%; margin: 0; text-align: left; }
