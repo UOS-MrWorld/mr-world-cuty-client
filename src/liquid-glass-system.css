@@ -1339,6 +1339,9 @@ input, select { accent-color: var(--aurora-violet); }
 .voice-input-wave:disabled,
 .voice-input-mic:disabled { cursor: wait; }
 .voice-input-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   position: fixed;
   z-index: 111;
   left: 50%;
@@ -1378,6 +1381,7 @@ input, select { accent-color: var(--aurora-violet); }
   line-height: 18px;
 }
 .voice-input-status-text { flex: 1; }
+.voice-privacy-note { display: block; max-width: 360px; color: #66708f; font-size: 10px; line-height: 1.4; text-align: center; }
 .voice-input-help-toggle {
   display: inline-flex;
   flex: none;
