@@ -43,7 +43,7 @@
 .staff-workspace .staff-page-heading p:not(.staff-kicker) { margin: 0; font-size: 13px; line-height: 1.8; color: var(--staff-muted); }
 .staff-kicker { margin: 0; color: var(--staff-blue); font-size: 11px; letter-spacing: .02em; font-weight: 600; }
 .staff-workspace .staff-button { display: inline-flex; justify-content: center; align-items: center; min-height: 43px; padding: 12px 20px; border: 0; border-radius: 15px; font-size: 12px; line-height: 1.6; font-weight: 600; white-space: nowrap; text-decoration: none; cursor: pointer; }
-.staff-workspace .staff-button.primary { background: linear-gradient(120deg, #579ac4, #397bab); color: white; box-shadow: 0 5px 15px #4083ae1c; }
+.staff-workspace .staff-button.primary { background: #0878ff; color: white; box-shadow: 0 8px 22px rgb(8 120 255 / .22); }
 .staff-workspace .staff-button.soft { background: #e7eff6; color: #47718c; }
 .staff-workspace .staff-button:hover { filter: brightness(.97); }
 .staff-workspace .staff-button:disabled, .staff-workspace .staff-text-action:disabled { opacity: .55; cursor: not-allowed; }
@@ -81,6 +81,13 @@
 .staff-workspace .staff-state.paused { background: #f56f46; color: #fff; }
 .staff-workspace .staff-text-action { display: inline-flex; min-height: 35px; align-items: center; padding: 7px 12px; border: 0; border-radius: 9px; background: #0878ff; color: #fff; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 11px; font-weight: 650; cursor: pointer; white-space: nowrap; }
 .staff-workspace .staff-text-action:hover { background: #075bd8; color: #fff; }
+.staff-workspace .staff-tour-list :is(.staff-state, .staff-text-action) {
+  border-color: #0878ff !important;
+  background: #0878ff !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.staff-workspace .staff-tour-list .staff-text-action:hover { background: #075bd8 !important; }
 .staff-row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .staff-status-overview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
 .staff-status-overview > div { min-width: 0; padding: 21px; border-radius: 21px; background: #ffffffd9; box-shadow: 0 10px 30px #7195ac09; }
@@ -108,7 +115,7 @@
 .staff-action-card dl > div { padding: 15px; border-radius: 15px; background: #f3f7fb; }
 .staff-action-card dt { color: #7a91a2; font-size: 10px; }
 .staff-action-card dd { margin: 6px 0 0; color: #274a66; font-size: 18px; font-weight: 700; }
-.staff-action-card .staff-button { width: 100%; background: #1769e8 !important; box-shadow: none !important; }
+.staff-action-card .staff-button { width: 100%; background: #0878ff !important; box-shadow: none !important; }
 .staff-action-card .staff-button:hover:not(:disabled) { background: #0d55c7 !important; }
 .staff-check { display: inline-flex; align-items: center; justify-content: center; }
 .staff-check input { width: 16px !important; height: 16px; min-height: 0 !important; accent-color: #1769e8; }

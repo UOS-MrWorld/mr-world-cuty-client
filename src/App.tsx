@@ -233,7 +233,8 @@ function CutyApp() {
     window.sessionStorage.setItem(storageKey, 'requested')
     let active = true
     void getTravelHistory({ page: 0, size: 6 }).then(response => {
-      if (active && response.data.content.length) setLoginTravelHistory(response.data.content)
+      const completed = response.data.content.filter(item => item.tourStatus === 'COMPLETED')
+      if (active && completed.length) setLoginTravelHistory(completed)
     }).catch(() => {
       // 로그인 흐름은 유지하고 이전 여행 탭에서 다시 조회할 수 있게 둔다.
     })

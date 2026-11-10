@@ -64,7 +64,7 @@ function ToursSection({ path }: { path: string }) {
 
   return <>
     <Heading title="상품 관리" description="서버에 저장된 여행상품을 등록하고 수정합니다." action={<AppLink className="staff-button primary" href="/staff/tours/new">상품 등록</AppLink>} />
-    {loading || error ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet">
+    {loading || error ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet staff-tour-list">
       <div className="staff-toolbar"><span>{items.length}개 상품</span></div>
       <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>상품명</th><th>테마</th><th>출발일</th><th>결제 인원</th><th>상태</th><th>관리</th></tr></thead><tbody>
         {items.map(item => <tr key={item.tourId}><td><strong>{item.tourName}</strong></td><td>{themeLabels[item.theme]}</td><td>{item.startDate}</td><td className="staff-number">{item.paidGuestCount}명</td><td><span className="staff-state">{tourStatusLabels[item.tourStatus]}</span></td><td><div className="staff-row-actions"><AppLink className="staff-text-action" href={`/staff/tours/${item.tourId}`}>현황</AppLink><AppLink className="staff-text-action" href={`/staff/tours/${item.tourId}/edit`}>수정</AppLink></div></td></tr>)}
