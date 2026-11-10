@@ -11,9 +11,9 @@ import type { StaffTourDetailResponse, StaffTourSummaryResponse, TourCreateReque
 
 type Section = 'tours' | 'inventory' | 'customers'
 const nav = [
-  { href: '/staff/tours', label: '상품 관리', description: '여행과 기본 구성' },
-  { href: '/staff/inventory', label: '물품·재고 관리', description: '제공 물품과 수량' },
-  { href: '/staff/customers', label: '고객 관리', description: '등급·할인 관리' },
+  { href: '/staff/tours', label: '상품 관리' },
+  { href: '/staff/inventory', label: '물품·재고 관리' },
+  { href: '/staff/customers', label: '고객 관리' },
 ]
 const loyaltyLabels: Record<ApiLoyaltyGrade, string> = { NORMAL: '일반', VIP: 'VIP' }
 const themeLabels: Record<ApiTheme, string> = { HONEYMOON: '허니문', HEALING: '효도·힐링', GOLF: '골프', TREKKING: '트레킹' }
@@ -25,7 +25,7 @@ export default function StaffPage({ path }: { path: string }) {
   return <div className="staff-workspace">
     <aside className="staff-sidebar">
       <div className="staff-space-title"><p>CUTY</p><h2>여행 운영</h2><span>실제 서버 업무 화면</span></div>
-      <nav aria-label="직원 업무">{nav.map(item => <AppLink key={item.href} href={item.href} aria-current={item.href.includes(section) ? 'page' : undefined}><strong>{item.label}</strong><span>{item.description}</span></AppLink>)}</nav>
+      <nav aria-label="직원 업무">{nav.map(item => <AppLink key={item.href} href={item.href} aria-current={item.href.includes(section) ? 'page' : undefined}><strong>{item.label}</strong></AppLink>)}</nav>
     </aside>
     <div className="staff-content">
       {section === 'tours' ? <ToursSection path={path} /> : section === 'inventory' ? <InventorySection /> : <CustomersSection path={path} />}
@@ -333,7 +333,7 @@ function CustomersSection({ path }: { path: string }) {
           <button className="staff-button primary" type="button" disabled={!pendingDiscountCount || applyingDiscount} onClick={() => void applyDiscount()}>{applyingDiscount ? '적용 중…' : `${loyaltyLabels[discountGrade]} 할인 적용 (${pendingDiscountCount})`}</button>
         </article>
       </section>
-      <section className="staff-sheet staff-list-sheet">
+      <section className="staff-sheet staff-list-sheet staff-customer-list">
         <div className="staff-toolbar"><span>고객 {customers.length}명 · 등급 변경은 선택한 고객에게만 적용됩니다.</span></div>
         <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><caption className="sr-only">고객별 단골 등급과 할인 적용 상태</caption><thead><tr><th scope="col"><label className="staff-check"><input type="checkbox" checked={allSelected} onChange={() => setSelectedCustomerIds(allSelected ? [] : customers.map(customer => customer.customerId))} /><span className="sr-only">모든 고객 선택</span></label></th><th scope="col">고객명</th><th scope="col">연락처</th><th scope="col">완료 여행</th><th scope="col">현재 등급</th><th scope="col">변경 등급</th><th scope="col">할인 상태</th><th scope="col">상세</th></tr></thead><tbody>
           {customers.map(customer => <tr key={customer.customerId}><td><label className="staff-check"><input type="checkbox" aria-label={`${customer.name} 선택`} checked={selectedCustomerIds.includes(customer.customerId)} onChange={() => toggleCustomer(customer.customerId)} /></label></td><td><strong>{customer.name}</strong></td><td>{customer.phoneNum}</td><td>{customer.completedTourCount}회</td><td><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></td><td><select aria-label={`${customer.name} 변경 등급`} value={gradeEdits[customer.customerId] ?? customer.loyaltyGrade} onChange={event => { setGradeEdits(current => ({ ...current, [customer.customerId]: event.target.value as ApiLoyaltyGrade })); setSelectedCustomerIds(current => current.includes(customer.customerId) ? current : [...current, customer.customerId]) }}>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></td><td><span className={`staff-state ${customer.loyaltyDiscountApplied ? 'preview' : customer.loyaltyGrade === 'VIP' ? 'paused' : ''}`}>{customer.loyaltyDiscountApplied ? '적용 완료' : '적용 전'}</span></td><td><AppLink className="staff-text-action" href={`/staff/customers/${customer.customerId}`}>보기</AppLink></td></tr>)}
