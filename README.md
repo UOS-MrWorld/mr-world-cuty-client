@@ -59,6 +59,8 @@ npm run dev
 
 EC2 통합 배포에서는 Spring 서버가 이 저장소의 `main`을 빌드해 같은 origin에서 정적 화면과 `/api/v1`을 함께 제공한다. 따라서 배포 빌드는 `VITE_API_BASE_URL`을 별도로 지정하지 않고 기본 상대 경로 `/api/v1`을 사용한다. 고객 로그인 중에는 서버 상품만 표시한다.
 
+`main` 변경 시 `.github/workflows/notify-server-deploy.yml`이 통합 배포를 요청한다. 저장소 Secret `SERVER_REPO_TOKEN`에는 서버 저장소의 Actions를 호출할 수 있는 최소 권한 토큰을 등록한다. Voice 요청에는 로그인 Access Token이 함께 전송되므로 운영 Voice 서버는 Spring 서버와 같은 `JWT_SECRET`을 사용해야 한다.
+
 ### api/
 
 `api/` 안의 파일은 [서버 저장소](https://github.com/UOS-MrWorld/mr-world-cuty-server)의 패키지와 1:1로 대응한다. 서버 쪽에 새 도메인이 생기면 여기도 같은 이름으로 파일을 추가해야 한다.

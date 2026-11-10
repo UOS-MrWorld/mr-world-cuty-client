@@ -15,7 +15,6 @@ export function safeNextPath(value?: string) {
 export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: string }) {
   const signup = mode === 'signup'
   const auth = useAuth()
-  const [accountType, setAccountType] = useState<'customer' | 'staff'>('customer')
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -47,7 +46,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
           name: String(values.get('name') ?? ''),
           phoneNum: String(values.get('contact') ?? '').replace(/\D/g, ''),
           address: String(values.get('address') ?? ''),
-          role: accountType === 'staff' ? 'STAFF' : 'CUSTOMER',
+          role: 'CUSTOMER',
         })
         form.reset()
         setMessage('회원가입이 완료되었습니다. 로그인 화면에서 새 계정으로 로그인해 주세요.')
@@ -78,10 +77,6 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
     <section className="auth-card surface-card" aria-labelledby="auth-form-heading">
       <h2 id="auth-form-heading">{signup ? '회원가입' : '로그인'}</h2>
       <p className="muted">CUTY 계정으로 여행과 신청 내역을 이어서 관리하세요.</p>
-      {signup && <div className="auth-account-types" role="group" aria-label="가입 유형">
-        <button type="button" aria-pressed={accountType === 'customer'} onClick={() => { setAccountType('customer'); setMessage('') }}>고객</button>
-        <button type="button" aria-pressed={accountType === 'staff'} onClick={() => { setAccountType('staff'); setMessage('') }}>직원</button>
-      </div>}
       <form className="auth-form" onSubmit={submit}>
           <label className="field" htmlFor="auth-account">아이디<input id="auth-account" name="account" autoComplete={signup ? 'off' : 'username'} required minLength={4} maxLength={20} pattern="([a-zA-Z0-9_]|-){4,20}" placeholder="영문·숫자 4~20자" /></label>
           <label className="field" htmlFor="auth-password">비밀번호<input id="auth-password" name="password" type="password" autoComplete={signup ? 'new-password' : 'current-password'} required minLength={8} maxLength={64} placeholder="8자 이상" /></label>
