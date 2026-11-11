@@ -164,11 +164,11 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
   backdrop-filter: none;
 }
 .product-list { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 24px; padding: 24px 0 32px; }
-.product-row { display: grid; grid-template-rows: auto 1fr auto; align-content: stretch; gap: 12px; height: 100%; padding: 0; }
+.product-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; align-content: stretch; gap: 12px; height: 100%; padding: 0; }
 .product-row .product-image { width: 100%; height: auto; aspect-ratio: 4 / 3; }
 .product-row .product-content { display: grid; align-content: start; gap: 8px; padding: 0; }
 .product-row .product-content :is(.product-meta, h2, .product-description, .product-tags, .product-benefits) { margin: 0; }
-.product-row .product-price { display: grid; gap: 4px; margin: 0; padding: 0; align-content: end; }
+.product-row .product-price { grid-column: auto; display: grid; gap: 4px; margin: 0; padding: 0; align-content: end; }
 .product-row .product-price > p { margin: 0; }
 .product-row :is(.product-content h2, .product-content h2 a, .product-price p, .product-price strong) {
   color: #fff !important;
