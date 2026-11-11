@@ -86,12 +86,6 @@ function ApiProfilePanel() {
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    if (!message) return
-    const timer = window.setTimeout(() => setMessage(''), 4000)
-    return () => window.clearTimeout(timer)
-  }, [message])
-
-  useEffect(() => {
     let active = true
     void getMyInfo().then(response => {
       if (active) setProfile(response.data)
@@ -132,8 +126,10 @@ function ApiProfilePanel() {
       <label className="field" htmlFor="api-profile-address">주소<input id="api-profile-address" required maxLength={255} autoComplete="street-address" value={profile.address} onChange={event => setProfile({ ...profile, address: event.target.value })} /></label>
       <button className="button primary" type="submit" disabled={saving}>{saving ? '저장 중…' : '회원정보 저장'} {!saving && <Icon name="check" size={17} />}</button>
     </form>
-    {message && <p className="notice" role="status">{message}</p>}
-    {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
+    {(message || errorMessage) && <div className="notification-stack">
+      {message && <div className="notice app-notification" role="status" onAnimationEnd={() => setMessage('')}><span>{message}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setMessage('')}>×</button></div>}
+      {errorMessage && <div className="notice notice-error app-notification" role="alert" onAnimationEnd={() => setErrorMessage('')}><span>{errorMessage}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setErrorMessage('')}>×</button></div>}
+    </div>}
   </section></div>
 }
 

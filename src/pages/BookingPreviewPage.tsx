@@ -62,8 +62,10 @@ export function BookingPreviewPage({ tour }: { tour: Tour; draft: TravelDraft })
 
   return <>
     <div className="page-heading"><p className="eyebrow">예약 상세</p><h1>{booking.tour.tourName}</h1><p>예약·결제·출발 상태를 확인하세요.</p></div>
-    {notice && <p className="notice" role="status">{notice}</p>}
-    {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
+    {(notice || errorMessage) && <div className="notification-stack">
+      {notice && <div className="notice app-notification" role="status" onAnimationEnd={() => setNotice('')}><span>{notice}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setNotice('')}>×</button></div>}
+      {errorMessage && <div className="notice notice-error app-notification" role="alert" onAnimationEnd={() => setErrorMessage('')}><span>{errorMessage}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setErrorMessage('')}>×</button></div>}
+    </div>}
     <div className="flow-layout"><div className="flow-main">
       <section className="surface-card"><h2 className="section-title">예약 상태</h2><div className="status-grid"><div className={`status-card${booking.bookingStatus === 'PAID' ? ' status-complete' : ''}`}><p className="status-label">예약</p><h3>{bookingStatusLabels[booking.bookingStatus]}</h3><p className="muted">예약번호 {booking.bookingId}</p></div><div className={`status-card${booking.paymentStatus === 'SUCCESS' ? ' status-complete' : ''}`}><p className="status-label">결제</p><h3>{booking.paymentStatus ? paymentStatusLabels[booking.paymentStatus] : '결제 기록 없음'}</h3><p className="muted">할인 전 {formatPrice(booking.totalPrice)}원 · 할인율 {booking.discountRate}%</p></div></div></section>
       <section className="surface-card"><h2 className="section-title">선택 구성</h2><dl className="detail-facts"><div><dt>출발일</dt><dd>{booking.tour.startDate}</dd></div><div><dt>총 여행 인원</dt><dd>{booking.guestCount}명</dd></div><div><dt>등급</dt><dd>{levelLabels[booking.tourLevel]}</dd></div><div><dt>호텔</dt><dd>{hotelLabels[booking.hotelGrade]}</dd></div><div><dt>식사</dt><dd>{mealLabels[booking.mealType]}</dd></div><div><dt>교통</dt><dd>{transportLabels[booking.transport]}</dd></div><div><dt>음료</dt><dd>{booking.drinkOptions.length ? booking.drinkOptions.map(option => `${option.drinkName} ${option.quantity}개`).join(' · ') : '선택 없음'}</dd></div></dl></section>

@@ -169,21 +169,22 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
 
   return <>
     <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>{booking ? '예약이 생성됐어요.' : '선택한 구성으로 예약할까요?'}</h1><p>{booking ? '결제 정보를 입력해 예약을 완료하세요.' : '결제 금액과 출발·취소 조건을 확인해 주세요.'}</p></div>
+    {(payment || errorMessage) && <div className="notification-stack">
+      {payment && <div className={`notice app-notification${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role={payment.paymentStatus === 'FAILED' ? 'alert' : 'status'} onAnimationEnd={() => setPayment(null)}><span>최근 결제 결과: {payment.paymentStatus === 'SUCCESS' ? '승인' : payment.paymentStatus === 'FAILED' ? '거절' : '환불'} · {formatPrice(payment.amount)}원</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setPayment(null)}>×</button></div>}
+      {errorMessage && <div className="notice notice-error app-notification" role="alert" onAnimationEnd={() => setErrorMessage('')}><span>{errorMessage}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setErrorMessage('')}>×</button></div>}
+    </div>}
     <div className="flow-layout">
       <div className="flow-main checkout-fields">
         {!booking ? <form className="surface-card" onSubmit={submitBooking}>
           <h2 className="section-title">예약 생성</h2>
           <dl className="detail-facts"><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>할인율</dt><dd>{quote.discountRate}%</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(quote.expectedPaymentAmount)}원</dd></div></dl>
           <label className="checkout-agreement"><input type="checkbox" required /><span>선택 구성과 결제 금액을 확인했습니다.</span></label>
-          {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
           <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="submit" disabled={processing}>{processing ? '예약 중…' : '예약하기'}</button></div>
         </form> : <form className="surface-card" onSubmit={submitPayment}>
           <h2 className="section-title">카드 결제</h2>
           <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(bookingPaymentAmount)}원</dd></div></dl>
           <label className="field" htmlFor="api-card-number">카드번호 <span className="required-mark">필수</span><input id="api-card-number" required autoComplete="off" value={cardNumber} onChange={event => setCardNumber(event.target.value)} placeholder="승인 확인용 숫자를 입력하세요" /><small>결제 확인용 숫자 1을 입력해 주세요.</small></label>
-          {payment && <p className={`notice${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role="status">최근 결제 결과: {payment.paymentStatus === 'SUCCESS' ? '승인' : payment.paymentStatus === 'FAILED' ? '거절' : '환불'} · {formatPrice(payment.amount)}원</p>}
           {selectionChanged && <div className="notice"><strong>저장한 구성과 예약 내용이 다릅니다.</strong><p>결제 전 현재 구성으로 예약 내용을 수정해 주세요.</p><button className="button secondary" type="button" disabled={processing} onClick={() => void syncBooking()}>{processing ? '예약 수정 중…' : '현재 구성으로 예약 수정'}</button></div>}
-          {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
           <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><AppLink className="button secondary" href="/my-trips?tab=bookings">내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing || selectionChanged}>{processing ? '결제 처리 중…' : '결제하기'} <Icon name="arrow" size={18} /></button></div>
         </form>}
         <section className="surface-card"><h2 className="section-title">출발·취소 조건</h2><dl className="detail-facts"><div><dt>모집 마감</dt><dd>{getRecruitmentDeadline(draft.date)} · 출발 7일 전</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd></div><div><dt>재고 부족</dt><dd>예약·결제를 차단하지 않음</dd></div></dl></section>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { AppLink } from '../components/AppLink'
 import { BrandMark } from '../components/BrandMark'
 import { contactPattern } from '../data/bookingPolicy'
@@ -12,20 +12,44 @@ export function safeNextPath(value?: string) {
     ? `${url.pathname}${url.search}` : '/my-trips'
 }
 
+function formatContact(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+}
+
+function contactCaret(value: string, digitCount: number) {
+  if (digitCount <= 0) return 0
+  let seen = 0
+  for (let index = 0; index < value.length; index += 1) {
+    if (/\d/.test(value[index])) seen += 1
+    if (seen === digitCount) return index + 1
+  }
+  return value.length
+}
+
 export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: string }) {
   const signup = mode === 'signup'
   const auth = useAuth()
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [contact, setContact] = useState('')
   const destination = safeNextPath(next)
   const linkSuffix = `?next=${encodeURIComponent(destination)}`
 
-  useEffect(() => {
-    if (!message) return
-    const timer = window.setTimeout(() => setMessage(''), 5000)
-    return () => window.clearTimeout(timer)
-  }, [message])
+  function contactKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    const input = event.currentTarget
+    const caret = input.selectionStart ?? 0
+    if (event.key !== 'Backspace' || caret !== input.selectionEnd || input.value[caret - 1] !== '-') return
+    event.preventDefault()
+    const digitIndex = input.value.slice(0, caret).replace(/\D/g, '').length - 1
+    const digits = input.value.replace(/\D/g, '')
+    const next = formatContact(`${digits.slice(0, digitIndex)}${digits.slice(digitIndex + 1)}`)
+    setContact(next)
+    requestAnimationFrame(() => input.setSelectionRange(contactCaret(next, digitIndex), contactCaret(next, digitIndex)))
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -55,6 +79,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
           role: values.get('role') === 'STAFF' ? 'STAFF' : 'CUSTOMER',
         })
         form.reset()
+        setContact('')
         setMessage('회원가입이 완료되었습니다. 로그인 화면에서 새 계정으로 로그인해 주세요.')
       } else {
         const session = await auth.login({
@@ -97,12 +122,14 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
             <label className="field" htmlFor="auth-confirm">비밀번호 확인<input id="auth-confirm" name="passwordConfirm" type="password" autoComplete="new-password" required minLength={8} onInput={event => event.currentTarget.setCustomValidity('')} /></label>
             <label className="field" htmlFor="auth-name">성명<input id="auth-name" name="name" autoComplete="off" required maxLength={40}/></label>
             <label className="field" htmlFor="auth-address">주소<input id="auth-address" name="address" autoComplete="off" required maxLength={160} /></label>
-            <label className="field" htmlFor="auth-contact">연락처<input id="auth-contact" name="contact" type="tel" autoComplete="tel" required pattern={contactPattern} placeholder="010-0000-0000" /><small>하이픈을 포함해 입력해도 됩니다.</small></label>
+            <label className="field" htmlFor="auth-contact">연락처<input id="auth-contact" name="contact" type="tel" inputMode="numeric" autoComplete="tel" required pattern={contactPattern} placeholder="010-0000-0000" value={contact} onKeyDown={contactKeyDown} onChange={event => { const input = event.currentTarget; const digitCount = input.value.slice(0, input.selectionStart ?? input.value.length).replace(/\D/g, '').length; const next = formatContact(input.value); setContact(next); requestAnimationFrame(() => { const caret = contactCaret(next, digitCount); input.setSelectionRange(caret, caret) }) }} /></label>
           </>}
-          {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
           <button className="button primary" type="submit" disabled={submitting}>{submitting ? '처리 중…' : signup ? '회원가입' : '로그인'}</button>
         </form>
-      {message && <p className="notice" role="status">{message}</p>}
+      {(message || errorMessage) && <div className="notification-stack">
+        {message && <div className="notice app-notification" role="status" onAnimationEnd={() => setMessage('')}><span>{message}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setMessage('')}>×</button></div>}
+        {errorMessage && <div className="notice notice-error app-notification" role="alert" onAnimationEnd={() => setErrorMessage('')}><span>{errorMessage}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setErrorMessage('')}>×</button></div>}
+      </div>}
       <p className="auth-switch">{signup ? '이미 계정이 있으신가요?' : 'CUTY가 처음이신가요?'} <AppLink href={`${signup ? '/login' : '/signup'}${linkSuffix}`}>{signup ? '로그인' : '회원가입'}</AppLink></p>
     </section>
   </div>

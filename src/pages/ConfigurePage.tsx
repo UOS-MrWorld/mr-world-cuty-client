@@ -40,12 +40,6 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
   const champagneIncluded = tour.source !== 'api' && draft.grade === 'premium'
 
   useEffect(() => {
-    if (!changeNotice) return
-    const timer = window.setTimeout(() => setChangeNotice(''), 3500)
-    return () => window.clearTimeout(timer)
-  }, [changeNotice])
-
-  useEffect(() => {
     if (tour.source !== 'api') return
     let active = true
     setQuoteLoading(true)
@@ -140,7 +134,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
                 })}
               </div>
             </fieldset>
-            {changeNotice && <p className="notice" role="status">{changeNotice}</p>}
+            {changeNotice && <div className="notification-stack"><div className="notice app-notification" role="status" onAnimationEnd={() => setChangeNotice('')}><span>{changeNotice}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setChangeNotice('')}>×</button></div></div>}
           </section>
 
           <section className="surface-card">

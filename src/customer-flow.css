@@ -21,11 +21,15 @@
 .auth-form > .field { font-weight: 700; }
 .auth-role-options { margin: 0; padding: 0; border: 0; }
 .auth-role-options legend { margin-bottom: 8px; color: var(--ink); font-size: 12px; font-weight: 700; }
-.auth-role-options > div { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.auth-role-options label { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 10px 12px; border: 1px solid #b9cce5; border-radius: 12px; background: #f7faff; cursor: pointer; }
-.auth-role-options label:has(input:checked) { border-color: #1769e8; background: #eaf3ff; box-shadow: 0 0 0 3px rgb(23 105 232 / .12); }
-.auth-role-options input { width: 16px; height: 16px; margin: 0; accent-color: #1769e8; flex: 0 0 auto; }
-.auth-role-options span { display: grid; gap: 2px; }
+.auth-role-options > div { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 12px; }
+.auth-role-options label { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 16px 20px; border: 1px solid #d8dde5; border-radius: 12px; background: #fff; cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
+.auth-role-options label::before { content: ''; flex: 0 0 20px; width: 20px; height: 20px; border: 1px solid #c7ced8; border-radius: 50%; background: #fff; }
+.auth-role-options label:hover { border-color: #aeb8c5; }
+.auth-role-options label:has(input:checked) { border: 2px solid #1769e8; background: #eaf3ff; box-shadow: none; }
+.auth-role-options label:has(input:checked)::before { border-color: #1769e8; background: radial-gradient(circle, #fff 0 3px, transparent 4px), #1769e8; }
+.auth-role-options label:has(input:focus-visible) { box-shadow: 0 0 0 3px rgb(23 105 232 / .12); }
+.auth-role-options input { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.auth-role-options span { display: grid; gap: 4px; }
 .auth-role-options strong { color: var(--ink); font-size: 12px; }
 .auth-role-options small { color: var(--muted); font-size: 10px; font-weight: 500; }
 .auth-form .button { margin-top: 6px; width: 100%; }

@@ -85,8 +85,9 @@
 .staff-workspace .staff-state.paused { background: #e9eef3; color: #5f7180; }
 .staff-workspace .staff-text-action { display: inline-flex; min-height: 35px; align-items: center; padding: 7px 12px; border: 0; border-radius: 9px; background: var(--staff-action-gradient); color: #fff; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 11px; font-weight: 650; cursor: pointer; white-space: nowrap; }
 .staff-workspace .staff-text-action:hover { background: linear-gradient(135deg, #0878ff, #064fc0); color: #fff; }
-.staff-workspace .staff-icon-action { justify-content: center; width: 46px; min-width: 46px; min-height: 46px; padding: 0; border-radius: 15px; background: var(--staff-action-gradient); color: #fff; box-shadow: 0 8px 22px rgb(8 120 255 / .22); -webkit-backdrop-filter: none; backdrop-filter: none; }
-.staff-workspace .staff-icon-action svg { display: block; color: #fff; stroke-width: 2; }
+.staff-workspace .staff-icon-action { justify-content: center; width: 46px; min-width: 46px; min-height: 46px; padding: 0; border-radius: 15px; background: var(--staff-action-gradient) !important; color: #fff !important; box-shadow: none; opacity: 1; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.staff-workspace .staff-icon-action:hover { background: #0d55c7 !important; }
+.staff-workspace .staff-icon-action svg { display: block; color: #fff; opacity: 1; stroke-width: 2; }
 .staff-workspace .staff-tour-list .staff-text-action {
   border-color: #0878ff !important;
   background: var(--staff-action-gradient) !important;
