@@ -285,7 +285,6 @@ function CustomersSection({ path }: { path: string }) {
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [filters, retry])
-  const sortedPolicies = [...policies].sort((first, second) => first.requiredTourCount - second.requiredTourCount)
   const selectedDiscountRate = policies.find(policy => policy.grade === discountGrade)?.discountRate ?? 0
   const discountTargets = selectedDiscountRate > 0 ? customers.filter(customer => customer.loyaltyGrade === discountGrade) : []
   const pendingDiscountCount = discountTargets.filter(customer => !customer.loyaltyDiscountApplied).length
@@ -330,10 +329,6 @@ function CustomersSection({ path }: { path: string }) {
           {!customers.length && <tr><td className="staff-loyalty-empty" colSpan={6}>표시할 고객이 없습니다.</td></tr>}
         </tbody></table></div>
       </section>
-      <aside className="staff-loyalty-notice">
-        <strong>단골 할인 운영 방식</strong>
-        <p>등급은 완료 여행 횟수로 산정되지만 할인은 자동 적용되지 않습니다. 직원 승인 후 다음 결제부터 적용됩니다. {sortedPolicies.map(policy => `${loyaltyLabels[policy.grade]} ${policy.requiredTourCount}회 이상·${policy.discountRate}%`).join(' / ')}</p>
-      </aside>
     </>}
   </>
 }
