@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { createBooking, getBooking, updateBooking } from '../api/booking'
 import { createPayment } from '../api/payment'
 import { getTourQuote } from '../api/tour'
@@ -35,8 +35,6 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
   const [serverSelectionKey, setServerSelectionKey] = useState('')
   const [payment, setPayment] = useState<PaymentResponse | null>(null)
   const [cardNumber, setCardNumber] = useState('')
-  const [cardParts, setCardParts] = useState(['', '', '', ''])
-  const cardInputs = useRef<Array<HTMLInputElement | null>>([])
   const [loading, setLoading] = useState(true)
   const [restoring, setRestoring] = useState(Boolean(requestedBookingId))
   const [resumeBlocked, setResumeBlocked] = useState(false)
@@ -49,27 +47,7 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
     ? discountedPaymentAmount(booking.totalPrice, booking.discountRate)
     : 0
 
-  function updateCardPart(index: number, value: string) {
-    const next = [...cardParts]
-    next[index] = value.replace(/\D/g, '').slice(0, 4)
-    setCardParts(next)
-    setCardNumber(next.join(''))
-    if (next[index].length === 4 && index < 3) cardInputs.current[index + 1]?.focus()
-  }
-
-  function cardPartKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Backspace' && !cardParts[index] && index > 0) cardInputs.current[index - 1]?.focus()
-  }
-
-  function pasteCardNumber(event: ClipboardEvent<HTMLInputElement>) {
-    const digits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 16)
-    if (!digits) return
-    event.preventDefault()
-    const next = [0, 4, 8, 12].map(start => digits.slice(start, start + 4))
-    setCardParts(next)
-    setCardNumber(digits)
-    cardInputs.current[Math.min(3, Math.floor((digits.length - 1) / 4))]?.focus()
-  }
+  const formattedCardNumber = cardNumber.replace(/(\d{4})(?=\d)/g, '$1-')
 
   useEffect(() => {
     let active = true
@@ -207,9 +185,7 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
         </form> : <form className="surface-card" onSubmit={submitPayment}>
           <h2 className="section-title">카드 결제</h2>
           <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(bookingPaymentAmount)}원</dd></div></dl>
-          <div className="field"><span>카드번호</span><div className="card-number-group" role="group" aria-label="카드번호를 입력하세요">
-            {cardParts.map((part, index) => <Fragment key={index}>{index > 0 && <span aria-hidden="true">-</span>}<input ref={element => { cardInputs.current[index] = element }} required={index === 0} inputMode="numeric" maxLength={4} autoComplete="off" value={part} placeholder="0000" aria-label={`카드번호 ${index + 1}번째 4자리`} onChange={event => updateCardPart(index, event.target.value)} onKeyDown={event => cardPartKeyDown(index, event)} onPaste={index === 0 ? pasteCardNumber : undefined} /></Fragment>)}
-          </div></div>
+          <label className="field" htmlFor="api-card-number">카드번호<input id="api-card-number" required inputMode="numeric" maxLength={19} autoComplete="off" value={formattedCardNumber} placeholder="0000-0000-0000-0000" aria-label="카드번호를 입력하세요" onChange={event => setCardNumber(event.target.value.replace(/\D/g, '').slice(0, 16))} /></label>
           {selectionChanged && <div className="notice"><strong>저장한 구성과 예약 내용이 다릅니다.</strong><p>결제 전 현재 구성으로 예약 내용을 수정해 주세요.</p><button className="button secondary" type="button" disabled={processing} onClick={() => void syncBooking()}>{processing ? '예약 수정 중…' : '현재 구성으로 예약 수정'}</button></div>}
           <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><AppLink className="button secondary" href="/my-trips?tab=bookings">내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing || selectionChanged}>{processing ? '결제 처리 중…' : '결제하기'} <Icon name="arrow" size={18} /></button></div>
         </form>}
