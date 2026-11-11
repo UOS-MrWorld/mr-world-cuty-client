@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { AppLink } from '../components/AppLink'
 import { BrandMark } from '../components/BrandMark'
 import { contactPattern } from '../data/bookingPolicy'
@@ -20,6 +20,12 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
   const [submitting, setSubmitting] = useState(false)
   const destination = safeNextPath(next)
   const linkSuffix = `?next=${encodeURIComponent(destination)}`
+
+  useEffect(() => {
+    if (!message) return
+    const timer = window.setTimeout(() => setMessage(''), 5000)
+    return () => window.clearTimeout(timer)
+  }, [message])
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -46,7 +52,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
           name: String(values.get('name') ?? ''),
           phoneNum: String(values.get('contact') ?? '').replace(/\D/g, ''),
           address: String(values.get('address') ?? ''),
-          role: 'CUSTOMER',
+          role: values.get('role') === 'STAFF' ? 'STAFF' : 'CUSTOMER',
         })
         form.reset()
         setMessage('회원가입이 완료되었습니다. 로그인 화면에서 새 계정으로 로그인해 주세요.')
@@ -72,17 +78,24 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
       <BrandMark large />
       <p className="eyebrow">CURATE YOUR TRAVEL</p>
       <h1>{signup ? '여행의 시작, CUTY와 함께.' : '여행을 시작해 보세요.'}</h1>
-      <p>고른 여행을 이어서 구성하고,<br />신청한 여행과 출발 상태를 한곳에서 확인하세요.</p>
+      <p>고른 여행을 이어서 구성하고<br />신청한 여행과 출발 상태를 한곳에서 확인하세요</p>
     </section>
     <section className="auth-card surface-card" aria-labelledby="auth-form-heading">
       <h2 id="auth-form-heading">{signup ? '회원가입' : '로그인'}</h2>
       <p className="muted">CUTY 계정으로 여행과 신청 내역을 이어서 관리하세요.</p>
       <form className="auth-form" onSubmit={submit}>
+          {signup && <fieldset className="auth-role-options">
+            <legend>가입 유형</legend>
+            <div>
+              <label><input type="radio" name="role" value="CUSTOMER" defaultChecked required /><span><strong>고객</strong><small>여행 검색·구성·예약</small></span></label>
+              <label><input type="radio" name="role" value="STAFF" required /><span><strong>직원</strong><small>상품·예약 운영 관리</small></span></label>
+            </div>
+          </fieldset>}
           <label className="field" htmlFor="auth-account">아이디<input id="auth-account" name="account" autoComplete={signup ? 'off' : 'username'} required minLength={4} maxLength={20} pattern="([a-zA-Z0-9_]|-){4,20}" placeholder="영문·숫자 4~20자" /></label>
           <label className="field" htmlFor="auth-password">비밀번호<input id="auth-password" name="password" type="password" autoComplete={signup ? 'new-password' : 'current-password'} required minLength={8} maxLength={64} placeholder="8자 이상" /></label>
           {signup && <>
             <label className="field" htmlFor="auth-confirm">비밀번호 확인<input id="auth-confirm" name="passwordConfirm" type="password" autoComplete="new-password" required minLength={8} onInput={event => event.currentTarget.setCustomValidity('')} /></label>
-            <label className="field" htmlFor="auth-name">성명<input id="auth-name" name="name" autoComplete="off" required maxLength={40} placeholder="화면 검토에는 예시 이름을 사용해 주세요" /></label>
+            <label className="field" htmlFor="auth-name">성명<input id="auth-name" name="name" autoComplete="off" required maxLength={40}/></label>
             <label className="field" htmlFor="auth-address">주소<input id="auth-address" name="address" autoComplete="off" required maxLength={160} /></label>
             <label className="field" htmlFor="auth-contact">연락처<input id="auth-contact" name="contact" type="tel" autoComplete="tel" required pattern={contactPattern} placeholder="010-0000-0000" /><small>하이픈을 포함해 입력해도 됩니다.</small></label>
           </>}

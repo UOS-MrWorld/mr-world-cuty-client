@@ -58,7 +58,7 @@ export default function TourDetailPage({ tour, draft, onChange, onContinue }: {
           </section>
         </div>
         <aside className="flow-summary booking-panel" aria-labelledby="booking-panel-title">
-          <div className="booking-panel-header"><h2 id="booking-panel-title">일정·인원 선택</h2>{tour.source !== 'api' && <span>예시 상품</span>}</div>
+          <div className="booking-panel-header"><h2 id="booking-panel-title">일정·인원 선택</h2>{tour.source !== 'api' && <span>여행상품</span>}</div>
           <div className="starting-price"><small>{gradeLabels[minimumGrade(tour)]} 기본 구성 · 1인</small><p><strong>{formatPrice(tour.price)}</strong>원~</p></div>
           <form id="detail-booking" noValidate onSubmit={event => {
             event.preventDefault()
@@ -74,7 +74,7 @@ export default function TourDetailPage({ tour, draft, onChange, onContinue }: {
           </form>
         </aside>
       </div>
-      <div className="mobile-detail-bar"><div><small>1인 예시 가격</small><strong>{formatPrice(tour.price)}원~</strong></div><a className="button primary" href="#detail-booking">일정·인원 선택</a></div>
+      <div className="mobile-detail-bar"><div><small>1인 예상 가격</small><strong>{formatPrice(tour.price)}원~</strong></div><a className="button primary" href="#detail-booking">일정·인원 선택</a></div>
     </>
   )
 }

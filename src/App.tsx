@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { getTour as requestTour } from './api/tour'
-import { getTravelHistory } from './api/booking'
+import { createBooking, getBookings, getTravelHistory } from './api/booking'
 import { AppLink } from './components/AppLink'
 import { BrandMark } from './components/BrandMark'
 import { FlowSteps } from './components/FlowSteps'
@@ -8,6 +8,7 @@ import { Icon } from './components/Icon'
 import { createDraft, isValidTravelDate, normalizeDraft } from './data/configuration'
 import { themes } from './data/travel'
 import { toDisplayTour } from './data/tourApiAdapter'
+import { toBookingRequest } from './data/bookingApiAdapter'
 import { apiTourLevels, applyVoiceConfiguration, voiceSearchPath, voiceSummary } from './data/voiceCommand'
 import { themeLabels } from './data/catalogue'
 import { useLocalStorage } from './hooks/useLocalStorage'
@@ -32,9 +33,6 @@ const SnowGlobe = lazy(() => import('./components/SnowGlobe'))
 const StaffPage = lazy(() => import('./pages/StaffPage'))
 
 import type { TravelDraft } from './types/travel'
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item) => typeof item === 'string')
 
 const isStoredDraftArray = (value: unknown): value is Record<string, unknown>[] =>
   Array.isArray(value) && value.every((item) =>
@@ -127,20 +125,8 @@ function CutyApp() {
     ? pageNames[screen ?? ''] ?? '상품 상세'
     : collectionNames[pathname] ?? '페이지를 찾을 수 없습니다'
   const title = tour ? `${pageLabel} · ${tour.title}` : pageLabel
-  const legacyCart = (() => {
-    try {
-      const value: unknown = JSON.parse(localStorage.getItem('cuty:wishes:v1') ?? 'null')
-      return isStringArray(value) ? value : []
-    } catch {
-      return []
-    }
-  })()
-  const [cartIds, saveCartIds, cartError] = useLocalStorage('cuty:cart:v1', legacyCart, isStringArray)
   const [storedDrafts, saveDrafts, draftsError] = useLocalStorage('cuty:drafts:v1', [], isStoredDraftArray)
-  const [savedApiTours, setSavedApiTours] = useState<ReturnType<typeof toDisplayTour>[]>([])
-  const [savedApiLoading, setSavedApiLoading] = useState(false)
-  const [savedApiError, setSavedApiError] = useState('')
-  const [savedApiRetry, setSavedApiRetry] = useState(0)
+  const [pendingBookingCount, setPendingBookingCount] = useState(0)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [voicePendingAction, setVoicePendingAction] = useState<string | null>(null)
@@ -150,17 +136,6 @@ function CutyApp() {
   const voiceTriggerRef = useRef<HTMLButtonElement>(null)
   const homeWelcomeTimerRef = useRef<number | null>(null)
   const previousPath = useRef<string | null>(null)
-  const visibleCartIds = useCustomerApi ? cartIds.filter(id => /^\d+$/.test(id)) : []
-  const savedApiTourIds = Array.from(new Set([
-    ...visibleCartIds,
-    ...storedDrafts.map(item => String(item.tourId ?? '')),
-  ].filter(id => /^\d+$/.test(id))))
-  const savedApiTourKey = savedApiTourIds.sort((a, b) => Number(a) - Number(b)).join(',')
-  const availableSavedTours = useCustomerApi ? savedApiTours : []
-  const draftEntries = availableSavedTours.flatMap((item) => {
-    const stored = storedDrafts.find((draft) => draft.tourId === item.id)
-    return stored ? [{ tour: item, draft: normalizeDraft(item, stored) }] : []
-  })
   const bookingId = new URLSearchParams(search).get('booking')
   const storedTourDraft = tour ? storedDrafts.find((item) => item.tourId === tour.id) : undefined
   const draft = tour
@@ -184,29 +159,25 @@ function CutyApp() {
   }
 
   useEffect(() => {
-    if (!useCustomerApi || !savedApiTourKey) {
-      setSavedApiTours([])
-      setSavedApiLoading(false)
-      setSavedApiError('')
+    if (!useCustomerApi) {
+      setPendingBookingCount(0)
       return
     }
     let active = true
-    setSavedApiLoading(true)
-    setSavedApiError('')
-    void Promise.allSettled(savedApiTourIds.map(id => requestTour(Number(id)))).then(results => {
-      if (!active) return
-      const loaded = results.flatMap(result => result.status === 'fulfilled' ? [toDisplayTour(result.value.data)] : [])
-      setSavedApiTours(loaded)
-      if (loaded.length !== savedApiTourIds.length) {
-        setSavedApiError('일부 저장한 상품을 불러오지 못했습니다.')
-      }
-    }).finally(() => {
-      if (active) setSavedApiLoading(false)
-    })
-    return () => { active = false }
-  // savedApiTourKey가 ID 목록 전체를 대표하며, 배열 자체의 매 렌더 변경은 무시합니다.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedApiRetry, savedApiTourKey, useCustomerApi])
+    const refresh = () => {
+      void getBookings({ status: 'PENDING', page: 0, size: 100 }).then(response => {
+        if (active) setPendingBookingCount(response.data.totalElements)
+      }).catch(() => {
+        if (active) setPendingBookingCount(0)
+      })
+    }
+    refresh()
+    window.addEventListener('cuty:bookings-change', refresh)
+    return () => {
+      active = false
+      window.removeEventListener('cuty:bookings-change', refresh)
+    }
+  }, [route, useCustomerApi])
 
   useEffect(() => {
     document.title = `${title} | CUTY`
@@ -224,6 +195,18 @@ function CutyApp() {
   useEffect(() => {
     setVoicePendingAction(null)
   }, [route])
+
+  useEffect(() => {
+    if (!feedback.message) return
+    const timer = window.setTimeout(() => setFeedback({ route: '', message: '' }), 4000)
+    return () => window.clearTimeout(timer)
+  }, [feedback])
+
+  useEffect(() => {
+    if (!voiceFeedback) return
+    const timer = window.setTimeout(() => setVoiceFeedback(''), 5000)
+    return () => window.clearTimeout(timer)
+  }, [voiceFeedback])
 
   useEffect(() => () => {
     if (homeWelcomeTimerRef.current !== null) window.clearTimeout(homeWelcomeTimerRef.current)
@@ -274,8 +257,19 @@ function CutyApp() {
     ])
   }
 
-  function toggleCart(id: string) {
-    saveCartIds(cartIds.includes(id) ? cartIds.filter((item) => item !== id) : [...cartIds, id])
+  async function handleLogout() {
+    setFeedback({ route: '', message: '' })
+    setVoiceFeedback('')
+    setVoicePendingAction(null)
+    saveDrafts([])
+    try {
+      localStorage.removeItem('cuty:cart:v1')
+      localStorage.removeItem('cuty:wishes:v1')
+    } catch {
+      // 저장소를 사용할 수 없어도 로그아웃은 계속 진행한다.
+    }
+    await logout()
+    navigate('/login')
   }
 
   function closeVoice() {
@@ -401,16 +395,16 @@ function CutyApp() {
     }
     if (pathname === '/') return <LandingPage onMoodChange={setHomeMood} showSearch={authSession?.role !== 'STAFF'} />
     if (pathname === '/tours') {
-      return <ExplorePage cartIds={visibleCartIds} useApi={useCustomerApi} />
+      return <ExplorePage useApi={useCustomerApi} />
     }
     if (pathname === '/my-trips') {
-      return <MyTripsPage draftEntries={draftEntries} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
+      return <MyTripsPage />
     }
     if (pathname === '/cart' || pathname === '/saved') {
       if (!useCustomerApi) {
         return <div className="empty-state"><h1>고객 계정이 필요한 화면이에요.</h1><p>장바구니는 고객 계정으로 확인할 수 있어요.</p><AppLink className="button primary" href={`/login?next=${encodeURIComponent(`${pathname}${search}`)}`}>고객 계정으로 로그인</AppLink></div>
       }
-      return <CartPage cartIds={visibleCartIds} onCartToggle={toggleCart} availableTours={availableSavedTours} draftEntries={draftEntries} savedToursLoading={savedApiLoading} savedToursError={savedApiError} onRetrySavedTours={() => setSavedApiRetry(value => value + 1)} />
+      return <CartPage />
     }
     const numericTourRoute = Boolean(routeTourId && /^\d+$/.test(routeTourId))
     if (routeTourId && !authSession) {
@@ -458,14 +452,17 @@ function CutyApp() {
           tour={tour}
           draft={draft}
           onChange={updateDraft}
-          onSave={() => {
-            const persisted = updateDraft(draft)
-            setFeedback({
-              route,
-              message: persisted
-                ? '구성을 저장했습니다. 내 여행에서 다시 확인할 수 있습니다.'
-                : '현재 화면에만 구성을 보관했습니다. 브라우저 저장 공간을 확인해 주세요.',
-            })
+          onSave={async () => {
+            updateDraft(draft)
+            try {
+              await createBooking(toBookingRequest(tour, draft))
+              navigate('/cart')
+            } catch (error) {
+              setFeedback({
+                route,
+                message: error instanceof Error ? error.message : '장바구니에 저장하지 못했습니다.',
+              })
+            }
           }}
           onContinue={() => {
             updateDraft(draft)
@@ -473,8 +470,6 @@ function CutyApp() {
             if (bookingId) params.set('update', '1')
             navigate(`/tours/${tour.id}/checkout${params.size ? `?${params}` : ''}`)
           }}
-          inCart={visibleCartIds.includes(tour.id)}
-          onCartToggle={() => toggleCart(tour.id)}
         />
       )
     }
@@ -511,9 +506,9 @@ function CutyApp() {
           {authSession?.role === 'STAFF'
             ? <nav className="main-nav" aria-label="직원 주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/staff/tours" aria-current={isStaff ? 'page' : undefined}>여행 운영</AppLink></nav>
             : <nav className="main-nav" aria-label="고객 주요 메뉴"><AppLink href="/" aria-current={isLanding ? 'page' : undefined}>홈</AppLink><AppLink href="/tours" aria-current={pathname === '/tours' || tour ? 'page' : undefined}>여행 둘러보기</AppLink><AppLink href="/my-trips" aria-current={pathname === '/my-trips' ? 'page' : undefined}>내 여행</AppLink></nav>}
-          <nav className="utility-nav" aria-label="보조 메뉴">{authSession?.role === 'CUSTOMER' && <AppLink href="/cart" aria-label={`장바구니 ${savedApiTourIds.length}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{savedApiTourIds.length > 0 && <b>{savedApiTourIds.length}</b>}</AppLink>}{authSession ? <button className="session-pill" onClick={() => void logout()} title="로그아웃">{authSession.memberName} 로그아웃</button> : <AppLink href={`/login?next=${encodeURIComponent(route)}`}>로그인</AppLink>}</nav>
+          <nav className="utility-nav" aria-label="보조 메뉴">{authSession?.role === 'CUSTOMER' && <AppLink href="/cart" aria-label={`장바구니 ${pendingBookingCount}개`} aria-current={pathname === '/cart' || pathname === '/saved' ? 'page' : undefined}><Icon name="cart" size={18} /><span>장바구니</span>{pendingBookingCount > 0 && <b>{pendingBookingCount}</b>}</AppLink>}{authSession ? <button className="session-pill" onClick={() => void handleLogout()} title="로그아웃">{authSession.memberName} 로그아웃</button> : <AppLink href={`/login?next=${encodeURIComponent(route)}`}>로그인</AppLink>}</nav>
         </div>
-        {!isLanding && !isStaff && !isAuth && pathname !== '/tours' && pathname !== '/my-trips' && <nav className="category-nav" aria-label="여행 테마 메뉴">{themes.map(item => {
+        {!isLanding && !isStaff && !isAuth && pathname !== '/tours' && pathname !== '/my-trips' && pathname !== '/cart' && pathname !== '/saved' && <nav className="category-nav" aria-label="여행 테마 메뉴">{themes.map(item => {
           const href = item.id === 'all' ? '/tours' : `/tours?theme=${item.id}`
           const selected = tour ? tour.theme === item.id : pathname === '/tours' && (new URLSearchParams(search).get('theme') ?? 'all') === item.id
           return <AppLink key={item.id} href={href} className={selected ? 'nav-active' : ''} aria-current={selected && pathname === '/tours' ? 'page' : undefined}>{themeLabels[item.id]}</AppLink>
@@ -537,9 +532,9 @@ function CutyApp() {
         {tour && screen && (
           <FlowSteps tourId={tour.id} step={flowSteps[screen ?? ''] ?? 1} search={search} />
         )}
-        {(cartError || draftsError) && (
+        {draftsError && (
           <p className="notice notice-error" role="alert">
-            브라우저 저장 공간을 사용할 수 없습니다. 새로고침하면 변경 내용이 사라질 수 있습니다.
+            변경 내용을 임시 저장할 수 없습니다. 새로고침하면 변경 내용이 사라질 수 있습니다.
           </p>
         )}
         {feedback.route === route && feedback.message && (
@@ -566,7 +561,7 @@ function CutyApp() {
         <p>로그인 세션이 5분 안에 만료됩니다. 작업을 계속하려면 세션을 연장해 주세요.</p>
         {sessionError && <p className="notice notice-error" role="alert">{sessionError}</p>}
         <div className="action-row">
-          <button className="button secondary" type="button" onClick={() => void logout()}>로그아웃</button>
+          <button className="button secondary" type="button" onClick={() => void handleLogout()}>로그아웃</button>
           <button className="button primary" type="button" onClick={() => {
             setSessionError('')
             void extendSession().then(() => setSessionWarning(false)).catch(error => {

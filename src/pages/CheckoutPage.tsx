@@ -154,7 +154,7 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
         params.set('booking', String(data.bookingId))
         navigate(`/tours/${tour.id}/preview?${params}`)
       } else {
-        setErrorMessage('결제가 승인되지 않았습니다. 입력값을 바꿔 다시 시도해 주세요.')
+        setErrorMessage('결제가 승인되지 않았습니다. 다시 시도해 주세요.')
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '결제를 처리하지 못했습니다.')
@@ -180,9 +180,9 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
         </form> : <form className="surface-card" onSubmit={submitPayment}>
           <h2 className="section-title">카드 결제</h2>
           <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(bookingPaymentAmount)}원</dd></div></dl>
-          <label className="field" htmlFor="api-card-number">카드번호 <span className="required-mark">필수</span><input id="api-card-number" required autoComplete="off" value={cardNumber} onChange={event => setCardNumber(event.target.value)} placeholder="승인 확인용 숫자를 입력하세요" /><small>실제 카드번호는 입력하지 마세요. 숫자 1을 입력하면 승인됩니다.</small></label>
+          <label className="field" htmlFor="api-card-number">카드번호 <span className="required-mark">필수</span><input id="api-card-number" required autoComplete="off" value={cardNumber} onChange={event => setCardNumber(event.target.value)} placeholder="승인 확인용 숫자를 입력하세요" /><small>결제 확인용 숫자 1을 입력해 주세요.</small></label>
           {payment && <p className={`notice${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role="status">최근 결제 결과: {payment.paymentStatus === 'SUCCESS' ? '승인' : payment.paymentStatus === 'FAILED' ? '거절' : '환불'} · {formatPrice(payment.amount)}원</p>}
-          {selectionChanged && <div className="notice"><strong>저장한 구성과 예약 내용이 다릅니다.</strong><p>결제 전에 현재 구성으로 예약 내용을 수정해 주세요.</p><button className="button secondary" type="button" disabled={processing} onClick={() => void syncBooking()}>{processing ? '예약 수정 중…' : '현재 구성으로 예약 수정'}</button></div>}
+          {selectionChanged && <div className="notice"><strong>저장한 구성과 예약 내용이 다릅니다.</strong><p>결제 전 현재 구성으로 예약 내용을 수정해 주세요.</p><button className="button secondary" type="button" disabled={processing} onClick={() => void syncBooking()}>{processing ? '예약 수정 중…' : '현재 구성으로 예약 수정'}</button></div>}
           {errorMessage && <p className="notice notice-error" role="alert">{errorMessage}</p>}
           <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><AppLink className="button secondary" href="/my-trips?tab=bookings">내 예약 보기</AppLink><button className="button primary" type="submit" disabled={processing || selectionChanged}>{processing ? '결제 처리 중…' : '결제하기'} <Icon name="arrow" size={18} /></button></div>
         </form>}

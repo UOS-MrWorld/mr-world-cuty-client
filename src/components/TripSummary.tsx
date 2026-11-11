@@ -68,7 +68,7 @@ export function TripSummary({
         <span>예상 총액</span>
         <strong>{formatPrice(quote?.expectedPaymentAmount ?? estimate.total)}원</strong>
       </div>
-      <p className="summary-note muted">{quote ? '선택 구성 기준 결제 예정 금액' : `1인 ${formatPrice(estimate.perPerson)}원 · 예시 금액`}</p>
+      <p className="summary-note muted">{quote ? '선택 구성 기준 결제 예정 금액' : `1인 ${formatPrice(estimate.perPerson)}원 · 예상 금액`}</p>
       {children}
     </aside>
   )

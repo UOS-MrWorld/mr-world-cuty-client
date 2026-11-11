@@ -19,6 +19,15 @@
 .auth-card > .muted { font-size: 12px; margin-bottom: 20px; }
 .auth-form,.profile-form { display: grid; gap: 14px; }
 .auth-form > .field { font-weight: 700; }
+.auth-role-options { margin: 0; padding: 0; border: 0; }
+.auth-role-options legend { margin-bottom: 8px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.auth-role-options > div { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.auth-role-options label { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 10px 12px; border: 1px solid #b9cce5; border-radius: 12px; background: #f7faff; cursor: pointer; }
+.auth-role-options label:has(input:checked) { border-color: #1769e8; background: #eaf3ff; box-shadow: 0 0 0 3px rgb(23 105 232 / .12); }
+.auth-role-options input { width: 16px; height: 16px; margin: 0; accent-color: #1769e8; flex: 0 0 auto; }
+.auth-role-options span { display: grid; gap: 2px; }
+.auth-role-options strong { color: var(--ink); font-size: 12px; }
+.auth-role-options small { color: var(--muted); font-size: 10px; font-weight: 500; }
 .auth-form .button { margin-top: 6px; width: 100%; }
 .auth-switch { text-align: center; margin: 18px 0 0; font-size: 12px; color: var(--muted); }
 .auth-switch a { margin-left: 7px; color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }

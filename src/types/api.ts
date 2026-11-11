@@ -71,7 +71,7 @@ export function normalizeApiError(error: unknown) {
         : status === 409
           ? '현재 상태에서는 요청을 처리할 수 없습니다.'
           : status >= 500
-            ? '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+            ? '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
             : '네트워크 연결을 확인하고 다시 시도해 주세요.'
 
   return new ApiRequestError(fallback, status, status, error)

@@ -20,14 +20,12 @@ import { findDrinkOption, toQuoteRequest } from '../data/bookingApiAdapter'
 import type { QuoteResponse } from '../types/tourApi'
 import type { HotelGrade, Tour, TravelDraft, TravelGrade, TravelMeal, TravelTransport } from '../types/travel'
 
-export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCart, onCartToggle }: {
+export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
   tour: Tour
   draft: TravelDraft
   onChange: (draft: TravelDraft) => void
   onContinue: () => void
-  onSave: () => void
-  inCart: boolean
-  onCartToggle: () => void
+  onSave: () => void | Promise<void>
 }) {
   const dateInput = useRef<HTMLInputElement>(null)
   const [dateError, setDateError] = useState(false)
@@ -40,6 +38,12 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
   const champagneOption = findDrinkOption(tour, 'CHAMPAGNE')
   const coffeeOption = findDrinkOption(tour, 'COFFEE')
   const champagneIncluded = tour.source !== 'api' && draft.grade === 'premium'
+
+  useEffect(() => {
+    if (!changeNotice) return
+    const timer = window.setTimeout(() => setChangeNotice(''), 3500)
+    return () => window.clearTimeout(timer)
+  }, [changeNotice])
 
   useEffect(() => {
     if (tour.source !== 'api') return
@@ -102,7 +106,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                   onChange={(event) => {
                     const travelers = Number(event.currentTarget.value)
                     update({ travelers })
-                    setChangeNotice(travelers > 2 && draft.transport === 'private' ? '3명 이상 선택 시 10인승 차량이 적용됩니다. 예시 기준입니다.' : '')
+                    setChangeNotice(travelers > 2 && draft.transport === 'private' ? '3명 이상 선택하면 10인승 차량이 적용됩니다.' : '')
                   }} />
                 <small className="muted" id="travelers-help">{tour.theme === 'romance' ? '허니문 예약은 정확히 2명 · 전체 결제 인원 3명 이상이면 출발 확정' : '예약 인원 상한 없음 · 전체 결제 인원 3명 이상이면 출발 확정'}</small>
               </div>
@@ -163,7 +167,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
                   return (
                     <label key={transport} className={`choice-card ${draft.transport === transport ? 'selected' : ''} ${reason ? 'unavailable' : ''}`}>
                       <input type="radio" name="transport" disabled={Boolean(reason)} checked={draft.transport === transport} onChange={() => update({ transport })} />
-                      <strong>{tour.theme === 'romance' && transport === 'private' ? `커플별 2인 전용 차량 · ${draft.travelers / 2}대` : transportLabels[transport]}</strong>
+                      <strong>{transportLabels[transport]}</strong>
                       {reason && <small>{reason}</small>}
                       {draft.transport === transport && <span className="selection-label">선택됨</span>}
                     </label>
@@ -232,15 +236,14 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave, inCar
           </div>}
           <div className="action-row">
             <button className="button primary" type="submit" disabled={tour.source === 'api' && (!quote || quoteLoading || Boolean(quoteError))}>신청 내용 확인하기</button>
-            <button className="button secondary" type="button" disabled={tour.source === 'api' && (!quote || quoteLoading || Boolean(quoteError))} onClick={onCartToggle}>{inCart ? '장바구니에서 빼기' : '장바구니 담기'}</button>
-            <button className="button secondary" type="button" onClick={onSave}>구성 저장하기</button>
+            <button className="button secondary" type="button" disabled={tour.source !== 'api' || !quote || quoteLoading || Boolean(quoteError)} onClick={() => void onSave()}>장바구니에 저장</button>
           </div>
-          <p className="muted">선택 내용은 이 브라우저에 자동 저장됩니다.</p>
+          <p className="muted">선택 내용은 자동 저장됩니다.</p>
           <details className="included-details">
             <summary>테마 기본 제공 사항</summary>
             <ul>{themeBenefits[tour.theme].map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
           </details>
-          {tour.source !== 'api' && <p className="notice">예시 상품입니다. 실제 신청·결제는 진행되지 않습니다.</p>}
+          {tour.source !== 'api' && <p className="notice">상품 정보를 확인하는 화면입니다. 신청과 결제는 진행되지 않습니다.</p>}
         </aside>
         <div className="mobile-configure-bar" aria-label="예상 금액과 다음 단계">
           <div><small>{draft.travelers}명 · {gradeLabels[draft.grade]} · {tour.source === 'api' ? '결제 예정 금액' : '예상 합계'}</small><strong>{formatPrice(quote?.expectedPaymentAmount ?? estimate.total)}원</strong></div>

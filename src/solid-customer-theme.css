@@ -116,6 +116,13 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
 .app-main:not(.landing-main):not(.staff-main) .flow-steps li { text-shadow: 0 1px 10px rgb(18 52 110 / .24); }
 
 .draft-list article.surface-card > div { display: grid; min-width: 0; }
+.api-booking-card .status-pill {
+  min-height: 34px;
+  padding: 8px 14px;
+  align-items: center;
+}
+.api-booking-card h2 { margin: 16px 0 5px; }
+.api-booking-card h2 + .muted { margin-top: 0; }
 .draft-card .draft-card-actions { flex: 0 0 164px; gap: 12px; }
 .draft-card .draft-action-box {
   width: 100%;
@@ -323,15 +330,15 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
 
 .catalog-filterbar {
   display: grid;
-  grid-template-columns: minmax(350px, .85fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 24px;
-  min-height: 184px;
+  gap: 20px;
+  min-height: 0;
   padding: 24px 32px;
 }
 .catalog-filterbar-search {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto;
+  grid-template-columns: minmax(280px, 1fr) auto auto;
   gap: 10px;
 }
 .catalog-filterbar-search .catalog-keyword {
@@ -339,6 +346,7 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
   grid-column: auto;
 }
 .catalog-filterbar-search .catalog-keyword > span { display: none; }
+.catalog-filterbar-search .button svg { display: block; color: #fff; stroke-width: 2; }
 .catalog-filterbar .filter-fields,
 .catalog-filterbar .filter-fields.is-open {
   display: grid;
@@ -365,7 +373,7 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
   align-items: center;
   margin-top: 0;
 }
-.catalog-filterbar .filter-fields fieldset label { font-size: 13px; }
+.catalog-filterbar .filter-fields fieldset label { font-size: 13px; white-space: nowrap; }
 .catalog-filterbar .range-filter output { grid-row: 2; align-self: center; }
 .catalog-filterbar .range-filter > input[type='range'] { grid-row: 3; align-self: center; width: 100%; margin: 0; }
 .catalog-filterbar .range-filter .range-labels { display: none; }

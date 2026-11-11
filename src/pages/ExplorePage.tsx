@@ -9,8 +9,7 @@ import { apiThemeByLocalTheme, toDisplayTour } from '../data/tourApiAdapter'
 import { navigate } from '../hooks/useRoute'
 import type { ThemeId } from '../types/travel'
 
-export default function ExplorePage({ cartIds, useApi = false }: {
-  cartIds: string[]
+export default function ExplorePage({ useApi = false }: {
   useApi?: boolean
 }) {
   const [apiTours, setApiTours] = useState<ReturnType<typeof toDisplayTour>[]>([])
@@ -26,7 +25,6 @@ export default function ExplorePage({ cartIds, useApi = false }: {
   const budget = Number(params.get('budget')) > 0 && Number.isFinite(Number(params.get('budget'))) ? params.get('budget') ?? '' : ''
   const duration = ['short', 'medium', 'long'].includes(params.get('duration') ?? '') ? params.get('duration') ?? '' : ''
   const sort = ['price-asc', 'price-desc', 'duration'].includes(params.get('sort') ?? '') ? params.get('sort') ?? '' : ''
-  const cartOnly = params.get('view') === 'cart' || params.get('view') === 'saved'
   const departureDate = params.get('date')?.trim() ?? ''
   const startDateFrom = params.get('from')?.trim() ?? ''
   const startDateTo = params.get('to')?.trim() ?? ''
@@ -68,9 +66,8 @@ export default function ExplorePage({ cartIds, useApi = false }: {
   }, [budget, departureDate, retryNonce, search, startDateFrom, startDateTo, theme, useApi])
 
   const filtered = useMemo(() => {
-    if (!useApi) return getVisibleTours(params, cartIds)
+    if (!useApi) return getVisibleTours(params)
     return apiTours
-      .filter(tour => !cartOnly || cartIds.includes(tour.id))
       .filter(tour => !startDateFrom || (tour.startDate ?? '') >= startDateFrom)
       .filter(tour => !startDateTo || (tour.startDate ?? '') <= startDateTo)
       .filter(tour => {
@@ -78,7 +75,7 @@ export default function ExplorePage({ cartIds, useApi = false }: {
         return !duration || duration === 'short' ? !duration || days <= 4 : duration === 'medium' ? days >= 5 && days <= 7 : days >= 8
       })
       .sort((a, b) => sort === 'price-asc' ? a.price - b.price : sort === 'price-desc' ? b.price - a.price : sort === 'duration' ? getTourDays(a) - getTourDays(b) : 0)
-  }, [apiTours, cartIds, cartOnly, params, sort, startDateFrom, startDateTo, useApi])
+  }, [apiTours, params, sort, startDateFrom, startDateTo, useApi])
 
   function updateFilters(values: Record<string, string | null>) {
     const next = new URLSearchParams(window.location.search)
@@ -95,7 +92,6 @@ export default function ExplorePage({ cartIds, useApi = false }: {
     duration ? { key: 'duration', label: duration === 'short' ? '4일 이하' : duration === 'medium' ? '5~7일' : '8일 이상' } : null,
     search ? { key: 'q', label: search } : null,
     startDateFrom || startDateTo ? { key: 'date-range', label: `${startDateFrom || '시작'} ~ ${startDateTo || '종료'}` } : null,
-    cartOnly ? { key: 'view', label: '장바구니' } : null,
   ].filter(item => item !== null)
 
   return (
@@ -120,7 +116,7 @@ export default function ExplorePage({ cartIds, useApi = false }: {
       </form>
       {(params.get('date') || params.get('travelers')) && <p className="catalog-intent"><strong>선택한 조건</strong> {params.get('date') && `출발 희망일 ${params.get('date')}`} {params.get('travelers') && ` · ${params.get('travelers')}명`}</p>}
       <section className="catalog-results" aria-labelledby="results-title">
-        <div className="results-toolbar"><h2 id="results-title">검색 결과 <strong role="status">{useApi && !cartOnly && !startDateFrom && !startDateTo ? apiTotal : filtered.length}</strong>건</h2><div className="results-controls"><label className="results-cart-filter"><input type="checkbox" checked={cartOnly} onChange={() => updateFilters({view:cartOnly ? null : 'cart'})} /><span>장바구니 상품만</span></label><label><span className="sr-only">상품 정렬</span><select value={sort} onChange={event => updateFilters({sort:event.target.value})}><option value="">기본순</option><option value="price-asc">낮은 가격순</option><option value="price-desc">높은 가격순</option><option value="duration">짧은 일정순</option></select></label></div></div>
+        <div className="results-toolbar"><h2 id="results-title">검색 결과 <strong role="status">{useApi && !startDateFrom && !startDateTo ? apiTotal : filtered.length}</strong>건</h2><div className="results-controls"><label><span className="sr-only">상품 정렬</span><select value={sort} onChange={event => updateFilters({sort:event.target.value})}><option value="">기본순</option><option value="price-asc">낮은 가격순</option><option value="price-desc">높은 가격순</option><option value="duration">짧은 일정순</option></select></label></div></div>
         {activeFilters.length > 0 && <div className="applied-filters" aria-label="적용한 검색 조건">{activeFilters.map(item => <button key={item.key} onClick={() => item.key === 'date-range' ? updateFilters({from:null,to:null}) : updateFilters({[item.key]:null})} aria-label={`${item.label} 조건 해제`}>{item.label}<Icon name="close" size={13} /></button>)}</div>}
         {loading ? <p className="notice" role="status">여행상품을 불러오는 중입니다.</p>
           : errorMessage ? <div className="empty-state"><Icon name="compass" size={32} /><h2>여행상품을 불러오지 못했어요.</h2><p>{errorMessage}</p><button className="button secondary" type="button" onClick={() => setRetryNonce(value => value + 1)}>다시 시도</button></div>

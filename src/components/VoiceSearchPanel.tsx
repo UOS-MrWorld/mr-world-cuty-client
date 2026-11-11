@@ -32,11 +32,11 @@ function describeMicError(error: unknown): VoiceIssue {
   if (name === 'NotReadableError' || name === 'AbortError') {
     return { message: '마이크를 다른 곳에서 사용 중이에요', help: '줌, 디스코드 같은 앱이나 다른 탭을 닫고 다시 눌러 주세요.' }
   }
-  return { message: '마이크를 켜지 못했어요', help: '새로고침 후 다시 시도해 주세요. 계속되면 다른 브라우저로 접속해 주세요.' }
+  return { message: '마이크를 켜지 못했어요', help: '새로고침 후 다시 시도해 주세요. 계속되면 다른 환경에서 접속해 주세요.' }
 }
 
 function describeAutoStopError(error: unknown): string {
-  if (typeof WebAssembly === 'undefined') return '이 브라우저는 자동 전송을 지원하지 않아요.'
+  if (typeof WebAssembly === 'undefined') return '현재 환경에서는 자동 전송을 지원하지 않아요.'
   const detail = error instanceof Error ? error.message : String(error)
   if (/fetch|404|load|network/i.test(detail)) return '자동 전송 파일을 불러오지 못했어요.'
   return '자동 전송을 시작하지 못했어요.'
@@ -298,7 +298,7 @@ export function VoiceSearchPanel({ context, onResponse, onClose, display = 'wave
     : status === 'listening' ? listeningMessage
       : status === 'processing' ? '말씀하신 내용을 확인하고 있어요…'
         : status === 'error' ? errorMessage
-          : issue?.message ?? '마이크를 사용할 수 없습니다. 브라우저 권한을 확인해 주세요.'
+          : issue?.message ?? '마이크를 사용할 수 없습니다. 마이크 권한을 확인해 주세요.'
   const showHelp = Boolean(issue) && (status === 'unavailable' || (status === 'listening' && autoStop === 'off' && !hearing))
   const statusClass = `voice-input-status${display === 'floating' ? ' is-floating' : ''} is-${status}${showHelp ? ' has-issue' : ''}`
   const statusRole = status === 'error' || status === 'unavailable' ? 'alert' : 'status'

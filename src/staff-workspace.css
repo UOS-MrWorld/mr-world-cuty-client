@@ -86,6 +86,7 @@
 .staff-workspace .staff-text-action { display: inline-flex; min-height: 35px; align-items: center; padding: 7px 12px; border: 0; border-radius: 9px; background: var(--staff-action-gradient); color: #fff; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 11px; font-weight: 650; cursor: pointer; white-space: nowrap; }
 .staff-workspace .staff-text-action:hover { background: linear-gradient(135deg, #0878ff, #064fc0); color: #fff; }
 .staff-workspace .staff-icon-action { justify-content: center; width: 46px; min-width: 46px; min-height: 46px; padding: 0; border-radius: 15px; background: var(--staff-action-gradient); color: #fff; box-shadow: 0 8px 22px rgb(8 120 255 / .22); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.staff-workspace .staff-icon-action svg { display: block; color: #fff; stroke-width: 2; }
 .staff-workspace .staff-tour-list .staff-text-action {
   border-color: #0878ff !important;
   background: var(--staff-action-gradient) !important;
@@ -115,7 +116,7 @@
 .staff-bottom-note { color: #7b909e; font-size: 11px; line-height: 1.9; margin: 19px 4px 0; }
 .staff-message { margin: 0 0 20px; padding: 18px 22px; border-radius: 20px; background: #e4f2ef; color: #4e7a6b; font-size: 12px; line-height: 1.9; }
 .staff-message.error { color: #a66356; background: #fff0e9; }
-.staff-customer-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-bottom: 20px; }
+.staff-customer-actions { margin-bottom: 20px; }
 .staff-customer-filter { display: grid; grid-template-columns: minmax(220px, 1.5fr) minmax(140px, .7fr) minmax(140px, .7fr) auto; align-items: end; gap: 14px; margin-bottom: 20px; }
 .staff-customer-filter .staff-row-actions { flex-wrap: nowrap; }
 .staff-action-card { display: grid; align-content: start; gap: 20px; min-width: 0; padding: 25px; border: 1px solid #dce7f1; border-radius: 24px; background: #fff; box-shadow: 0 12px 34px #436b8d12; }
@@ -128,8 +129,11 @@
 .staff-action-card dd { margin: 6px 0 0; color: #274a66; font-size: 18px; font-weight: 700; }
 .staff-action-card .staff-button { width: 100%; background: var(--staff-action-gradient) !important; box-shadow: none !important; }
 .staff-action-card .staff-button:hover:not(:disabled) { background: #0d55c7 !important; }
-.staff-check { display: inline-flex; align-items: center; justify-content: center; }
-.staff-check input { width: 16px !important; height: 16px; min-height: 0 !important; accent-color: #1769e8; }
+.staff-discount-card { gap: 24px; padding: 28px 30px; }
+.staff-discount-card > div:first-child { max-width: 650px; }
+.staff-discount-controls { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(280px, 1fr) minmax(220px, .8fr); align-items: end; gap: 18px; }
+.staff-discount-controls dl { align-self: stretch; }
+.staff-discount-controls .staff-button { min-height: 48px; }
 .staff-loyalty-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-bottom: 18px; }
 .staff-loyalty-overview > div { position: relative; min-width: 0; padding: 22px 20px 21px; border-radius: 22px; background: #ffffffb8; box-shadow: 0 10px 30px #7195ac08; }
 .staff-loyalty-overview span { display: grid; place-items: center; width: 27px; height: 27px; margin-bottom: 18px; border-radius: 9px; color: #377aa7; background: #e4f1fa; font-size: 11px; font-weight: 700; }
@@ -298,6 +302,8 @@
   .staff-option-grid { grid-template-columns: 1fr; }
   .staff-status-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .staff-customer-filter { grid-template-columns: 1fr 1fr; }
+  .staff-discount-controls { grid-template-columns: 1fr 1fr; }
+  .staff-discount-controls .staff-button { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) {
   .staff-workspace { display: block; border-radius: 24px; }
@@ -318,8 +324,10 @@
   .staff-workspace .staff-sheet { padding: 21px 18px; border-radius: 23px; }
   .staff-workspace .staff-list-sheet { padding: 18px 0 0; }
   .staff-loyalty-overview { grid-template-columns: 1fr; }
-  .staff-customer-actions { grid-template-columns: 1fr; }
   .staff-customer-filter { grid-template-columns: 1fr; }
+  .staff-discount-card { padding: 22px 18px; }
+  .staff-discount-controls { grid-template-columns: 1fr; }
+  .staff-discount-controls .staff-button { grid-column: auto; }
   .staff-loyalty-overview > div { padding: 18px; }
   .staff-loyalty-overview span { margin-bottom: 12px; }
   .staff-loyalty-sheet .staff-section-heading { padding: 0 18px; }

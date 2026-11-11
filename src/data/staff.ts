@@ -11,7 +11,7 @@ export const staffOptionLabels: Record<StaffOptionId, string> = {
   coffee: '커피 추가',
 }
 
-export const staffStateLabels = { draft: '초안', preview: '판매 화면 예시', paused: '운영 중지 예시' }
+export const staffStateLabels = { draft: '초안', preview: '판매 화면 미리보기', paused: '운영 중지' }
 
 export function createStaffProduct(tour: Tour): StaffProduct {
   const restricted = tour.theme === 'romance' || tour.theme === 'healing'
@@ -47,8 +47,8 @@ export const staffInventory: StaffInventoryItem[] = [
 ]
 export const staffCustomers: StaffCustomer[] = [
   {
-    id: 1, name: '화면 예시 고객 01', address: '', contact: '',
-    history: [{ product: '교토 효도여행 3박 4일', date: '2026-04-15', grade: '그랜드', price: 1290000, state: '여행 완료 예시' }],
+    id: 1, name: '고객 01', address: '', contact: '',
+    history: [{ product: '교토 효도여행 3박 4일', date: '2026-04-15', grade: '그랜드', price: 1290000, state: '여행 완료' }],
   },
-  { id: 2, name: '화면 예시 고객 02', address: '', contact: '', history: [] },
+  { id: 2, name: '고객 02', address: '', contact: '', history: [] },
 ]

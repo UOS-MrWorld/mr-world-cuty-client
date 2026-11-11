@@ -35,7 +35,7 @@ export function toQuoteRequest(tour: Tour, draft: TravelDraft): QuoteRequest {
 
 export function toBookingRequest(tour: Tour, draft: TravelDraft): BookingRequest {
   const tourId = Number(tour.id)
-  if (!Number.isSafeInteger(tourId)) throw new Error('서버 상품 ID가 올바르지 않습니다.')
+  if (!Number.isSafeInteger(tourId)) throw new Error('상품 ID가 올바르지 않습니다.')
   return { tourId, ...toQuoteRequest(tour, draft) }
 }
 

@@ -199,7 +199,7 @@
 .choice-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 11px; }
 .choice-card { display: grid; grid-template-columns: 16px minmax(0,1fr); align-content: start; align-items: start; gap: 7px 8px; border: 1px solid #dfe4ec; background: white; border-radius: 4px; padding: 16px 13px; cursor: pointer; font-size: 12px; }
 .choice-card > input[type='radio'] { grid-column: 1; grid-row: 1; margin: 3px 0 0; }
-.choice-card > input[type='number'] { grid-column: 2; width: 100%; min-width: 0; min-height: 42px; margin: 2px 0 0; padding: 9px 12px; border: 1px solid #cbd9ea; border-radius: 9px; color: var(--ink); background: #fff; }
+.choice-card > input[type='number'] { grid-column: 1 / -1; justify-self: center; width: 50%; min-width: 140px; max-width: 220px; min-height: 42px; margin: 2px 0 0; padding: 9px 12px; border: 1px solid #cbd9ea; border-radius: 9px; color: var(--ink); background: #fff; }
 .choice-card > strong, .choice-card > span, .choice-card > small { grid-column: 2; }
 .choice-card strong { font-size: 13px; font-weight: 600; line-height: 1.5; }
 .choice-card > span, .choice-card small { font-size: 11px; color: #7a8594; line-height: 1.6; }

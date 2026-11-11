@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createInventory, getInventories, updateInventory } from '../api/inventory'
-import { activateLoyaltyDiscountByGrade, getCustomerDetail, getCustomers, getLoyaltyPolicy, updateCustomerLoyaltyGrades } from '../api/customer'
+import { activateLoyaltyDiscountByGrade, getCustomerDetail, getCustomers, getLoyaltyPolicy } from '../api/customer'
 import { createTour, getStaffTour, getStaffTours, updateTour } from '../api/tour'
 import { AppLink } from '../components/AppLink'
 import { Icon } from '../components/Icon'
@@ -21,11 +21,19 @@ const themeLabels: Record<ApiTheme, string> = { HONEYMOON: '허니문', HEALING:
 const tourStatusLabels: Record<ApiTourStatus, string> = { RECRUITING: '모집 중', CONFIRMED: '출발 확정', COMPLETED: '여행 완료', CANCELLED: '취소됨' }
 const bookingStatusLabels: Record<ApiBookingStatus, string> = { PENDING: '결제 전', PAID: '결제 완료', CANCELLED: '취소됨' }
 
+function getDiscountStatus(customer: CustomerSummaryResponse, policies: LoyaltyPolicyResponse['policies']) {
+  const discountRate = policies.find(policy => policy.grade === customer.loyaltyGrade)?.discountRate ?? 0
+  if (discountRate <= 0) return { label: '대상 아님', className: '' }
+  return customer.loyaltyDiscountApplied
+    ? { label: '적용 완료', className: 'preview' }
+    : { label: '적용 전 (승인 대기)', className: 'paused' }
+}
+
 export default function StaffPage({ path }: { path: string }) {
   const section: Section = path.startsWith('/staff/inventory') ? 'inventory' : path.startsWith('/staff/customers') ? 'customers' : 'tours'
   return <div className="staff-workspace">
     <aside className="staff-sidebar">
-      <div className="staff-space-title"><p>CUTY</p><h2>여행 운영</h2><span>실제 서버 업무 화면</span></div>
+      <div className="staff-space-title"><p>CUTY</p><h2>여행 운영</h2><span>여행 운영 화면</span></div>
       <nav aria-label="직원 업무">{nav.map(item => <AppLink key={item.href} href={item.href} aria-current={item.href.includes(section) ? 'page' : undefined}><strong>{item.label}</strong></AppLink>)}</nav>
     </aside>
     <div className="staff-content">
@@ -41,7 +49,7 @@ function Heading({ title, description, action }: { title: string; description: s
 function LoadingState({ error, retry }: { error: string; retry: () => void }) {
   return error
     ? <div className="staff-sheet staff-empty"><h2>정보를 불러오지 못했습니다</h2><p role="alert">{error}</p><button className="staff-button primary" onClick={retry}>다시 시도</button></div>
-    : <p className="staff-message" role="status">서버에서 정보를 불러오는 중입니다.</p>
+    : <p className="staff-message" role="status">정보를 불러오는 중입니다.</p>
 }
 
 function ToursSection({ path }: { path: string }) {
@@ -64,7 +72,7 @@ function ToursSection({ path }: { path: string }) {
   }, [retry])
 
   return <>
-    <Heading title="상품 관리" description="서버에 저장된 여행상품을 등록하고 수정합니다." action={<AppLink className="staff-button primary" href="/staff/tours/new">상품 등록</AppLink>} />
+    <Heading title="상품 관리" description="여행상품을 등록하고 수정합니다." action={<AppLink className="staff-button primary" href="/staff/tours/new">상품 등록</AppLink>} />
     {loading || error ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet staff-tour-list">
       <div className="staff-toolbar"><span>{items.length}개 상품</span></div>
       <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>상품명</th><th>테마</th><th>출발일</th><th>결제 인원</th><th>상태</th><th>관리</th></tr></thead><tbody>
@@ -86,11 +94,14 @@ function TourStatus({ tourId }: { tourId: number }) {
     return () => { active = false }
   }, [retry, tourId])
   if (!data || error) return <LoadingState error={error} retry={() => setRetry(value => value + 1)} />
+  const participatingGuestCount = data.bookings
+    .filter(booking => booking.bookingStatus !== 'CANCELLED')
+    .reduce((total, booking) => total + booking.guestCount, 0)
   return <>
-    <Heading title={data.tour.tourName} description="결제 인원, 신청 고객과 제공 물품 현황을 확인합니다." action={<div className="staff-row-actions"><AppLink className="staff-button soft" href="/staff/tours">목록으로</AppLink><AppLink className="staff-button primary" href={`/staff/tours/${tourId}/edit`}>상품 수정</AppLink></div>} />
+    <Heading title={data.tour.tourName} description="결제 현황과 신청 고객 및 제공 물품을 확인합니다." action={<div className="staff-row-actions"><AppLink className="staff-button soft" href="/staff/tours">목록으로</AppLink><AppLink className="staff-button primary" href={`/staff/tours/${tourId}/edit`}>상품 수정</AppLink></div>} />
     <section className="staff-status-overview" aria-label="상품 운영 요약">
       <div><span>상품 상태</span><strong>{tourStatusLabels[data.tour.tourStatus]}</strong></div>
-      <div><span>결제 인원</span><strong>{data.paidGuestCount}명</strong></div>
+      <div><span>참여·결제 현황</span><strong>신청 인원 {participatingGuestCount}명 중 {data.paidGuestCount}명 결제 완료</strong></div>
       <div><span>여행 일정</span><strong>{data.tour.startDate} ~ {data.tour.endDate}</strong></div>
       <div><span>1인 기본 가격</span><strong>{formatPrice(data.tour.basePrice)}원</strong></div>
     </section>
@@ -160,7 +171,7 @@ function TourEditor({ tourId }: { tourId?: number }) {
   }
   if (loading) return <LoadingState error={error} retry={() => window.location.reload()} />
   return <>
-    <Heading title={tourId ? '상품 수정' : '상품 등록'} description="입력한 내용은 서버 상품과 고객 화면에 반영됩니다." action={<AppLink className="staff-button soft" href="/staff/tours">목록으로</AppLink>} />
+    <Heading title={tourId ? '상품 수정' : '상품 등록'} description="입력한 내용은 상품 정보와 고객 화면에 반영됩니다." action={<AppLink className="staff-button soft" href="/staff/tours">목록으로</AppLink>} />
     <form className="staff-sheet staff-editor" onSubmit={submit}>
       <div className="staff-fields two">
         <label className="staff-field"><span>상품명</span><input required value={value.tourName} onChange={e => setValue(current => ({ ...current, tourName: e.target.value }))} /></label>
@@ -179,7 +190,7 @@ function TourEditor({ tourId }: { tourId?: number }) {
         })}</div> : <p className="staff-message">먼저 물품·재고 관리에서 기념품을 등록해 주세요.</p>}
       </section>
       {error && <p className="staff-message error" role="alert">{error}</p>}
-      <div className="staff-form-actions"><button className="staff-button primary" disabled={saving}>{saving ? '저장 중…' : '서버에 저장'}</button></div>
+      <div className="staff-form-actions"><button className="staff-button primary" disabled={saving}>{saving ? '저장 중…' : '저장'}</button></div>
     </form>
   </>
 }
@@ -195,6 +206,11 @@ function InventorySection() {
   const [message, setMessage] = useState('')
   const [retry, setRetry] = useState(0)
   const focusedShortage = useRef(false)
+  useEffect(() => {
+    if (!message) return
+    const timer = window.setTimeout(() => setMessage(''), 4000)
+    return () => window.clearTimeout(timer)
+  }, [message])
   useEffect(() => {
     let active = true
     setLoading(true); setError('')
@@ -249,19 +265,21 @@ function CustomersSection({ path }: { path: string }) {
   if (detailId) return <CustomerDetail customerId={Number(detailId)} />
   const [customers, setCustomers] = useState<CustomerSummaryResponse[]>([])
   const [policies, setPolicies] = useState<LoyaltyPolicyResponse['policies']>([])
-  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([])
-  const [gradeEdits, setGradeEdits] = useState<Record<number, ApiLoyaltyGrade>>({})
   const [discountGrade, setDiscountGrade] = useState<ApiLoyaltyGrade>('VIP')
   const [keyword, setKeyword] = useState('')
   const [gradeFilter, setGradeFilter] = useState<'' | ApiLoyaltyGrade>('')
   const [discountFilter, setDiscountFilter] = useState<'' | 'true' | 'false'>('')
   const [filters, setFilters] = useState<{ keyword?: string; loyaltyGrade?: ApiLoyaltyGrade; discountApplied?: boolean }>({})
   const [loading, setLoading] = useState(true)
-  const [savingGrades, setSavingGrades] = useState(false)
   const [applyingDiscount, setApplyingDiscount] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [retry, setRetry] = useState(0)
+  useEffect(() => {
+    if (!message) return
+    const timer = window.setTimeout(() => setMessage(''), 4000)
+    return () => window.clearTimeout(timer)
+  }, [message])
   useEffect(() => {
     let active = true
     setLoading(true); setError('')
@@ -270,75 +288,52 @@ function CustomersSection({ path }: { path: string }) {
         if (!active) return
         setCustomers(customerResponse.data.content)
         setPolicies(policyResponse.data.policies)
-        setGradeEdits(Object.fromEntries(customerResponse.data.content.map(customer => [customer.customerId, customer.loyaltyGrade])))
-        setSelectedCustomerIds([])
       })
       .catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '고객 정보를 불러오지 못했습니다.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [filters, retry])
   const sortedPolicies = [...policies].sort((first, second) => first.requiredTourCount - second.requiredTourCount)
-  const selectedChanges = customers.flatMap(customer => selectedCustomerIds.includes(customer.customerId) && gradeEdits[customer.customerId] !== customer.loyaltyGrade
-    ? [{ customerId: customer.customerId, loyaltyGrade: gradeEdits[customer.customerId] }]
-    : [])
-  const discountTargets = customers.filter(customer => customer.loyaltyGrade === discountGrade)
+  const selectedDiscountRate = policies.find(policy => policy.grade === discountGrade)?.discountRate ?? 0
+  const discountTargets = selectedDiscountRate > 0 ? customers.filter(customer => customer.loyaltyGrade === discountGrade) : []
   const pendingDiscountCount = discountTargets.filter(customer => !customer.loyaltyDiscountApplied).length
-  const allSelected = customers.length > 0 && selectedCustomerIds.length === customers.length
-
-  function toggleCustomer(customerId: number) {
-    setSelectedCustomerIds(current => current.includes(customerId) ? current.filter(id => id !== customerId) : [...current, customerId])
-  }
-
-  async function saveGradeChanges() {
-    if (!selectedChanges.length || savingGrades) return
-    setSavingGrades(true); setError(''); setMessage('')
-    try {
-      const { data } = await updateCustomerLoyaltyGrades({ changes: selectedChanges })
-      setMessage(`고객 등급 ${data.updatedCount}건을 변경했습니다.`)
-      setRetry(value => value + 1)
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '고객 등급을 변경하지 못했습니다.') }
-    finally { setSavingGrades(false) }
-  }
 
   async function applyDiscount() {
     if (!pendingDiscountCount || applyingDiscount) return
     setApplyingDiscount(true); setError(''); setMessage('')
     try {
       const { data } = await activateLoyaltyDiscountByGrade(discountGrade)
-      setMessage(`${loyaltyLabels[discountGrade]} 등급 할인 적용 완료 · 대상 ${data.targetCount}명, 새 적용 ${data.appliedCount}명, 기존 적용 ${data.skippedCount}명`)
+      setMessage(`${loyaltyLabels[discountGrade]} 등급 할인 적용 완료 · 대상 ${data.targetCount}명 · 새 적용 ${data.appliedCount}명 · 기존 적용 ${data.skippedCount}명`)
       setRetry(value => value + 1)
     } catch (reason) { setError(reason instanceof Error ? reason.message : '단골 할인을 승인하지 못했습니다.') }
     finally { setApplyingDiscount(false) }
   }
   return <>
-    <Heading title="고객 관리" description="고객 등급을 일괄 변경하고 등급별 할인을 적용합니다." />
+    <Heading title="고객 관리" description="고객 정보를 확인하고 등급별 할인을 적용합니다." />
     {message && <p className="staff-message" role="status">{message}</p>}
     {error && !loading && <p className="staff-message error" role="alert">{error}</p>}
     {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <>
       <form className="staff-sheet staff-customer-filter" role="search" onSubmit={event => { event.preventDefault(); setFilters({ ...(keyword.trim() ? { keyword: keyword.trim() } : {}), ...(gradeFilter ? { loyaltyGrade: gradeFilter } : {}), ...(discountFilter ? { discountApplied: discountFilter === 'true' } : {}) }) }}>
         <label className="staff-field"><span>이름·아이디 검색</span><input type="search" value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="고객 이름 또는 로그인 아이디" /></label>
         <label className="staff-field"><span>고객 등급</span><select value={gradeFilter} onChange={event => setGradeFilter(event.target.value as '' | ApiLoyaltyGrade)}><option value="">전체 등급</option>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></label>
-        <label className="staff-field"><span>할인 상태</span><select value={discountFilter} onChange={event => setDiscountFilter(event.target.value as '' | 'true' | 'false')}><option value="">전체 상태</option><option value="true">적용 완료</option><option value="false">적용 전</option></select></label>
+        <label className="staff-field"><span>할인 상태</span><select value={discountFilter} onChange={event => setDiscountFilter(event.target.value as '' | 'true' | 'false')}><option value="">전체 상태</option><option value="true">적용 완료</option><option value="false">미적용</option></select></label>
         <div className="staff-row-actions"><button className="staff-button primary" type="submit">검색</button><button className="staff-button soft" type="button" onClick={() => { setKeyword(''); setGradeFilter(''); setDiscountFilter(''); setFilters({}) }}>초기화</button></div>
       </form>
-      <section className="staff-customer-actions" aria-label="고객 등급과 할인 관리">
-        <article className="staff-action-card">
-          <div><p className="staff-action-kicker">등급 관리</p><h2>고객별 등급 일괄 변경</h2><p>목록에서 고객과 등급을 지정하면 선택한 변경이 한 번에 적용됩니다.</p></div>
-          <dl><div><dt>선택 고객</dt><dd>{selectedCustomerIds.length}명</dd></div><div><dt>변경 예정</dt><dd>{selectedChanges.length}건</dd></div></dl>
-          <button className="staff-button primary" type="button" disabled={!selectedChanges.length || savingGrades} onClick={() => void saveGradeChanges()}>{savingGrades ? '변경 중…' : `등급 변경 (${selectedChanges.length})`}</button>
-        </article>
-        <article className="staff-action-card">
+      <section className="staff-customer-actions" aria-label="등급별 할인 관리">
+        <article className="staff-action-card staff-discount-card">
           <div><p className="staff-action-kicker">할인 관리</p><h2>등급별 할인 적용</h2><p>선택한 등급에서 아직 할인이 적용되지 않은 고객에게 혜택을 적용합니다.</p></div>
-          <label className="staff-field"><span>적용 등급</span><select value={discountGrade} onChange={event => setDiscountGrade(event.target.value as ApiLoyaltyGrade)}>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></label>
-          <dl><div><dt>대상 고객</dt><dd>{discountTargets.length}명</dd></div><div><dt>적용 대기</dt><dd>{pendingDiscountCount}명</dd></div></dl>
-          <button className="staff-button primary" type="button" disabled={!pendingDiscountCount || applyingDiscount} onClick={() => void applyDiscount()}>{applyingDiscount ? '적용 중…' : `${loyaltyLabels[discountGrade]} 할인 적용 (${pendingDiscountCount})`}</button>
+          <div className="staff-discount-controls">
+            <label className="staff-field"><span>적용 등급</span><select value={discountGrade} onChange={event => setDiscountGrade(event.target.value as ApiLoyaltyGrade)}>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></label>
+            <dl><div><dt>대상 고객</dt><dd>{discountTargets.length}명</dd></div><div><dt>적용 대기</dt><dd>{pendingDiscountCount}명</dd></div></dl>
+            <button className="staff-button primary" type="button" disabled={!pendingDiscountCount || applyingDiscount} onClick={() => void applyDiscount()}>{applyingDiscount ? '적용 중…' : selectedDiscountRate <= 0 ? '할인 대상 없음' : `${loyaltyLabels[discountGrade]} 할인 적용 (${pendingDiscountCount})`}</button>
+          </div>
         </article>
       </section>
       <section className="staff-sheet staff-list-sheet staff-customer-list">
-        <div className="staff-toolbar"><span>고객 {customers.length}명 · 등급 변경은 선택한 고객에게만 적용됩니다.</span></div>
-        <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><caption className="sr-only">고객별 단골 등급과 할인 적용 상태</caption><thead><tr><th scope="col"><label className="staff-check"><input type="checkbox" checked={allSelected} onChange={() => setSelectedCustomerIds(allSelected ? [] : customers.map(customer => customer.customerId))} /><span className="sr-only">모든 고객 선택</span></label></th><th scope="col">고객명</th><th scope="col">연락처</th><th scope="col">완료 여행</th><th scope="col">현재 등급</th><th scope="col">변경 등급</th><th scope="col">할인 상태</th><th scope="col">상세</th></tr></thead><tbody>
-          {customers.map(customer => <tr key={customer.customerId}><td><label className="staff-check"><input type="checkbox" aria-label={`${customer.name} 선택`} checked={selectedCustomerIds.includes(customer.customerId)} onChange={() => toggleCustomer(customer.customerId)} /></label></td><td><strong>{customer.name}</strong></td><td>{customer.phoneNum}</td><td>{customer.completedTourCount}회</td><td><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></td><td><select aria-label={`${customer.name} 변경 등급`} value={gradeEdits[customer.customerId] ?? customer.loyaltyGrade} onChange={event => { setGradeEdits(current => ({ ...current, [customer.customerId]: event.target.value as ApiLoyaltyGrade })); setSelectedCustomerIds(current => current.includes(customer.customerId) ? current : [...current, customer.customerId]) }}>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></td><td><span className={`staff-state ${customer.loyaltyDiscountApplied ? 'preview' : customer.loyaltyGrade === 'VIP' ? 'paused' : ''}`}>{customer.loyaltyDiscountApplied ? '적용 완료' : '적용 전'}</span></td><td><AppLink className="staff-text-action" href={`/staff/customers/${customer.customerId}`}>보기</AppLink></td></tr>)}
-          {!customers.length && <tr><td className="staff-loyalty-empty" colSpan={8}>표시할 고객이 없습니다.</td></tr>}
+        <div className="staff-toolbar"><span>고객 {customers.length}명</span></div>
+        <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><caption className="sr-only">고객별 단골 등급과 할인 적용 상태</caption><thead><tr><th scope="col">고객명</th><th scope="col">연락처</th><th scope="col">완료 여행</th><th scope="col">현재 등급</th><th scope="col">할인 상태</th><th scope="col">상세</th></tr></thead><tbody>
+          {customers.map(customer => { const discountStatus = getDiscountStatus(customer, policies); return <tr key={customer.customerId}><td><strong>{customer.name}</strong></td><td>{customer.phoneNum}</td><td>{customer.completedTourCount}회</td><td><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></td><td><span className={`staff-state ${discountStatus.className}`}>{discountStatus.label}</span></td><td><AppLink className="staff-text-action" href={`/staff/customers/${customer.customerId}`}>보기</AppLink></td></tr> })}
+          {!customers.length && <tr><td className="staff-loyalty-empty" colSpan={6}>표시할 고객이 없습니다.</td></tr>}
         </tbody></table></div>
       </section>
       <aside className="staff-loyalty-notice">
@@ -351,22 +346,28 @@ function CustomersSection({ path }: { path: string }) {
 
 function CustomerDetail({ customerId }: { customerId: number }) {
   const [customer, setCustomer] = useState<CustomerDetailResponse | null>(null)
+  const [policies, setPolicies] = useState<LoyaltyPolicyResponse['policies']>([])
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
   useEffect(() => {
     let active = true
     setError('')
-    void getCustomerDetail(customerId).then(response => { if (active) setCustomer(response.data) })
+    void Promise.all([getCustomerDetail(customerId), getLoyaltyPolicy()]).then(([customerResponse, policyResponse]) => {
+      if (!active) return
+      setCustomer(customerResponse.data)
+      setPolicies(policyResponse.data.policies)
+    })
       .catch(reason => { if (active) setError(reason instanceof Error ? reason.message : '고객 상세 정보를 불러오지 못했습니다.') })
     return () => { active = false }
   }, [customerId, retry])
   if (!customer || error) return <LoadingState error={error} retry={() => setRetry(value => value + 1)} />
+  const discountStatus = getDiscountStatus(customer, policies)
   return <>
     <Heading title={customer.name} description="고객 기본정보와 단골 할인 적용 상태를 확인합니다." action={<AppLink className="staff-button soft" href="/staff/customers">목록으로</AppLink>} />
     <section className="staff-status-overview" aria-label="고객 요약">
       <div><span>고객 등급</span><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></div>
       <div><span>완료 여행</span><strong>{customer.completedTourCount}회</strong></div>
-      <div><span>단골 할인</span><strong>{customer.loyaltyDiscountApplied ? '적용 완료' : '적용 전'}</strong></div>
+      <div><span>단골 할인</span><strong>{discountStatus.label}</strong></div>
       <div><span>고객번호</span><strong>#{customer.customerId}</strong></div>
     </section>
     <section className="staff-sheet">
@@ -376,7 +377,7 @@ function CustomerDetail({ customerId }: { customerId: number }) {
         <div><dt>이름</dt><dd>{customer.name}</dd></div>
         <div><dt>연락처</dt><dd>{customer.phoneNum}</dd></div>
         <div><dt>주소</dt><dd>{customer.address || '등록되지 않음'}</dd></div>
-        <div><dt>할인 적용 일시</dt><dd>{customer.loyaltyDiscountAppliedAt ? new Date(customer.loyaltyDiscountAppliedAt).toLocaleString('ko-KR') : '적용 전'}</dd></div>
+        <div><dt>할인 적용 일시</dt><dd>{customer.loyaltyDiscountAppliedAt ? new Date(customer.loyaltyDiscountAppliedAt).toLocaleString('ko-KR') : discountStatus.label}</dd></div>
       </dl>
     </section>
   </>

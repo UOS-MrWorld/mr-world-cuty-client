@@ -20,8 +20,8 @@ export const hotelLabels: Record<HotelGrade, string> = {
   '5': '5등급 호텔',
 }
 export const transportLabels: Record<TravelTransport, string> = {
-  private: '2인 전용 고급차량',
-  van: '10인승 고급차량',
+  private: '시그니처 (2인승)',
+  van: '프리미엄 (10인승)',
 }
 export const mealLabels: Record<TravelMeal, string> = {
   lunch: '도시락',
@@ -31,7 +31,7 @@ export const mealLabels: Record<TravelMeal, string> = {
 
 export function getTransportDescription(tour: Tour, draft: TravelDraft) {
   return tour.theme === 'romance' && draft.transport === 'private'
-    ? `커플별 2인 전용 고급차량 · ${draft.travelers / 2}대`
+    ? `${transportLabels.private} · ${draft.travelers / 2}대`
     : transportLabels[draft.transport]
 }
 export const themeBenefits: Record<Exclude<ThemeId, 'all'>, string[]> = {
