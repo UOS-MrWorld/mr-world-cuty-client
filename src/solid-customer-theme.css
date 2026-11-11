@@ -17,6 +17,22 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
 .results-toolbar { align-items: center; }
 .results-toolbar select { border: 1px solid #dce0e6; background: rgb(255 255 255 / .98); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 
+.detail-section-nav {
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--lg-radius-md);
+  background: var(--cuty-solid-blue);
+}
+.detail-section-nav a { color: #fff; }
+.detail-section-nav a:hover { color: #fff; background: var(--cuty-solid-blue-hover); }
+.detail-section {
+  margin-top: 24px;
+  padding: 32px;
+  border: 0;
+  border-radius: var(--lg-radius-md);
+  background: #fff;
+}
+
 .site-globe-backdrop.is-landing {
   background: var(--cuty-solid-bg);
 }
