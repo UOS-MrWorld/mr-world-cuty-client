@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { cancelBooking, getBookings, getTravelHistory } from '../api/booking'
+import { cancelBooking, getBooking, getBookings, getTravelHistory } from '../api/booking'
 import { getMyInfo, updateMyInfo } from '../api/member'
 import { AppLink } from '../components/AppLink'
 import { Icon } from '../components/Icon'
@@ -36,10 +36,22 @@ function ApiTripsPanel({ tab }: { tab: 'cart' | 'bookings' | 'history' }) {
       })
       : tab === 'bookings'
         ? getBookings({ status: 'PAID', page: 0, size: 100 }).then(response => {
-          if (active) setBookings(response.data.content)
+          return Promise.all(response.data.content.map(async booking => ({
+            booking,
+            tourStatus: (await getBooking(booking.bookingId)).data.tour.tourStatus,
+          })))
+        }).then(items => {
+          if (active) setBookings(items.filter(item => item.tourStatus === 'RECRUITING' || item.tourStatus === 'CONFIRMED').map(item => item.booking))
         })
-        : getTravelHistory({ page: 0, size: 100 }).then(response => {
-          if (active) setHistory(response.data.content)
+        : Promise.all([
+          getBookings({ status: 'PAID', page: 0, size: 100 }),
+          getTravelHistory({ page: 0, size: 100 }),
+        ]).then(async ([bookingResponse, historyResponse]) => {
+          const completedBookingIds = new Set((await Promise.all(bookingResponse.data.content.map(async booking => ({
+            bookingId: booking.bookingId,
+            tourStatus: (await getBooking(booking.bookingId)).data.tour.tourStatus,
+          })))).filter(item => item.tourStatus === 'COMPLETED').map(item => item.bookingId))
+          if (active) setHistory(historyResponse.data.content.filter(item => completedBookingIds.has(item.bookingId) && item.tourStatus === 'COMPLETED'))
         })
     void request.catch(error => {
       if (active) setErrorMessage(error instanceof Error ? error.message : '여행 내역을 불러오지 못했습니다.')
