@@ -12,7 +12,7 @@ const paymentStatusLabels = { SUCCESS: '결제 성공', FAILED: '결제 실패',
 const levelLabels = { CLASSIC: '클래식', GRAND: '그랜드', PREMIUM: '프리미엄' }
 const hotelLabels = { THREE_STAR: '3등급 호텔', FOUR_STAR: '4등급 호텔', FIVE_STAR: '5등급 호텔' }
 const mealLabels = { LUNCH_BOX: '도시락', LOCAL_RESTAURANT: '현지식 레스토랑', FINE_DINING: '파인다이닝' }
-const transportLabels = { PREMIUM_CAR_2: '시그니처 (2인승)', PREMIUM_VAN_10: '프리미엄 (10인승)' }
+const transportLabels = { PREMIUM_CAR_2: '2인 전용 고급차량', PREMIUM_VAN_10: '10인 승합 고급차량' }
 const tourStatusLabels = { RECRUITING: '모집 중', CONFIRMED: '출발 확정', COMPLETED: '여행 완료', CANCELLED: '투어 취소' }
 
 export function BookingPreviewPage({ tour }: { tour: Tour; draft: TravelDraft }) {

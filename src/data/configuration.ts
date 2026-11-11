@@ -20,8 +20,8 @@ export const hotelLabels: Record<HotelGrade, string> = {
   '5': '5등급 호텔',
 }
 export const transportLabels: Record<TravelTransport, string> = {
-  private: '시그니처 (2인승)',
-  van: '프리미엄 (10인승)',
+  private: '2인 전용 고급차량',
+  van: '10인 승합 고급차량',
 }
 export const mealLabels: Record<TravelMeal, string> = {
   lunch: '도시락',
