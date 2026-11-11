@@ -101,7 +101,7 @@ function TourStatus({ tourId }: { tourId: number }) {
     <Heading title={data.tour.tourName} description="결제 현황과 신청 고객 및 제공 물품을 확인합니다." action={<div className="staff-row-actions"><AppLink className="staff-button soft" href="/staff/tours">목록으로</AppLink><AppLink className="staff-button primary" href={`/staff/tours/${tourId}/edit`}>상품 수정</AppLink></div>} />
     <section className="staff-status-overview" aria-label="상품 운영 요약">
       <div><span>상품 상태</span><strong>{tourStatusLabels[data.tour.tourStatus]}</strong></div>
-      <div><span>참여·결제 현황</span><strong>신청 인원 {participatingGuestCount}명 중 {data.paidGuestCount}명 결제 완료</strong></div>
+      <div><span>참여·결제 현황</span><strong><b>{data.paidGuestCount}</b> / {participatingGuestCount}</strong></div>
       <div><span>여행 일정</span><strong>{data.tour.startDate} ~ {data.tour.endDate}</strong></div>
       <div><span>1인 기본 가격</span><strong>{formatPrice(data.tour.basePrice)}원</strong></div>
     </section>

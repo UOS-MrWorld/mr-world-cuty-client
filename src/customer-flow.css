@@ -89,6 +89,8 @@
 .person-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 19px; margin-top: 23px; }
 .person-address { grid-column: 1 / -1; }
 .checkout-fields { margin: 0; padding: 0; border: 0; min-width: 0; }
+.card-number-group { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; width: 100%; }
+.card-number-group input { min-width: 0; text-align: center; }
 .companion-block { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 25px; }
 .companion-block summary,.booking-person-details summary { cursor: pointer; font-size: 13px; font-weight: 600; padding: 5px 0; }
 .payment-methods { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 24px 0; }

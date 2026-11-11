@@ -106,6 +106,7 @@
 .staff-status-overview > div { min-width: 0; padding: 21px; border-radius: 21px; background: #ffffffd9; box-shadow: 0 10px 30px #7195ac09; }
 .staff-status-overview span { display: block; color: #7d93a2; font-size: 10px; }
 .staff-status-overview strong { display: block; margin-top: 9px; color: #31566e; font-size: 15px; line-height: 1.5; }
+.staff-status-overview strong b { color: #0878ff; font-weight: 800; }
 .staff-status-section + .staff-status-section { margin-top: 20px; }
 .staff-status-section .staff-section-heading { padding: 0 23px; }
 .staff-table-empty { padding-block: 42px !important; color: var(--staff-muted); text-align: center; }

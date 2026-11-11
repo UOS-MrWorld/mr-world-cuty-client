@@ -28,21 +28,18 @@ function ApiTripsPanel({ tab }: { tab: 'cart' | 'bookings' | 'history' }) {
     let active = true
     setLoading(true)
     setErrorMessage('')
+    setBookings([])
+    setHistory([])
     const request = tab === 'cart'
       ? getBookings({ status: 'PENDING', page: 0, size: 100 }).then(response => {
         if (active) setBookings(response.data.content)
       })
       : tab === 'bookings'
-        ? getBookings({ page: 0, size: 100 }).then(response => {
+        ? getBookings({ status: 'PAID', page: 0, size: 100 }).then(response => {
           if (active) setBookings(response.data.content)
         })
-        : Promise.all([
-          getBookings({ status: 'PENDING', page: 0, size: 100 }),
-          getTravelHistory({ page: 0, size: 100 }),
-        ]).then(([bookingResponse, historyResponse]) => {
-          if (!active) return
-          setBookings(bookingResponse.data.content)
-          setHistory(historyResponse.data.content)
+        : getTravelHistory({ page: 0, size: 100 }).then(response => {
+          if (active) setHistory(response.data.content)
         })
     void request.catch(error => {
       if (active) setErrorMessage(error instanceof Error ? error.message : '여행 내역을 불러오지 못했습니다.')

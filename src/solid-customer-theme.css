@@ -216,6 +216,7 @@ body { background: var(--cuty-solid-bg); color: var(--cuty-solid-ink); }
   margin-top: 0;
   top: 24px;
 }
+.checkout-fields + .flow-summary { align-self: start; top: 24px; }
 
 .landing-main .landing-search {
   border: 1px solid #dce6f2;
