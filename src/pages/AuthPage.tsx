@@ -102,7 +102,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
     <section className="auth-intro">
       <BrandMark large />
       <p className="eyebrow">CURATE YOUR TRAVEL</p>
-      <h1>{signup ? '여행의 시작, CUTY와 함께.' : '여행을 시작해 보세요.'}</h1>
+      <h1>{signup ? '여행의 시작, CUTY와 함께' : '여행을 시작해 보세요.'}</h1>
       <p>마음에 드는 여행을 찾고<br />예약까지 한 번에</p>
     </section>
     <section className="auth-card surface-card v2-auth-card" aria-labelledby="auth-form-heading">
