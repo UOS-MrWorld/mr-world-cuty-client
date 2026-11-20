@@ -120,7 +120,18 @@ body { word-break: keep-all; }
 .site-header.app-header.v2-header .utility-nav .session-pill:hover,
 .site-header.app-header.v2-header .utility-nav > a[href^='/login']:hover { background: var(--v2-toc-active); }
 .site-header.app-header.v2-header .category-nav { background: transparent; }
-.site-header.app-header.v2-header .category-nav a { color: #fff; text-shadow: var(--v2-on-blue-shadow); }
+.site-header.app-header.v2-header .category-nav { height: 36px; margin: 0 auto; align-items: center; gap: 6px; transform: none; translate: none; top: 0; }
+.site-header.app-header.v2-header .category-nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: #fff;
+  text-shadow: var(--v2-on-blue-shadow);
+}
+.site-header.app-header.v2-header:has(> .category-nav) { padding-bottom: 6px; }
+.site-header.app-header.v2-header .category-nav a:hover { background: rgb(255 255 255 / .18); }
 .site-header.app-header.v2-header .category-nav a:not(.nav-active) { color: var(--v2-on-blue-muted); }
 .app-main:not(.landing-main):not(.staff-main) .breadcrumbs,
 .app-main:not(.landing-main):not(.staff-main) .breadcrumbs :is(a, span) { color: var(--v2-on-blue-muted); text-shadow: var(--v2-on-blue-shadow); }
@@ -221,31 +232,55 @@ body { word-break: keep-all; }
 }
 
 .v2-theme-tabs {
+  --tab-gap: 6px;
+  --tab-pad: 6px;
+  --tab-width: calc((100% - var(--tab-pad) * 2 - var(--tab-gap) * (var(--tab-count) - 1)) / var(--tab-count));
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: repeat(4, 96px);
-  gap: 6px;
+  gap: var(--tab-gap);
   align-self: flex-start;
-  padding: 6px;
+  padding: var(--tab-pad);
   border-radius: 999px;
   background: rgb(255 255 255 / .12);
   pointer-events: auto;
 }
+/* One liquid drop behind the tabs. The leading edge moves first and the trailing
+   edge catches up, so the highlight stretches and flows into the next theme. */
+.v2-theme-drop {
+  position: absolute;
+  z-index: -1;
+  top: var(--tab-pad);
+  bottom: var(--tab-pad);
+  left: calc(var(--tab-pad) + var(--tab-index) * (var(--tab-width) + var(--tab-gap)));
+  right: calc(var(--tab-pad) + (var(--tab-count) - 1 - var(--tab-index)) * (var(--tab-width) + var(--tab-gap)));
+  border-radius: 999px;
+  background: radial-gradient(120% 140% at 30% 20%, #fff 0%, #f4f9ff 55%, #e2eeff 100%);
+  box-shadow: 0 6px 18px rgb(18 52 110 / .22), inset 0 -2px 6px rgb(8 120 255 / .12), inset 0 2px 4px rgb(255 255 255 / .9);
+  pointer-events: none;
+  transition: left .62s cubic-bezier(.65, 0, .35, 1) .14s, right .42s cubic-bezier(.3, 1.35, .5, 1);
+}
+.v2-theme-tabs[data-direction='prev'] .v2-theme-drop {
+  transition: left .42s cubic-bezier(.3, 1.35, .5, 1), right .62s cubic-bezier(.65, 0, .35, 1) .14s;
+}
 .v2-theme-tabs button {
+  position: relative;
   height: 40px;
   padding: 0;
   border: 0;
   border-radius: 999px;
-  color: #fff;
-  background: rgb(255 255 255 / .16);
+  color: rgb(255 255 255 / .82);
+  background: transparent;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
-  text-shadow: none;
+  text-shadow: var(--v2-on-blue-shadow);
   cursor: pointer;
-  transition: background-color .18s ease, color .18s ease;
+  transition: color .3s ease .18s, text-shadow .3s ease .18s;
 }
-.v2-theme-tabs button:hover { background: rgb(255 255 255 / .26); }
-.v2-theme-tabs button[aria-pressed='true'] { color: var(--v2-primary-hover); background: #fff; font-weight: 700; }
+.v2-theme-tabs button:not([aria-pressed='true']):hover { color: #fff; }
+.v2-theme-tabs button[aria-pressed='true'] { color: var(--v2-primary-hover); font-weight: 700; text-shadow: none; }
 .v2-theme-tabs button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 5px #1672bd; }
 
 /* Search card: four equal fields + 76×76 icon button */
@@ -683,7 +718,8 @@ body { word-break: keep-all; }
 .v2-detail-layout #tour-grade > .muted { margin: 24px 0 0; color: var(--v2-muted); font-size: 15px; }
 
 .booking-panel.v2-booking-panel {
-  top: 144px;
+  position: sticky;
+  top: 138px;
   align-self: start;
   margin: 0;
   padding: 32px 28px 28px;
@@ -1503,5 +1539,6 @@ body { word-break: keep-all; }
 .staff-workspace .v2-detail-sheet .staff-detail-list dd { color: var(--v2-staff-ink); font-weight: 700; }
 
 @media (prefers-reduced-motion: reduce) {
-  .v2-theme-tabs button { transition: none; }
+  .v2-theme-tabs button,
+  .v2-theme-drop { transition: none; }
 }

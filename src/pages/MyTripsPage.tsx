@@ -157,7 +157,7 @@ export function MyTripsPage() {
     document.getElementById(`my-trips-tab-${tabIds[next]}`)?.focus()
   }
   return <>
-    <div className="page-heading v2-page-heading"><p className="eyebrow">여행 관리</p><h1>나의 여행을 한눈에.</h1><p>고르고 있는 여행부터 신청한 여행, 지난 여행까지 확인하세요.</p></div>
+    <div className="page-heading v2-page-heading"><p className="eyebrow">여행 관리</p><h1>나의 여행을 한눈에</h1><p>고르고 있는 여행부터 신청한 여행, 지난 여행까지 확인하세요.</p></div>
     <div className="collection-tabs my-trips-tabs v2-tabs" role="tablist" aria-label="내 여행 분류">{tabIds.map((id, index) => <button id={`my-trips-tab-${id}`} role="tab" type="button" aria-selected={tab === id} aria-controls={`my-trips-panel-${id}`} tabIndex={tab === id ? 0 : -1} key={id} onClick={() => switchTab(id)} onKeyDown={event => tabKeyDown(event, index)}>{tabLabels[id]}{counts[id] !== undefined && <b>{counts[id]}</b>}</button>)}</div>
     <div role="tabpanel" id={`my-trips-panel-${tab}`} aria-labelledby={`my-trips-tab-${tab}`} className="my-trips-panel" tabIndex={0}>
       {authSession?.role === 'CUSTOMER' && tab === 'drafts' && <ApiTripsPanel tab="cart" />}
