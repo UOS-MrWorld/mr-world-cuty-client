@@ -102,7 +102,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
     <section className="auth-intro">
       <BrandMark large />
       <p className="eyebrow">CURATE YOUR TRAVEL</p>
-      <h1>{signup ? '여행의 시작, CUTY와 함께' : '여행을 시작해 보세요.'}</h1>
+      <h1>{signup ? '여행의 시작, <br />CUTY와 함께' : '여행을 시작해 보세요'}</h1>
       <p>마음에 드는 여행을 찾고<br />예약까지 한 번에</p>
     </section>
     <section className="auth-card surface-card v2-auth-card" aria-labelledby="auth-form-heading">
@@ -112,8 +112,8 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
           {signup && <fieldset className="auth-role-options">
             <legend>가입 유형</legend>
             <div>
-              <label><input type="radio" name="role" value="CUSTOMER" defaultChecked required /><span><strong>고객</strong><small>여행 검색·구성·예약</small></span></label>
-              <label><input type="radio" name="role" value="STAFF" required /><span><strong>직원</strong><small>상품·예약 운영 관리</small></span></label>
+              <label><input type="radio" name="role" value="CUSTOMER" defaultChecked required /><span><strong>고객</strong></span></label>
+              <label><input type="radio" name="role" value="STAFF" required /><span><strong>직원</strong></span></label>
             </div>
           </fieldset>}
           <label className="field" htmlFor="auth-account">아이디<input id="auth-account" name="account" autoComplete={signup ? 'off' : 'username'} required minLength={4} maxLength={20} pattern="([a-zA-Z0-9_]|-){4,20}" placeholder="영문·숫자 4~20자" /></label>
