@@ -96,27 +96,27 @@ export default function ExplorePage({ useApi = false }: {
 
   return (
     <>
-      <div className="catalog-heading"><div><p className="eyebrow">여행상품 검색</p><h1>{theme === 'all' ? '테마여행' : themeLabels[theme]}</h1></div></div>
-      <form className="catalog-filterbar" role="search" key={`${theme}:${search}:${region}:${useApi}`} onSubmit={event => {
+      <div className="catalog-heading v2-catalog-heading"><div><p className="eyebrow">여행상품 검색</p><h1>{theme === 'all' ? '테마여행' : themeLabels[theme]}</h1></div></div>
+      <form className="catalog-filterbar v2-filter-card" role="search" key={`${theme}:${search}:${region}:${useApi}`} onSubmit={event => {
         event.preventDefault()
         const form = new FormData(event.currentTarget)
         updateFilters({ q: String(form.get('q') ?? '').trim(), ...(!useApi ? { region: String(form.get('region') ?? 'all') } : {}) })
       }}>
-        <div className="catalog-filterbar-search">
+        <div className="catalog-filterbar-search v2-filter-search">
           {!useApi && <label><span>여행지</span><select name="region" defaultValue={region}>{regions.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>}
           <label className="catalog-keyword"><span>상품명·키워드</span><input name="q" type="search" aria-label="상품명·키워드" defaultValue={search} placeholder={useApi ? '상품명 또는 설명을 입력하세요' : '여행지 또는 상품명을 입력하세요'} /></label>
           <button className="button primary" type="submit"><Icon name="search" size={18} />검색</button>
           <AppLink className="catalog-filter-reset" href="/tours">초기화</AppLink>
         </div>
-        <div id="catalog-filter-fields" className="filter-fields">
-          <fieldset><legend>여행 테마</legend><div>{themes.map(item => <label key={item.id}><input type="radio" name="theme" checked={theme === item.id} onChange={() => updateFilters({theme:item.id})} /><span>{themeLabels[item.id]}</span>{!useApi && <small>{tours.filter(tour => item.id === 'all' || tour.theme === item.id).length}</small>}</label>)}</div></fieldset>
-          <fieldset className="range-filter"><legend>여행 기간</legend><output>{duration === 'short' ? '4일 이하' : duration === 'medium' ? '5~7일' : duration === 'long' ? '8일 이상' : '전체'}</output><input aria-label="여행 기간" type="range" min="0" max="3" step="1" value={durationValues.indexOf(duration)} style={{ background: `linear-gradient(to right, #0878ff 0%, #0878ff ${(durationValues.indexOf(duration) / 3) * 100}%, #c5cbd3 ${(durationValues.indexOf(duration) / 3) * 100}%, #c5cbd3 100%)` }} onChange={event => updateFilters({duration:durationValues[Number(event.target.value)]})} /><div className="range-labels" aria-hidden="true"><span>전체</span><span>4일 이하</span><span>5~7일</span><span>8일 이상</span></div></fieldset>
-          <fieldset className="range-filter"><legend>예산 <small>1인 기본 금액</small></legend><output>{budget ? `${Number(budget) / 10000}만원 이하` : '전체'}</output><input aria-label="예산" type="range" min="0" max="3" step="1" value={budgetValues.indexOf(budget)} style={{ background: `linear-gradient(to right, #0878ff 0%, #0878ff ${(budgetValues.indexOf(budget) / 3) * 100}%, #c5cbd3 ${(budgetValues.indexOf(budget) / 3) * 100}%, #c5cbd3 100%)` }} onChange={event => updateFilters({budget:budgetValues[Number(event.target.value)]})} /><div className="range-labels" aria-hidden="true"><span>전체</span><span>100만원</span><span>200만원</span><span>400만원</span></div></fieldset>
+        <div id="catalog-filter-fields" className="filter-fields v2-filter-fields">
+          <fieldset className="v2-theme-chips"><legend>여행 테마</legend><div>{themes.map(item => <label key={item.id}><input type="radio" name="theme" checked={theme === item.id} onChange={() => updateFilters({theme:item.id})} /><span>{themeLabels[item.id]}</span>{!useApi && <small>{tours.filter(tour => item.id === 'all' || tour.theme === item.id).length}</small>}</label>)}</div></fieldset>
+          <fieldset className="range-filter v2-range"><legend>여행 기간</legend><output>{duration === 'short' ? '4일 이하' : duration === 'medium' ? '5~7일' : duration === 'long' ? '8일 이상' : '전체'}</output><input aria-label="여행 기간" type="range" min="0" max="3" step="1" value={durationValues.indexOf(duration)} style={{ background: `linear-gradient(to right, #0878ff 0%, #0878ff ${(durationValues.indexOf(duration) / 3) * 100}%, #c5cbd3 ${(durationValues.indexOf(duration) / 3) * 100}%, #c5cbd3 100%)` }} onChange={event => updateFilters({duration:durationValues[Number(event.target.value)]})} /><div className="range-labels" aria-hidden="true"><span>전체</span><span>4일 이하</span><span>5~7일</span><span>8일 이상</span></div></fieldset>
+          <fieldset className="range-filter v2-range"><legend>예산 <small>1인 기본 금액</small></legend><output>{budget ? `${Number(budget) / 10000}만원 이하` : '전체'}</output><input aria-label="예산" type="range" min="0" max="3" step="1" value={budgetValues.indexOf(budget)} style={{ background: `linear-gradient(to right, #0878ff 0%, #0878ff ${(budgetValues.indexOf(budget) / 3) * 100}%, #c5cbd3 ${(budgetValues.indexOf(budget) / 3) * 100}%, #c5cbd3 100%)` }} onChange={event => updateFilters({budget:budgetValues[Number(event.target.value)]})} /><div className="range-labels" aria-hidden="true"><span>전체</span><span>100만원</span><span>200만원</span><span>400만원</span></div></fieldset>
         </div>
       </form>
-      {(params.get('date') || params.get('travelers')) && <p className="catalog-intent"><strong>선택한 조건</strong> {params.get('date') && `출발 희망일 ${params.get('date')}`} {params.get('travelers') && ` · ${params.get('travelers')}명`}</p>}
-      <section className="catalog-results" aria-labelledby="results-title">
+      <section className="catalog-results v2-catalog-results" aria-labelledby="results-title">
         <div className="results-toolbar"><h2 id="results-title">검색 결과 <strong role="status">{useApi && !startDateFrom && !startDateTo ? apiTotal : filtered.length}</strong>건</h2><div className="results-controls"><label><span className="sr-only">상품 정렬</span><select value={sort} onChange={event => updateFilters({sort:event.target.value})}><option value="">기본순</option><option value="price-asc">낮은 가격순</option><option value="price-desc">높은 가격순</option><option value="duration">짧은 일정순</option></select></label></div></div>
+        {(params.get('date') || params.get('travelers')) && <p className="catalog-intent v2-catalog-intent"><strong>선택한 조건</strong> {params.get('date') && `출발 희망일 ${params.get('date')}`} {params.get('travelers') && ` · ${params.get('travelers')}명`}</p>}
         {activeFilters.length > 0 && <div className="applied-filters" aria-label="적용한 검색 조건">{activeFilters.map(item => <button key={item.key} onClick={() => item.key === 'date-range' ? updateFilters({from:null,to:null}) : updateFilters({[item.key]:null})} aria-label={`${item.label} 조건 해제`}>{item.label}<Icon name="close" size={13} /></button>)}</div>}
         {loading ? <p className="notice" role="status">여행상품을 불러오는 중입니다.</p>
           : errorMessage ? <div className="empty-state"><Icon name="compass" size={32} /><h2>여행상품을 불러오지 못했어요.</h2><p>{errorMessage}</p><button className="button secondary" type="button" onClick={() => setRetryNonce(value => value + 1)}>다시 시도</button></div>

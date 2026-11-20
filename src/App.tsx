@@ -488,7 +488,7 @@ function CutyApp() {
     <>
       <a className="skip-link" href="#page-content">본문으로 건너뛰기</a>
       <div className={`site-globe-backdrop${isLanding ? ' is-landing' : ''}${authOnly ? ' is-auth' : ''}`} aria-hidden="true"><div className="site-globe-dome-window"><Suspense fallback={null}><SnowGlobe mood={backdropMood} paused={routeTransitioning} reducedMotion={reducedMotion} /></Suspense></div></div>
-      {!authOnly && <header className={`site-header app-header${isLanding ? ' landing-header' : ''}`}>
+      {!authOnly && <header className={`site-header app-header v2-header${isLanding ? ' landing-header' : ''}`}>
         <div className="header-main">
           <AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink>
           {authSession?.role === 'STAFF'
@@ -532,11 +532,10 @@ function CutyApp() {
         {renderPage()}
       </main>
 
-      {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} /></footer> : <footer className={`site-footer app-footer${voiceOpen ? ' is-voice-open' : ''}`}>
+      {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} /><p className="v2-footer-copy">© CUTY · Curate Your Travel</p></footer> : <footer className={`site-footer app-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}>
           <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink></div>
           <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} />
-          <p>Mr.CUTY · 테마여행 상품 구성 서비스</p>
-          <small>© Mr.CUTY.</small>
+          <p className="v2-footer-copy">© CUTY · Curate Your Travel</p>
       </footer>)}
       {canUseVoice && voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display="floating" onClose={closeVoice} />}
       {showHomeWelcome && <div className="home-welcome-transition" role="status" aria-live="polite"><p>새로운 목적지로 출발해보아요</p></div>}

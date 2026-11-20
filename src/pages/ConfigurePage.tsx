@@ -64,12 +64,12 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
 
   return (
     <>
-      <div className="page-heading">
+      <div className="page-heading v2-page-heading">
         <p className="eyebrow">여행 구성</p>
         <h1>등급·옵션 선택</h1>
         <p>{tour.title} · {tour.duration}</p>
       </div>
-      <form className="flow-layout configure-layout" noValidate onSubmit={(event) => {
+      <form className="flow-layout configure-layout v2-configure" noValidate onSubmit={(event) => {
         event.preventDefault()
         if (tour.source !== 'api' && !isOpenTravelDate(draft.date)) {
           setDateError(true)
@@ -80,7 +80,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
         onContinue()
       }}>
         <div className="flow-main">
-          <section className="surface-card">
+          <section className="surface-card v2-section-card">
             <h2>출발 희망일·인원</h2>
             <div className="field-grid">
               <div className="field">
@@ -91,7 +91,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
                     update({ date: event.currentTarget.value })
                     setDateError(false)
                   }} />
-                <small id="travel-date-help" className="muted">출발 7일 전 모집 마감</small>
+                <small id="travel-date-help" className="muted sr-only">출발 7일 전 모집 마감</small>
                 {dateError && <p className="field-error" id="travel-date-error" role="alert">모집 마감 전인 {getEarliestDepartureDate()} 이후의 출발일을 선택해 주세요.</p>}
               </div>
               <div className="field">
@@ -107,11 +107,10 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
             </div>
           </section>
 
-          <section className="surface-card">
+          <section className="surface-card v2-section-card">
             <fieldset>
               <legend><h2>여행 등급</h2></legend>
-              <p className="muted">등급 변경 시 호텔·교통·식사·음료가 기본 구성으로 초기화됩니다. 희망일과 인원은 유지됩니다.</p>
-              <div className="choice-grid grade-choices">
+              <div className="choice-grid grade-choices v2-choice-grid">
                 {(Object.keys(gradeLabels) as TravelGrade[]).map((grade) => {
                   const unavailable = tour.source === 'api'
                     ? !tour.apiConfiguration?.availableGrades.includes(grade)
@@ -137,11 +136,11 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
             {changeNotice && <div className="notification-stack"><div className="notice app-notification" role="status" onAnimationEnd={() => setChangeNotice('')}><span>{changeNotice}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setChangeNotice('')}>×</button></div></div>}
           </section>
 
-          <section className="surface-card">
+          <section className="surface-card v2-section-card">
             <h2>호텔·교통·식사</h2>
             <fieldset className="option-fieldset">
               <legend>호텔</legend>
-              <div className="choice-grid">
+              <div className="choice-grid v2-choice-grid">
                 {(Object.keys(hotelLabels) as HotelGrade[]).map((hotel) => (
                   <label key={hotel} className={`choice-card ${draft.hotel === hotel ? 'selected' : ''}`}>
                     <input type="radio" name="hotel" checked={draft.hotel === hotel} onChange={() => update({ hotel })} />
@@ -153,10 +152,10 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
             </fieldset>
             <fieldset className="option-fieldset">
               <legend>교통</legend>
-              <div className="choice-grid">
+              <div className="choice-grid v2-choice-grid">
                 {(Object.keys(transportLabels) as TravelTransport[]).map((transport) => {
                   const reason = tour.theme === 'romance' && transport === 'van'
-                    ? '허니문은 커플별 2인 전용 차량 제공'
+                    ? '허니문은 2인 전용 차량만 가능'
                     : tour.theme !== 'romance' && draft.travelers > 2 && transport === 'private' ? '2명 이하일 때 선택 가능' : ''
                   return (
                     <label key={transport} className={`choice-card ${draft.transport === transport ? 'selected' : ''} ${reason ? 'unavailable' : ''}`}>
@@ -171,7 +170,7 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
             </fieldset>
             <fieldset className="option-fieldset">
               <legend>식사</legend>
-              <div className="choice-grid">
+              <div className="choice-grid v2-choice-grid">
                 {(Object.keys(mealLabels) as TravelMeal[]).map((meal) => (
                   <label key={meal} className={`choice-card ${draft.meal === meal ? 'selected' : ''}`}>
                     <input type="radio" name="meal" checked={draft.meal === meal} onChange={() => update({ meal })} />
@@ -184,9 +183,9 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
             </fieldset>
           </section>
 
-          <section className="surface-card">
+          <section className="surface-card v2-section-card">
             <h2>추가 옵션</h2>
-            <div className="choice-grid">
+            <div className="choice-grid v2-choice-grid">
               <label className={`choice-card ${draft.champagneQuantity > 0 || champagneIncluded ? 'selected' : ''}`}>
                 <strong>샴페인</strong>
                 <small>{champagneIncluded ? '프리미엄 기본 포함 · 추가금 0원' : champagneOption ? `+ ${formatPrice(champagneOption.price)}원 / 예약` : '+ 50,000원 / 1인'}</small>
@@ -200,11 +199,10 @@ export function ConfigurePage({ tour, draft, onChange, onContinue, onSave }: {
                 {draft.coffeeQuantity > 0 && <span className="selection-label">{draft.coffeeQuantity}개 선택</span>}
               </label>
             </div>
-            <p className="muted">수량은 0~100개에서 선택하며 예약 전체 기준으로 계산됩니다.</p>
           </section>
         </div>
 
-        <aside className="flow-summary surface-card" aria-labelledby="configuration-summary">
+        <aside className="flow-summary surface-card v2-summary" aria-labelledby="configuration-summary">
           <p className="eyebrow">선택한 여행</p>
           <h2 id="configuration-summary">{tour.title}</h2>
           <dl className="summary-details">

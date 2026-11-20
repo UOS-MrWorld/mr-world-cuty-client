@@ -11,7 +11,7 @@ export function TourCard({ tour, onRemove, href = `/tours/${tour.id}` }: {
   href?: string
 }) {
   return (
-    <article className="product-row" data-voice-tour-id={tour.id} data-voice-tour-name={tour.title}
+    <article className="product-row v2-tour-card" data-voice-tour-id={tour.id} data-voice-tour-name={tour.title}
       data-voice-tour-theme={tour.tag} data-voice-tour-price={tour.price}>
       <div className="product-image">
         <AppLink href={href} aria-label={`${tour.title} 상세 보기`}>

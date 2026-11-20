@@ -33,7 +33,7 @@ export default function StaffPage({ path }: { path: string }) {
   const section: Section = path.startsWith('/staff/inventory') ? 'inventory' : path.startsWith('/staff/customers') ? 'customers' : 'tours'
   return <div className="staff-workspace">
     <aside className="staff-sidebar">
-      <div className="staff-space-title"><p>CUTY</p><h2>여행 운영</h2><span>여행 운영 화면</span></div>
+      <div className="staff-space-title"><p>CUTY</p><h2>여행 운영</h2></div>
       <nav aria-label="직원 업무">{nav.map(item => <AppLink key={item.href} href={item.href} aria-current={item.href.includes(section) ? 'page' : undefined}><strong>{item.label}</strong></AppLink>)}</nav>
     </aside>
     <div className="staff-content">
@@ -62,6 +62,7 @@ function ToursSection({ path }: { path: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
+  const [statusFilter, setStatusFilter] = useState<ApiTourStatus | 'ALL'>('ALL')
   useEffect(() => {
     let active = true
     setLoading(true); setError('')
@@ -72,11 +73,12 @@ function ToursSection({ path }: { path: string }) {
   }, [retry])
 
   return <>
-    <Heading title="상품 관리" description="여행상품을 등록하고 수정합니다." action={<AppLink className="staff-button primary" href="/staff/tours/new">상품 등록</AppLink>} />
+    <Heading title="상품 관리" description="" action={<AppLink className="staff-button primary" href="/staff/tours/new">상품 등록</AppLink>} />
+    <div className="v2-status-filter" role="group" aria-label="상품 상태 필터">{(['ALL', 'RECRUITING', 'CONFIRMED', 'COMPLETED'] as const).map(status => <button key={status} type="button" aria-pressed={statusFilter === status} onClick={() => setStatusFilter(status)}>{status === 'ALL' ? '전체' : tourStatusLabels[status]}</button>)}</div>
     {loading || error ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet staff-tour-list">
       <div className="staff-toolbar"><span>{items.length}개 상품</span></div>
-      <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>상품명</th><th>테마</th><th>출발일</th><th>결제 인원</th><th>상태</th><th>관리</th></tr></thead><tbody>
-        {items.map(item => <tr key={item.tourId}><td><strong>{item.tourName}</strong></td><td>{themeLabels[item.theme]}</td><td>{item.startDate}</td><td className="staff-number">{item.paidGuestCount}명</td><td><span className="staff-state">{tourStatusLabels[item.tourStatus]}</span></td><td><div className="staff-row-actions"><AppLink className="staff-text-action" href={`/staff/tours/${item.tourId}`}>현황</AppLink><AppLink className="staff-text-action" href={`/staff/tours/${item.tourId}/edit`}>수정</AppLink></div></td></tr>)}
+      <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>상품명</th><th>테마</th><th>출발일</th><th className="staff-number">결제 인원</th><th>상태</th><th className="v2-align-end">관리</th></tr></thead><tbody>
+        {items.filter(item => statusFilter === 'ALL' || item.tourStatus === statusFilter).map(item => <tr key={item.tourId}><td><strong>{item.tourName}</strong></td><td>{themeLabels[item.theme]}</td><td>{item.startDate}</td><td className="staff-number">{item.paidGuestCount}명</td><td><span className={`staff-state v2-status v2-status-${item.tourStatus}`}>{tourStatusLabels[item.tourStatus]}</span></td><td className="v2-align-end"><div className="staff-row-actions"><AppLink className="staff-text-action" href={`/staff/tours/${item.tourId}`}>현황</AppLink><AppLink className="staff-text-action" href={`/staff/tours/${item.tourId}/edit`}>수정</AppLink></div></td></tr>)}
       </tbody></table></div>
     </section>}
   </>
@@ -105,20 +107,22 @@ function TourStatus({ tourId }: { tourId: number }) {
       <div><span>여행 일정</span><strong>{data.tour.startDate} ~ {data.tour.endDate}</strong></div>
       <div><span>1인 기본 가격</span><strong>{formatPrice(data.tour.basePrice)}원</strong></div>
     </section>
+    <div className="v2-status-grid">
     <section className="staff-sheet staff-list-sheet staff-status-section">
       <div className="staff-section-heading"><h2>신청 고객</h2><span>예약 {data.bookings.length}건</span></div>
       <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>예약번호</th><th>고객명</th><th>인원</th><th>예약 상태</th></tr></thead><tbody>
-        {data.bookings.map(booking => <tr key={booking.bookingId}><td>#{booking.bookingId}</td><td><strong>{booking.name}</strong><small className="staff-subtext">고객번호 {booking.customerId}</small></td><td>{booking.guestCount}명</td><td><span className="staff-state">{bookingStatusLabels[booking.bookingStatus]}</span></td></tr>)}
+        {data.bookings.map(booking => <tr key={booking.bookingId}><td>#{booking.bookingId}</td><td><strong>{booking.name}</strong><small className="staff-subtext">고객번호 {booking.customerId}</small></td><td>{booking.guestCount}명</td><td><span className={`staff-state v2-status v2-status-${booking.bookingStatus}`}>{bookingStatusLabels[booking.bookingStatus]}</span></td></tr>)}
         {!data.bookings.length && <tr><td colSpan={4} className="staff-table-empty">신청 고객이 없습니다.</td></tr>}
       </tbody></table></div>
     </section>
     <section className="staff-sheet staff-list-sheet staff-status-section">
       <div className="staff-section-heading"><h2>기념품 구성</h2><span>결제 인원을 기준으로 필요한 재고를 계산합니다.</span></div>
-      <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>물품명</th><th>1인 제공 수량</th><th>필요 수량</th><th>현재 재고</th><th>상태</th></tr></thead><tbody>
-        {data.gifts.map(gift => { const required = data.paidGuestCount * gift.quantityPerGuest; const enough = gift.currentStock >= required; return <tr key={gift.itemId}><td><strong>{gift.itemName}</strong></td><td>{gift.quantityPerGuest}개</td><td>{required}개</td><td>{gift.currentStock}개</td><td><span className={`staff-state ${enough ? 'preview' : 'paused'}`}>{enough ? '충분' : `${required - gift.currentStock}개 부족`}</span></td></tr> })}
+      <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>물품명</th><th className="staff-number">1인 제공 수량</th><th className="staff-number">필요 수량</th><th className="staff-number">현재 재고</th><th>상태</th></tr></thead><tbody>
+        {data.gifts.map(gift => { const required = data.paidGuestCount * gift.quantityPerGuest; const enough = gift.currentStock >= required; return <tr key={gift.itemId}><td><strong>{gift.itemName}</strong></td><td className="staff-number">{gift.quantityPerGuest}개</td><td className="staff-number">{required}개</td><td className="staff-number">{gift.currentStock}개</td><td><span className={`staff-state v2-stock ${enough ? 'preview' : 'paused'}`}>{enough ? '충분' : `${required - gift.currentStock}개 부족`}</span></td></tr> })}
         {!data.gifts.length && <tr><td colSpan={5} className="staff-table-empty">등록된 기념품 구성이 없습니다.</td></tr>}
       </tbody></table></div>
     </section>
+    </div>
   </>
 }
 
@@ -243,15 +247,15 @@ function InventorySection() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : '물품을 등록하지 못했습니다.') }
   }
   return <>
-    <Heading title="물품·재고 관리" description="부족 재고를 확인하고 현재 수량을 바로 보충합니다." />
-    <form className="staff-sheet staff-fields two" onSubmit={register}><label className="staff-field"><span>새 물품명</span><input name="itemName" required /></label><label className="staff-field"><span>초기 수량</span><input name="quantity" type="number" min="0" step="1" required /></label><button className="staff-button primary">물품 등록</button></form>
-    {shortages.length > 0 && <p className="staff-message error" role="alert">재고가 부족한 물품이 {shortages.length}개 있습니다. 첫 번째 부족 수량 입력으로 이동했습니다.</p>}
+    <Heading title="물품·재고 관리" description="" />
+    {shortages.length > 0 && <p className="staff-message error v2-alert" role="alert">재고가 부족한 물품이 {shortages.length}개 있습니다.</p>}
+    <form className="staff-sheet staff-fields two v2-inventory-form" onSubmit={register}><label className="staff-field"><span>새 물품명</span><input name="itemName" required /></label><label className="staff-field"><span>초기 수량</span><input name="quantity" type="number" min="0" step="1" required /></label><button className="staff-button primary">물품 등록</button></form>
     {(message || (error && !loading)) && <div className="notification-stack">
       {message && <div className="staff-message app-notification" role="status" onAnimationEnd={() => setMessage('')}><span>{message}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setMessage('')}>×</button></div>}
       {error && !loading && <div className="staff-message error app-notification" role="alert" onAnimationEnd={() => setError('')}><span>{error}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setError('')}>×</button></div>}
     </div>}
-    {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet"><form className="staff-toolbar staff-inventory-search" role="search" onSubmit={event => { event.preventDefault(); setAppliedKeyword(keyword.trim()) }}><label className="staff-search"><span className="sr-only">재고 물품 검색</span><input type="search" value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="물품명 검색" /></label><div className="staff-row-actions"><button className="staff-text-action staff-icon-action" type="submit" aria-label="검색" title="검색"><Icon name="search" size={20} /></button>{appliedKeyword && <button className="staff-text-action" type="button" onClick={() => { setKeyword(''); setAppliedKeyword('') }}>초기화</button>}</div></form><div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>물품명</th><th>현재 수량</th><th>사용 예정</th><th>상태</th><th>저장</th></tr></thead><tbody>
-      {items.map(item => { const shortage = item.quantity < item.requiredQuantity; const changed = quantities[item.itemId] !== item.quantity || names[item.itemId]?.trim() !== item.itemName; return <tr key={item.itemId} className={shortage ? 'inventory-shortage' : ''}><td><input className="staff-inventory-name" aria-label={`${item.itemName} 물품명`} required value={names[item.itemId] ?? ''} onChange={event => setNames(current => ({ ...current, [item.itemId]: event.target.value }))} /></td><td><input id={`inventory-quantity-${item.itemId}`} aria-label={`${item.itemName} 현재 수량`} type="number" min="0" step="1" value={quantities[item.itemId] ?? 0} onChange={event => setQuantities(current => ({ ...current, [item.itemId]: Number(event.target.value) }))} /></td><td>{item.requiredQuantity}개</td><td>{shortage ? <span className="staff-state paused">부족 {item.requiredQuantity - item.quantity}개</span> : <span className="staff-state preview">충분</span>}</td><td><button className="staff-text-action" type="button" onClick={() => void save(item)} disabled={!changed || !names[item.itemId]?.trim()}>변경 저장</button></td></tr> })}
+    {loading ? <LoadingState error={error} retry={() => setRetry(value => value + 1)} /> : <section className="staff-sheet staff-list-sheet v2-inventory-list"><form className="staff-toolbar staff-inventory-search" role="search" onSubmit={event => { event.preventDefault(); setAppliedKeyword(keyword.trim()) }}><label className="staff-search"><span className="sr-only">재고 물품 검색</span><input type="search" value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="물품명 검색" /></label><div className="staff-row-actions"><button className="staff-text-action staff-icon-action" type="submit" aria-label="검색" title="검색"><Icon name="search" size={20} /></button>{appliedKeyword && <button className="staff-text-action" type="button" onClick={() => { setKeyword(''); setAppliedKeyword('') }}>초기화</button>}</div></form><div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><thead><tr><th>물품명</th><th>현재 수량</th><th>사용 예정</th><th>상태</th><th className="v2-align-end">저장</th></tr></thead><tbody>
+      {items.map(item => { const shortage = item.quantity < item.requiredQuantity; const changed = quantities[item.itemId] !== item.quantity || names[item.itemId]?.trim() !== item.itemName; return <tr key={item.itemId} className={shortage ? 'inventory-shortage' : ''}><td><input className="staff-inventory-name" aria-label={`${item.itemName} 물품명`} required value={names[item.itemId] ?? ''} onChange={event => setNames(current => ({ ...current, [item.itemId]: event.target.value }))} /></td><td><input id={`inventory-quantity-${item.itemId}`} aria-label={`${item.itemName} 현재 수량`} type="number" min="0" step="1" value={quantities[item.itemId] ?? 0} onChange={event => setQuantities(current => ({ ...current, [item.itemId]: Number(event.target.value) }))} /></td><td>{item.requiredQuantity}개</td><td>{shortage ? <span className="staff-state paused v2-stock-state">부족 {item.requiredQuantity - item.quantity}개</span> : <span className="staff-state preview">충분</span>}</td><td className="v2-align-end"><button className="staff-text-action" type="button" onClick={() => void save(item)} disabled={!changed || !names[item.itemId]?.trim()}>변경 저장</button></td></tr> })}
       {!items.length && <tr><td className="staff-table-empty" colSpan={5}>검색된 물품이 없습니다.</td></tr>}
     </tbody></table></div></section>}
   </>
@@ -300,7 +304,7 @@ function CustomersSection({ path }: { path: string }) {
     finally { setApplyingDiscount(false) }
   }
   return <>
-    <Heading title="고객 관리" description="고객 정보를 확인하고 등급별 할인을 적용합니다." />
+    <Heading title="고객 관리" description="" />
     {(message || (error && !loading)) && <div className="notification-stack">
       {message && <div className="staff-message app-notification" role="status" onAnimationEnd={() => setMessage('')}><span>{message}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setMessage('')}>×</button></div>}
       {error && !loading && <div className="staff-message error app-notification" role="alert" onAnimationEnd={() => setError('')}><span>{error}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setError('')}>×</button></div>}
@@ -313,19 +317,19 @@ function CustomersSection({ path }: { path: string }) {
         <div className="staff-row-actions"><button className="staff-button primary" type="submit">검색</button><button className="staff-button soft" type="button" onClick={() => { setKeyword(''); setGradeFilter(''); setDiscountFilter(''); setFilters({}) }}>초기화</button></div>
       </form>
       <section className="staff-customer-actions" aria-label="등급별 할인 관리">
-        <article className="staff-action-card staff-discount-card">
-          <div><p className="staff-action-kicker">할인 관리</p><h2>등급별 할인 적용</h2><p>선택한 등급에서 아직 할인이 적용되지 않은 고객에게 혜택을 적용합니다.</p></div>
+        <article className="staff-action-card staff-discount-card v2-discount-card">
+          <div><p className="staff-action-kicker">할인 관리</p><h2>등급별 할인 적용</h2></div>
           <div className="staff-discount-controls">
             <label className="staff-field"><span>적용 등급</span><select value={discountGrade} onChange={event => setDiscountGrade(event.target.value as ApiLoyaltyGrade)}>{Object.entries(loyaltyLabels).map(([grade, label]) => <option key={grade} value={grade}>{label}</option>)}</select></label>
-            <dl><div><dt>대상 고객</dt><dd>{discountTargets.length}명</dd></div><div><dt>적용 대기</dt><dd>{pendingDiscountCount}명</dd></div></dl>
+            <dl><div><dt>대상 고객</dt><dd>{discountTargets.length}명</dd></div><div className={pendingDiscountCount > 0 ? 'v2-pending-box' : undefined}><dt>적용 대기</dt><dd>{pendingDiscountCount}명</dd></div></dl>
             <button className="staff-button primary" type="button" disabled={!pendingDiscountCount || applyingDiscount} onClick={() => void applyDiscount()}>{applyingDiscount ? '적용 중…' : selectedDiscountRate <= 0 ? '할인 대상 없음' : `${loyaltyLabels[discountGrade]} 할인 적용 (${pendingDiscountCount})`}</button>
           </div>
         </article>
       </section>
       <section className="staff-sheet staff-list-sheet staff-customer-list">
         <div className="staff-toolbar"><span>고객 {customers.length}명</span></div>
-        <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><caption className="sr-only">고객별 단골 등급과 할인 적용 상태</caption><thead><tr><th scope="col">고객명</th><th scope="col">연락처</th><th scope="col">완료 여행</th><th scope="col">현재 등급</th><th scope="col">할인 상태</th><th scope="col">상세</th></tr></thead><tbody>
-          {customers.map(customer => { const discountStatus = getDiscountStatus(customer, policies); return <tr key={customer.customerId}><td><strong>{customer.name}</strong></td><td>{customer.phoneNum}</td><td>{customer.completedTourCount}회</td><td><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></td><td><span className={`staff-state ${discountStatus.className}`}>{discountStatus.label}</span></td><td><AppLink className="staff-text-action" href={`/staff/customers/${customer.customerId}`}>보기</AppLink></td></tr> })}
+        <div className="staff-table-scroll" tabIndex={0}><table className="staff-table"><caption className="sr-only">고객별 단골 등급과 할인 적용 상태</caption><thead><tr><th scope="col">고객명</th><th scope="col">연락처</th><th scope="col" className="staff-number">완료 여행</th><th scope="col">현재 등급</th><th scope="col">할인 상태</th><th scope="col" className="v2-align-end">상세</th></tr></thead><tbody>
+          {customers.map(customer => { const discountStatus = getDiscountStatus(customer, policies); return <tr key={customer.customerId}><td><strong>{customer.name}</strong></td><td>{customer.phoneNum}</td><td className="staff-number">{customer.completedTourCount}회</td><td><strong className={`v2-grade v2-grade-${customer.loyaltyGrade}`}>{loyaltyLabels[customer.loyaltyGrade]}</strong></td><td><span className={`staff-state ${discountStatus.className}`}>{discountStatus.label}</span></td><td className="v2-align-end"><AppLink className="staff-text-action" href={`/staff/customers/${customer.customerId}`}>상세보기</AppLink></td></tr> })}
           {!customers.length && <tr><td className="staff-loyalty-empty" colSpan={6}>표시할 고객이 없습니다.</td></tr>}
         </tbody></table></div>
       </section>
@@ -352,14 +356,15 @@ function CustomerDetail({ customerId }: { customerId: number }) {
   if (!customer || error) return <LoadingState error={error} retry={() => setRetry(value => value + 1)} />
   const discountStatus = getDiscountStatus(customer, policies)
   return <>
-    <Heading title={customer.name} description="고객 기본정보와 단골 할인 적용 상태를 확인합니다." action={<AppLink className="staff-button soft" href="/staff/customers">목록으로</AppLink>} />
-    <section className="staff-status-overview" aria-label="고객 요약">
-      <div><span>고객 등급</span><strong>{loyaltyLabels[customer.loyaltyGrade]}</strong></div>
+    <Heading title={customer.name} description="" />
+    <section className="staff-status-overview v2-key-table" aria-label="고객 요약">
+      <div className="staff-section-heading v2-key-heading"><h2>주요 정보</h2></div>
+      <div><span>고객 등급</span><strong className={`v2-grade v2-grade-${customer.loyaltyGrade}`}>{loyaltyLabels[customer.loyaltyGrade]}</strong></div>
       <div><span>완료 여행</span><strong>{customer.completedTourCount}회</strong></div>
-      <div><span>단골 할인</span><strong>{discountStatus.label}</strong></div>
+      <div><span>단골 할인</span><strong className={`staff-state ${discountStatus.className}`}>{discountStatus.label}</strong></div>
       <div><span>고객번호</span><strong>#{customer.customerId}</strong></div>
     </section>
-    <section className="staff-sheet">
+    <section className="staff-sheet v2-detail-sheet">
       <div className="staff-section-heading"><h2>기본정보</h2></div>
       <dl className="staff-detail-list">
         <div><dt>로그인 아이디</dt><dd>{customer.loginId}</dd></div>
