@@ -37,6 +37,7 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
   const [cardNumber, setCardNumber] = useState('')
   const [cardParts, setCardParts] = useState(['', '', '', ''])
   const cardInputs = useRef<Array<HTMLInputElement | null>>([])
+  const conditionsTrack = useRef<HTMLDListElement>(null)
   const [loading, setLoading] = useState(true)
   const [restoring, setRestoring] = useState(Boolean(requestedBookingId))
   const [resumeBlocked, setResumeBlocked] = useState(false)
@@ -192,19 +193,19 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
   if (!quote) return <div className="empty-state"><Icon name="compass" size={36} /><h1>신청 내용을 확인하지 못했어요.</h1><p>{errorMessage}</p><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성으로 돌아가기</AppLink></div>
 
   return <>
-    <div className="page-heading"><p className="eyebrow">신청·결제</p><h1>{booking ? '예약이 생성됐어요.' : '선택한 구성으로 예약할까요?'}</h1><p>{booking ? '결제 정보를 입력해 예약을 완료하세요.' : '결제 금액과 출발·취소 조건을 확인해 주세요.'}</p></div>
+    <div className="page-heading v2-page-heading"><h1>{booking ? '예약이 생성됐어요.' : '선택한 구성으로 예약할까요?'}</h1></div>
     {(payment || errorMessage) && <div className="notification-stack">
       {payment && <div className={`notice app-notification${payment.paymentStatus === 'FAILED' ? ' notice-error' : ''}`} role={payment.paymentStatus === 'FAILED' ? 'alert' : 'status'} onAnimationEnd={() => setPayment(null)}><span>최근 결제 결과: {payment.paymentStatus === 'SUCCESS' ? '승인' : payment.paymentStatus === 'FAILED' ? '거절' : '환불'} · {formatPrice(payment.amount)}원</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setPayment(null)}>×</button></div>}
       {errorMessage && <div className="notice notice-error app-notification" role="alert" onAnimationEnd={() => setErrorMessage('')}><span>{errorMessage}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setErrorMessage('')}>×</button></div>}
     </div>}
-    <div className="flow-layout">
+    <div className="flow-layout v2-checkout">
       <div className="flow-main checkout-fields">
-        {!booking ? <form className="surface-card" onSubmit={submitBooking}>
+        {!booking ? <form className="surface-card v2-pay-card" onSubmit={submitBooking}>
           <h2 className="section-title">예약 생성</h2>
           <dl className="detail-facts"><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>할인율</dt><dd>{quote.discountRate}%</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(quote.expectedPaymentAmount)}원</dd></div></dl>
           <label className="checkout-agreement"><input type="checkbox" required /><span>선택 구성과 결제 금액을 확인했습니다.</span></label>
           <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="submit" disabled={processing}>{processing ? '예약 중…' : '예약하기'}</button></div>
-        </form> : <form className="surface-card" onSubmit={submitPayment}>
+        </form> : <form className="surface-card v2-pay-card" onSubmit={submitPayment}>
           <h2 className="section-title">카드 결제</h2>
           <dl className="detail-facts"><div><dt>예약번호</dt><dd>{booking.bookingId}</dd></div><div><dt>예약 상태</dt><dd>결제 전</dd></div><div><dt>결제 예정 금액</dt><dd>{formatPrice(bookingPaymentAmount)}원</dd></div></dl>
           <div className="checkout-payment-controls">
@@ -215,7 +216,7 @@ function ApiCheckout({ tour, draft, onDraftChange }: { tour: Tour; draft: Travel
             <div className="action-row"><AppLink className="button secondary" href={`/tours/${tour.id}/configure${window.location.search}`}>구성 수정하기</AppLink><button className="button primary" type="submit" disabled={processing || selectionChanged}>{processing ? '결제 처리 중…' : '결제하기'} <Icon name="arrow" size={18} /></button></div>
           </div>
         </form>}
-        <section className="surface-card"><h2 className="section-title">출발·취소 조건</h2><dl className="detail-facts"><div><dt>모집 마감</dt><dd>{getRecruitmentDeadline(draft.date)} · 출발 7일 전</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd></div><div><dt>재고 부족</dt><dd>예약·결제를 차단하지 않음</dd></div></dl></section>
+        <section className="surface-card v2-conditions-card"><h2 className="section-title">출발·취소 조건</h2><div className="v2-conditions"><dl className="detail-facts v2-conditions-track" ref={conditionsTrack}><div><dt>모집 마감</dt><dd>{getRecruitmentDeadline(draft.date)} · 출발 7일 전</dd><dd className="v2-condition-desc">마감일 전까지 취소할 수 있어요.<br />결제 완료 예약은 자동 환불됩니다.</dd></div><div><dt>출발 확정 기준</dt><dd>전체 결제 인원 3명 이상</dd><dd className="v2-condition-desc">마감일에 인원이 부족하면<br />여행이 취소되고 결과를 안내합니다.</dd></div><div><dt>재고 부족</dt><dd>예약·결제를 차단하지 않음</dd><dd className="v2-condition-desc">기념품이 부족해도 신청은 그대로 진행되고<br />출발 전에 준비합니다.</dd></div></dl><button type="button" className="v2-conditions-next" aria-label="다음 조건 보기" onClick={() => { const track = conditionsTrack.current; if (!track) return; if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 4) track.scrollTo({ left: 0 }); else track.scrollBy({ left: (track.firstElementChild as HTMLElement | null)?.offsetWidth ?? track.clientWidth }) }}><Icon name="chevron-right" size={20} /></button></div></section>
       </div>
       <TripSummary tour={tour} draft={draft} quote={quote} />
     </div>

@@ -27,7 +27,7 @@ export function TripSummary({
     : '미선택'
 
   return (
-    <aside className="flow-summary surface-card" aria-label="선택한 여행과 예상 금액">
+    <aside className="flow-summary surface-card v2-receipt" aria-label="선택한 여행과 예상 금액">
       <h2 className="section-title">선택 상품</h2>
       <div className="summary-product">
         <img src={tour.image} alt={tour.imageAlt} />

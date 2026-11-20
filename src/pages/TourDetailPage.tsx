@@ -35,29 +35,29 @@ export default function TourDetailPage({ tour, draft, onChange, onContinue }: {
   }
   return (
     <>
-      <header className="detail-heading">
+      <header className="detail-heading v2-detail-heading">
         <AppLink className="detail-back icon-button" href={`/tours${window.location.search}`} aria-label="상품 목록으로 돌아가기"><Icon name="arrow" size={21} /></AppLink>
-        <div className="detail-heading-meta"><span className="theme-tag">{themeLabels[tour.theme]}</span><span>{tour.source === 'api' ? `${tour.startDate} 출발` : tour.location}</span></div>
+        <div className="detail-heading-meta v2-detail-meta"><span className="theme-tag">{themeLabels[tour.theme]}</span><span>{tour.source === 'api' ? `${tour.startDate} 출발` : tour.location}</span></div>
         <h1>{tour.title}</h1>
         <p>{tour.description}</p>
-        <div className="detail-quick-facts"><span><Icon name="compass" size={17} />{tour.duration}</span><span>{gradeLabels[minimumGrade(tour)]} 이상</span><span>{tour.theme === 'romance' ? '커플별 2인 전용 차량' : '10인승 차량 기본'}</span></div>
+        <div className="detail-quick-facts v2-quick-facts"><span><Icon name="compass" size={17} />{tour.duration}</span><span>{gradeLabels[minimumGrade(tour)]} 이상</span><span>{tour.theme === 'romance' ? '커플별 2인 전용 차량' : '10인승 차량 기본'}</span></div>
       </header>
-      <div className="flow-layout detail-layout">
+      <div className="flow-layout detail-layout v2-detail-layout">
         <div className="flow-main detail-main">
           <figure className="detail-visual"><img className="detail-photo" src={tour.image} alt={tour.imageAlt} /></figure>
-          <nav className="detail-section-nav" aria-label="상품 상세 목차"><a href="#tour-overview">상품 안내</a><a href="#tour-grade">등급별 구성</a></nav>
+          <nav className="detail-section-nav v2-toc" aria-label="상품 상세 목차"><a href="#tour-overview">상품 안내</a><a href="#tour-grade">등급별 구성</a></nav>
           <section id="tour-overview" className="detail-section">
             <h2>상품 안내</h2>
-            <dl className="information-table"><div><dt>{tour.source === 'api' ? '출발일' : '여행지'}</dt><dd>{tour.source === 'api' ? tour.startDate : tour.location}</dd></div><div><dt>여행 기간</dt><dd>{tour.duration}</dd></div><div><dt>여행 테마</dt><dd>{themeLabels[tour.theme]}</dd></div><div><dt>기본 등급</dt><dd>{gradeLabels[minimumGrade(tour)]}{requiresGrand && ' · 클래식 선택 불가'}</dd></div></dl>
+            <dl className="information-table v2-info-grid"><div><dt>{tour.source === 'api' ? '출발일' : '여행지'}</dt><dd>{tour.source === 'api' ? tour.startDate : tour.location}</dd></div><div><dt>여행 기간</dt><dd>{tour.duration}</dd></div><div><dt>여행 테마</dt><dd>{themeLabels[tour.theme]}</dd></div><div><dt>기본 등급</dt><dd>{gradeLabels[minimumGrade(tour)]}{requiresGrand && ' · 클래식 선택 불가'}</dd></div></dl>
             <h3>테마 기본 제공</h3><ul className="benefit-list">{themeBenefits[tour.theme].map(item => <li key={item}><Icon name="check" size={16} />{item}</li>)}</ul>
           </section>
           <section id="tour-grade" className="detail-section">
             <h2>등급별 기본 구성</h2>
-            <div className="table-scroll"><table className="grade-table"><caption className="sr-only">등급별 호텔과 식사 비교</caption><thead><tr><th scope="col">등급</th><th scope="col">호텔</th><th scope="col">기본 식사</th></tr></thead><tbody><tr className={requiresGrand ? 'unavailable-row' : ''}><th scope="row">클래식{requiresGrand && <small>선택 불가</small>}</th><td>3등급</td><td>도시락</td></tr><tr><th scope="row">그랜드</th><td>4등급</td><td>현지식 레스토랑</td></tr><tr><th scope="row">프리미엄</th><td>5등급</td><td>{tour.source === 'api' ? '파인다이닝' : '스테이크·샴페인'}</td></tr></tbody></table></div>
+            <div className="table-scroll v2-grade-table"><table className="grade-table"><caption className="sr-only">등급별 호텔과 식사 비교</caption><thead><tr><th scope="col">등급</th><th scope="col">호텔</th><th scope="col">기본 식사</th></tr></thead><tbody><tr className={requiresGrand ? 'unavailable-row' : ''}><th scope="row">클래식{requiresGrand && <small>선택 불가</small>}</th><td>3등급</td><td>도시락</td></tr><tr><th scope="row">그랜드</th><td>4등급</td><td>현지식 레스토랑</td></tr><tr><th scope="row">프리미엄</th><td>5등급</td><td>{tour.source === 'api' ? '파인다이닝' : '스테이크·샴페인'}</td></tr></tbody></table></div>
             <p className="muted">호텔·교통·식사는 다음 단계에서 변경할 수 있습니다. 기본 구성 대비 차액이 반영됩니다.</p>
           </section>
         </div>
-        <aside className="flow-summary booking-panel" aria-labelledby="booking-panel-title">
+        <aside className="flow-summary booking-panel v2-booking-panel" aria-labelledby="booking-panel-title">
           <div className="booking-panel-header"><h2 id="booking-panel-title">일정·인원 선택</h2>{tour.source !== 'api' && <span>여행상품</span>}</div>
           <div className="starting-price"><small>{gradeLabels[minimumGrade(tour)]} 기본 구성 · 1인</small><p><strong>{formatPrice(tour.price)}</strong>원~</p></div>
           <form id="detail-booking" noValidate onSubmit={event => {

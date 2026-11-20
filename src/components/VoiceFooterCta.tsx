@@ -17,7 +17,7 @@ export function VoiceFooterCta({ onClick, buttonRef }: VoiceFooterCtaProps) {
       title="음성으로 여행 찾기"
     >
       <span className="voice-neon-icon" aria-hidden="true">
-        <Icon name="mic-filled" size={22} />
+        <Icon name="mic-filled" size={30} />
       </span>
     </button>
   )

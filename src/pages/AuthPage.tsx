@@ -98,14 +98,14 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'signup'; next?: stri
     }
   }
 
-  return <div className="auth-layout">
+  return <div className="auth-layout v2-auth">
     <section className="auth-intro">
       <BrandMark large />
       <p className="eyebrow">CURATE YOUR TRAVEL</p>
       <h1>{signup ? '여행의 시작, CUTY와 함께.' : '여행을 시작해 보세요.'}</h1>
-      <p>고른 여행을 이어서 구성하고<br />신청한 여행과 출발 상태를 한곳에서 확인하세요</p>
+      <p>마음에 드는 여행을 찾고<br />예약까지 한 번에</p>
     </section>
-    <section className="auth-card surface-card" aria-labelledby="auth-form-heading">
+    <section className="auth-card surface-card v2-auth-card" aria-labelledby="auth-form-heading">
       <h2 id="auth-form-heading">{signup ? '회원가입' : '로그인'}</h2>
       <p className="muted">CUTY 계정으로 여행과 신청 내역을 이어서 관리하세요.</p>
       <form className="auth-form" onSubmit={submit}>

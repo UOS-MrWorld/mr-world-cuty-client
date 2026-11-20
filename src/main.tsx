@@ -9,6 +9,7 @@ import './staff-workspace.css'
 import './liquid-glass-system.css'
 import './solid-customer-theme.css'
 import App from './App.tsx'
+import './cuty-v2-theme.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

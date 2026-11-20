@@ -82,8 +82,8 @@ function ApiTripsPanel({ tab }: { tab: 'cart' | 'bookings' | 'history' }) {
   if (!records.length) return <div className="empty-state"><Icon name={tab === 'cart' ? 'cart' : 'compass'} size={36} /><h2>{tab === 'cart' ? '장바구니가 비어 있어요.' : tab === 'bookings' ? '신청한 여행이 없어요.' : '아직 여행 이력이 없어요.'}</h2><p>{tab === 'cart' ? '여행 구성을 저장하면 결제 전 예약이 이곳에 표시됩니다.' : '여행을 선택하고 예약하면 이곳에서 상태를 확인할 수 있어요.'}</p><AppLink className="button primary" href="/tours">여행 둘러보기 <Icon name="arrow" size={17} /></AppLink></div>
 
   return <div className="draft-list">
-    {bookings.map(booking => <article className="surface-card api-booking-card" key={`booking-${booking.bookingId}`}><div><span className="status-pill">{bookingStatusLabels[booking.bookingStatus]}</span><h2>{booking.tourName}</h2><p className="muted">출발일 {booking.startDate}</p><strong>예약 금액 {formatPrice(booking.totalPrice)}원</strong><p className="summary-note">할인율 {booking.discountRate}% · 예약번호 {booking.bookingId}</p></div><div className="action-row"><AppLink className="button secondary" href={booking.bookingStatus === 'PENDING' ? `/tours/${booking.tourId}/checkout?booking=${booking.bookingId}` : `/tours/${booking.tourId}/preview?booking=${booking.bookingId}`}>{booking.bookingStatus === 'PENDING' ? '결제 계속하기' : '예약 상세'} <Icon name="arrow" size={17} /></AppLink>{booking.bookingStatus === 'PENDING' && <button className="button secondary" type="button" disabled={cancellingId === booking.bookingId} onClick={() => void cancelPendingBooking(booking)}>{cancellingId === booking.bookingId ? '빼는 중…' : '장바구니에서 빼기'}</button>}</div></article>)}
-    {tab === 'history' && history.map(item => <article className="surface-card trip-history-card" key={`history-${item.bookingId}`}><img className="history-thumbnail" src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><span className="status-pill">{tourStatusLabels[item.tourStatus]}</span><h2>{item.tourName}</h2><p className="muted">{item.startDate} ~ {item.endDate} · {apiTourLevelLabels[item.tourLevel]}</p><strong>결제 금액 {formatPrice(item.paidAmount)}원</strong><p className="summary-note">예약번호 {item.bookingId}</p></div></article>)}
+    {bookings.map(booking => <article className="surface-card api-booking-card v2-booking-card" key={`booking-${booking.bookingId}`}><div><span className={`status-pill v2-status v2-status-${booking.bookingStatus}`}>{bookingStatusLabels[booking.bookingStatus]}</span><h2>{booking.tourName}</h2><p className="muted">출발일 {booking.startDate}</p><strong>예약 금액 {formatPrice(booking.totalPrice)}원</strong><p className="summary-note">할인율 {booking.discountRate}% · 예약번호 {booking.bookingId}</p></div><div className="action-row"><AppLink className="button secondary" href={booking.bookingStatus === 'PENDING' ? `/tours/${booking.tourId}/checkout?booking=${booking.bookingId}` : `/tours/${booking.tourId}/preview?booking=${booking.bookingId}`}>{booking.bookingStatus === 'PENDING' ? '결제 계속하기' : '예약 상세'} <Icon name="arrow" size={17} /></AppLink>{booking.bookingStatus === 'PENDING' && <button className="button secondary" type="button" disabled={cancellingId === booking.bookingId} onClick={() => void cancelPendingBooking(booking)}>{cancellingId === booking.bookingId ? '빼는 중…' : '장바구니에서 빼기'}</button>}</div></article>)}
+    {tab === 'history' && history.map(item => <article className="surface-card trip-history-card v2-booking-card" key={`history-${item.bookingId}`}><img className="history-thumbnail" src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><span className={`status-pill v2-status v2-status-${item.tourStatus}`}>{tourStatusLabels[item.tourStatus]}</span><h2>{item.tourName}</h2><p className="muted">{item.startDate} ~ {item.endDate} · {apiTourLevelLabels[item.tourLevel]}</p><strong>결제 금액 {formatPrice(item.paidAmount)}원</strong><p className="summary-note">예약번호 {item.bookingId}</p></div></article>)}
   </div>
 }
 
@@ -126,7 +126,7 @@ function ApiProfilePanel() {
   if (loading) return <p className="notice" role="status">회원정보를 불러오는 중입니다.</p>
   if (!profile) return <div className="empty-state"><h2>회원정보를 불러오지 못했어요.</h2><p>{errorMessage}</p></div>
 
-  return <div className="profile-layout"><section className="surface-card">
+  return <div className="profile-layout"><section className="surface-card v2-profile-card">
     <h2>나의 정보</h2><p className="muted">성명과 로그인 아이디는 조회만 가능하며, 연락처와 주소를 수정할 수 있어요.</p>
     <form className="profile-form" onSubmit={submit}>
       <label className="field" htmlFor="api-profile-account">로그인 아이디<input id="api-profile-account" value={profile.loginId} readOnly /></label>
@@ -157,8 +157,8 @@ export function MyTripsPage() {
     document.getElementById(`my-trips-tab-${tabIds[next]}`)?.focus()
   }
   return <>
-    <div className="page-heading"><p className="eyebrow">여행 관리</p><h1>나의 여행을 한눈에.</h1><p>고르고 있는 여행부터 신청한 여행, 지난 여행까지 확인하세요.</p></div>
-    <div className="collection-tabs my-trips-tabs" role="tablist" aria-label="내 여행 분류">{tabIds.map((id, index) => <button id={`my-trips-tab-${id}`} role="tab" type="button" aria-selected={tab === id} aria-controls={`my-trips-panel-${id}`} tabIndex={tab === id ? 0 : -1} key={id} onClick={() => switchTab(id)} onKeyDown={event => tabKeyDown(event, index)}>{tabLabels[id]}{counts[id] !== undefined && <b>{counts[id]}</b>}</button>)}</div>
+    <div className="page-heading v2-page-heading"><p className="eyebrow">여행 관리</p><h1>나의 여행을 한눈에.</h1><p>고르고 있는 여행부터 신청한 여행, 지난 여행까지 확인하세요.</p></div>
+    <div className="collection-tabs my-trips-tabs v2-tabs" role="tablist" aria-label="내 여행 분류">{tabIds.map((id, index) => <button id={`my-trips-tab-${id}`} role="tab" type="button" aria-selected={tab === id} aria-controls={`my-trips-panel-${id}`} tabIndex={tab === id ? 0 : -1} key={id} onClick={() => switchTab(id)} onKeyDown={event => tabKeyDown(event, index)}>{tabLabels[id]}{counts[id] !== undefined && <b>{counts[id]}</b>}</button>)}</div>
     <div role="tabpanel" id={`my-trips-panel-${tab}`} aria-labelledby={`my-trips-tab-${tab}`} className="my-trips-panel" tabIndex={0}>
       {authSession?.role === 'CUSTOMER' && tab === 'drafts' && <ApiTripsPanel tab="cart" />}
       {authSession?.role === 'CUSTOMER' && (tab === 'bookings' || tab === 'history') && <ApiTripsPanel tab={tab} />}
@@ -170,7 +170,7 @@ export function MyTripsPage() {
 
 export function CartPage() {
   return <>
-    <div className="page-heading"><p className="eyebrow">여행 관리</p><h1>장바구니</h1><p>결제 전 예약을 확인하고 이어서 결제하세요.</p></div>
+    <div className="page-heading v2-page-heading"><p className="eyebrow">여행 관리</p><h1>장바구니</h1><p>결제 전 예약을 확인하고 이어서 결제하세요.</p></div>
     <ApiTripsPanel tab="cart" />
   </>
 }
