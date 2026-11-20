@@ -243,7 +243,7 @@ body { word-break: keep-all; }
   align-self: flex-start;
   padding: var(--tab-pad);
   border-radius: 999px;
-  background: rgb(255 255 255 / .12);
+  background: transparent;
   pointer-events: auto;
 }
 /* One liquid drop behind the tabs. The leading edge moves first and the trailing
@@ -259,10 +259,10 @@ body { word-break: keep-all; }
   background: radial-gradient(120% 140% at 30% 20%, #fff 0%, #f4f9ff 55%, #e2eeff 100%);
   box-shadow: 0 6px 18px rgb(18 52 110 / .22), inset 0 -2px 6px rgb(8 120 255 / .12), inset 0 2px 4px rgb(255 255 255 / .9);
   pointer-events: none;
-  transition: left .62s cubic-bezier(.65, 0, .35, 1) .14s, right .42s cubic-bezier(.3, 1.35, .5, 1);
+  transition: left .36s cubic-bezier(.45, 0, .2, 1) .05s, right .28s cubic-bezier(.25, 1.12, .4, 1);
 }
 .v2-theme-tabs[data-direction='prev'] .v2-theme-drop {
-  transition: left .42s cubic-bezier(.3, 1.35, .5, 1), right .62s cubic-bezier(.65, 0, .35, 1) .14s;
+  transition: left .28s cubic-bezier(.25, 1.12, .4, 1), right .36s cubic-bezier(.45, 0, .2, 1) .05s;
 }
 .v2-theme-tabs button {
   position: relative;
@@ -277,7 +277,7 @@ body { word-break: keep-all; }
   font-weight: 600;
   text-shadow: var(--v2-on-blue-shadow);
   cursor: pointer;
-  transition: color .3s ease .18s, text-shadow .3s ease .18s;
+  transition: color .2s ease .08s, text-shadow .2s ease .08s;
 }
 .v2-theme-tabs button:not([aria-pressed='true']):hover { color: #fff; }
 .v2-theme-tabs button[aria-pressed='true'] { color: var(--v2-primary-hover); font-weight: 700; text-shadow: none; }
@@ -525,15 +525,23 @@ body { word-break: keep-all; }
   text-shadow: var(--v2-on-blue-shadow);
 }
 .v2-catalog-results .results-toolbar select {
-  height: 44px;
-  min-width: 118px;
-  padding: 0 14px;
-  border: 1px solid var(--v2-card-border);
-  border-radius: 12px;
+  height: 40px;
+  min-width: 0;
+  padding: 0 38px 0 18px;
+  border: 0;
+  border-radius: 999px;
   color: var(--v2-ink);
-  background-color: #fff;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23213451' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E") no-repeat right 18px center / 12px 12px;
+  box-shadow: 0 6px 16px rgb(25 65 125 / .12);
   font-size: 14px;
+  font-weight: 600;
+  line-height: 40px;
+  cursor: pointer;
+  field-sizing: content;
+  -webkit-appearance: none;
+  appearance: none;
 }
+.v2-catalog-results .results-toolbar select:hover { background-color: var(--v2-soft); }
 
 .product-list:has(.v2-tour-card) { gap: 40px 28px; padding-top: 28px; }
 .product-row.v2-tour-card { gap: 0; }
@@ -551,7 +559,7 @@ body { word-break: keep-all; }
 .product-row.v2-tour-card .product-tags span { font-size: 13px; font-weight: 700; }
 .product-row.v2-tour-card .product-tags span + span::before { margin: 0 4px 0 0; }
 .product-row.v2-tour-card .product-price {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: end;
   column-gap: 12px;
   row-gap: 2px;
@@ -562,24 +570,6 @@ body { word-break: keep-all; }
 .product-row.v2-tour-card .product-price > span { grid-column: 1; font-size: 12px; font-weight: 500; }
 .product-row.v2-tour-card .product-price > p { grid-column: 1; font-size: 14px; }
 .product-row.v2-tour-card .product-price strong { font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
-.product-row.v2-tour-card .product-price .button {
-  display: inline-flex;
-  grid-column: 2;
-  grid-row: 1 / span 3;
-  align-self: center;
-  justify-content: center;
-  min-height: 44px;
-  margin: 0;
-  padding: 0 20px;
-  border: 0;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--v2-secondary);
-  font-size: 14px;
-  font-weight: 700;
-}
-.product-row.v2-tour-card .product-price .button:hover { background: var(--v2-primary-hover); }
-.product-row.v2-tour-card .product-price .button svg { display: none; }
 
 @media (max-width: 1180px) {
   .product-list:has(.v2-tour-card) { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -31,7 +31,6 @@ export function TourCard({ tour, onRemove, href = `/tours/${tour.id}` }: {
         <span>{tour.source === 'api' ? '1인 기본 금액' : '1인 기준 · 예상 금액'}</span>
         <p><strong>{formatPrice(tour.price)}</strong>원~</p>
         <small>등급·옵션에 따라 변경</small>
-        <AppLink className="button secondary" href={href}>상품 상세보기 <Icon name="arrow" size={16} /></AppLink>
       </div>
     </article>
   )
