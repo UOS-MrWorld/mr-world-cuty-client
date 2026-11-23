@@ -1534,3 +1534,28 @@ body { word-break: keep-all; }
   .v2-theme-tabs button,
   .v2-theme-drop { transition: none; }
 }
+
+/* ───────── Voice feedback notification ───────── */
+/* 음성 명령 결과 안내: 크게, 불투명한 파란 바탕에 흰 글씨. */
+.notification-stack:has(.voice-feedback) { width: min(640px, calc(100% - 32px)); }
+.notice.voice-feedback.app-notification {
+  min-height: 64px;
+  padding: 18px 20px 18px 24px;
+  border: 1px solid rgb(255 255 255 / .35);
+  border-radius: 16px;
+  color: #fff;
+  background: var(--v2-primary);
+  box-shadow: 0 14px 36px rgb(7 64 160 / .35);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+  opacity: 1;
+}
+.notice.voice-feedback.app-notification .notification-close { width: 32px; min-height: 32px; color: #fff; font-size: 22px; }
+.notice.voice-feedback.app-notification .notification-close:hover { background: rgb(255 255 255 / .16); }
+.notice.voice-feedback.app-notification .notification-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 760px) {
+  .notice.voice-feedback.app-notification { min-height: 56px; padding: 14px 16px 14px 18px; font-size: 15px; }
+}
