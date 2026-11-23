@@ -1,2 +1,5 @@
 /* 음성 예약 안내 문구: 기존 음성 안내 자리(화면 상단)에 대화가 끝날 때까지 계속 표시한다 */
 .notice.voice-feedback.app-notification.voice-guide { animation: none; opacity: 1; transform: none; }
+
+/* 음성 예약 중에는 마이크 상태 문구(말씀해 주세요 등)를 숨겨 안내 문구와 겹치지 않게 한다 */
+.voice-booking-listening .voice-input-status { display: none; }

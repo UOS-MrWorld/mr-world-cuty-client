@@ -28,11 +28,11 @@ function speak(text: string) {
     synth.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'ko-KR'
-    utterance.rate = 1.05
+    utterance.rate = 1.2
     const voice = synth.getVoices().find(item => item.lang.startsWith('ko'))
     if (voice) utterance.voice = voice
     // 일부 브라우저는 onend가 오지 않으므로 글자 수 기준으로 끝을 보장한다.
-    const fallback = window.setTimeout(resolve, 1500 + text.length * 200)
+    const fallback = window.setTimeout(resolve, 1000 + text.length * 160)
     const done = () => {
       window.clearTimeout(fallback)
       resolve()
@@ -341,11 +341,10 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
           } else if (drinks.length) {
             pendingDrinksRef.current = drinks
             const merged = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
-            const before = drinksRef.current
             drinksRef.current = merged
             const summary = bookingSummary()
-            drinksRef.current = before
             pendingDrinksRef.current = merged
+            syncScreen()
             await say(`네, ${name}. ${summary} 추가하셨습니다.`, 'confirmExtras')
           } else if (stepRef.current === 'more' && isNo(said)) {
             await book()
@@ -388,5 +387,8 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     pendingAction: null,
   }
   if (!listening || busy) return null
-  return <VoiceSearchPanel key={turn} context={context} onResponse={onVoice} display="floating" onClose={() => setListening(false)} />
+  // 질문은 화면 상단 안내 문구로 이미 보여주므로 마이크 상태 문구는 숨긴다
+  return <div className="voice-booking-listening">
+    <VoiceSearchPanel key={turn} context={context} onResponse={onVoice} display="floating" onClose={() => setListening(false)} />
+  </div>
 }
