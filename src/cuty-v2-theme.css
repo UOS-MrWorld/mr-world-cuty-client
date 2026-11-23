@@ -165,9 +165,11 @@ body { word-break: keep-all; }
 }
 
 /* ───────── Voice button ───────── */
+/* 모든 화면에서 같은 위치. 오른쪽·하단 여백을 같은 값으로 두고, 홈 검색 버튼의 오른쪽 아래 대각선에 오도록 맞춘다. */
 .voice-neon-cta.is-floating {
-  right: max(24px, calc((100vw - var(--v2-content)) / 2 + var(--v2-gutter)));
-  bottom: 72px;
+  --v2-voice-inset: 52px;
+  right: calc(var(--v2-voice-inset) + env(safe-area-inset-right));
+  bottom: calc(var(--v2-voice-inset) + env(safe-area-inset-bottom));
   width: 76px;
   height: 76px;
   margin: 0;
@@ -363,7 +365,7 @@ body { word-break: keep-all; }
   .landing-main .landing-search.v2-search-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .landing-main .v2-search-card :is(label, .hero-field) { min-height: 60px; padding: 10px 14px; }
   .landing-main .v2-search-card .hero-search-submit.v2-search-submit { grid-column: 1 / -1; width: 100%; height: 52px; }
-  .voice-neon-cta.is-floating { right: max(18px, env(safe-area-inset-right)); bottom: 24px; width: 64px; height: 64px; }
+  .voice-neon-cta.is-floating { --v2-voice-inset: 20px; width: 64px; height: 64px; }
   .site-footer.app-footer.v2-footer { padding: 32px 20px 40px; }
 }
 
