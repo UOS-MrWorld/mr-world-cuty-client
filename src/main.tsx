@@ -10,6 +10,7 @@ import './liquid-glass-system.css'
 import './solid-customer-theme.css'
 import App from './App.tsx'
 import './cuty-v2-theme.css'
+import './voice-booking.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

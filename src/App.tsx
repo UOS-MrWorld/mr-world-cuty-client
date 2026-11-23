@@ -23,6 +23,7 @@ import LandingPage from './pages/LandingPage'
 import { AuthPage } from './pages/AuthPage'
 import { VoiceSearchPanel } from './components/VoiceSearchPanel'
 import { VoiceFooterCta } from './components/VoiceFooterCta'
+import { VoiceBookingDialog } from './components/VoiceBookingDialog'
 import { PreviewDialog } from './components/PreviewDialog'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import { AuthProvider, useAuth } from './hooks/useAuth'
@@ -129,6 +130,7 @@ function CutyApp() {
   const [pendingBookingCount, setPendingBookingCount] = useState(0)
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voiceBookingOpen, setVoiceBookingOpen] = useState(false)
   const [voicePendingAction, setVoicePendingAction] = useState<string | null>(null)
   const [voiceFeedback, setVoiceFeedback] = useState('')
   const [sessionWarning, setSessionWarning] = useState(false)
@@ -533,11 +535,13 @@ function CutyApp() {
         {voiceFeedback && <div className="notice voice-feedback app-notification" role="status" onAnimationEnd={() => setVoiceFeedback('')}><span>{voiceFeedback}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setVoiceFeedback('')}>×</button></div>}
       </div>}
 
-      {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} /><p className="v2-footer-copy">© CUTY · Curate Your Travel</p></footer> : <footer className={`site-footer app-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}>
+      {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} /><button type="button" className="voice-booking-cta" onClick={() => { setVoiceOpen(false); setVoiceBookingOpen(true) }}>🎙 음성 예약</button><p className="v2-footer-copy">© CUTY · Curate Your Travel</p></footer> : <footer className={`site-footer app-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}>
           <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink></div>
           <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} />
+          <button type="button" className="voice-booking-cta" onClick={() => { setVoiceOpen(false); setVoiceBookingOpen(true) }}>🎙 음성 예약</button>
           <p className="v2-footer-copy">© CUTY · Curate Your Travel</p>
       </footer>)}
+      {canUseVoice && voiceBookingOpen && authSession && <VoiceBookingDialog customerName={authSession.memberName} onClose={() => setVoiceBookingOpen(false)} onDone={path => { setVoiceBookingOpen(false); navigate(path) }} />}
       {canUseVoice && voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display="floating" onClose={closeVoice} />}
       {showHomeWelcome && <div className="home-welcome-transition" role="status" aria-live="polite"><p>새로운 목적지로 출발해보아요</p></div>}
       {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={closeLoginTravelHistory}>
