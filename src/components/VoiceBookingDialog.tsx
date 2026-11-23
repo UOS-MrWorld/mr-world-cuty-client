@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { createBooking } from '../api/booking'
 import { getTour, getTours } from '../api/tour'
 import {
-  anyTime, bestLevel, detectDate, detectDrinks, detectLevel, detectTheme, drinkText, formatKoreanDate, isNo, isYes,
+  anyTime, bestLevel, detectBudget, detectDate, detectKeyword, detectOptions, hotelLabels, mealLabels, transportLabels, detectDrinks, detectLevel, detectTheme, drinkText, formatKoreanDate, isNo, isYes,
   levelDefaults, levelLabels, matchTour, recommendTours, themeLabels, wantsRecommendation,
 } from '../data/voiceBookingDialog'
-import type { DrinkPick } from '../data/voiceBookingDialog'
+import type { DrinkPick, OptionChange } from '../data/voiceBookingDialog'
 import type { ApiTheme, ApiTourLevel } from '../types/api'
 import type { TourDetailResponse, TourSummaryResponse } from '../types/tourApi'
 import type { VoiceResponse, VoiceScreenContext } from '../types/voiceApi'
@@ -67,11 +67,14 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
   const candidatesRef = useRef<TourSummaryResponse[]>([])
   const themeRef = useRef<ApiTheme | null>(null)
   const dateRef = useRef<string | null>(null)
+  const budgetRef = useRef<number | null>(null)
+  const keywordRef = useRef<string | null>(null)
   const guestsRef = useRef<number | null>(null)
   const detailRef = useRef<TourDetailResponse | null>(null)
   const levelRef = useRef<ApiTourLevel | null>(null)
   const suggestedLevelRef = useRef<ApiTourLevel | null>(null)
   const drinksRef = useRef<DrinkPick[]>([])
+  const optionsRef = useRef<OptionChange>({})
   const pendingDrinksRef = useRef<DrinkPick[]>([])
   const mountedRef = useRef(true)
   const name = `${customerName} 고객님`
@@ -122,13 +125,25 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     return toursRef.current
   }
 
+  function currentOptions() {
+    const detail = detailRef.current!
+    const level = levelRef.current!
+    return {
+      hotelGrade: optionsRef.current.hotelGrade ?? levelDefaults[level].hotelGrade,
+      mealType: optionsRef.current.mealType ?? levelDefaults[level].mealType,
+      transport: optionsRef.current.transport ?? detail.defaultTransport,
+    }
+  }
+
   function bookingSummary() {
     const detail = detailRef.current
     const level = levelRef.current
     if (!detail || !level) return ''
     const drinks = drinksRef.current.length ? `, ${drinkText(drinksRef.current)}` : ''
     const guests = guestsRef.current ? `, 인원은 ${guestsRef.current}명` : ''
-    return `여행은 ${detail.tourName}, 스타일은 ${levelLabels[level]} 스타일${guests}${drinks}`
+    const o = currentOptions()
+    const options = `, 숙소는 ${hotelLabels[o.hotelGrade]}, 식사는 ${mealLabels[o.mealType]}, 교통은 ${transportLabels[o.transport]}`
+    return `여행은 ${detail.tourName}, 스타일은 ${levelLabels[level]} 스타일${guests}${options}${drinks}`
   }
 
   const THEME_QUESTION = '어떤 테마의 여행을 원하세요? 허니문, 효도 힐링, 골프, 아웃도어 트레킹이 있어요. 기념일이나 함께 가는 분을 말씀해 주셔도 맞춰서 추천해 드릴게요.'
@@ -137,6 +152,8 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
   async function collect(text: string) {
     themeRef.current = detectTheme(text) ?? themeRef.current
     dateRef.current = detectDate(text) ?? dateRef.current
+    budgetRef.current = detectBudget(text) ?? budgetRef.current
+    keywordRef.current = detectKeyword(text, await loadTours()) ?? keywordRef.current
     if (!themeRef.current) {
       await say(THEME_QUESTION, 'theme')
       return
@@ -159,7 +176,8 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
   async function recommend(text: string) {
     const theme = themeRef.current
     const tours = await loadTours()
-    const candidates = recommendTours(tours, theme, dateRef.current)
+    budgetRef.current = detectBudget(text) ?? budgetRef.current
+    const candidates = recommendTours(tours, theme, dateRef.current, budgetRef.current, keywordRef.current)
     candidatesRef.current = candidates
     if (candidates[0]) onNavigate(theme ? `/tours?theme=${themePath[theme]}` : '/tours')
     if (!candidates.length) {
@@ -181,7 +199,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
       await say('몇 분이 함께 가시나요?', 'guests')
       return
     }
-    await say(`네, ${name}. ${bookingSummary()}, 이렇게 예약하셨습니다. 식사 때 곁들일 커피나 샴페인도 추가할 수 있어요.`, 'extras')
+    await say(`네, ${name}. ${bookingSummary()}, 이렇게 예약하셨습니다. 옵션 변경이나 추가를 원하시면 말씀해 주세요.`, 'extras')
   }
 
   async function chooseTour(tour: TourSummaryResponse) {
@@ -205,8 +223,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
         tourId: detail.tourId,
         tourLevel: level,
         guestCount: guestsRef.current ?? (detail.theme === 'HONEYMOON' ? 2 : 1),
-        ...levelDefaults[level],
-        transport: detail.defaultTransport,
+        ...currentOptions(),
         drinkOptions: drinksRef.current.map(drink => ({ optionId: drink.optionId, quantity: drink.quantity })),
       })
       onNavigate('/my-trips')
@@ -227,7 +244,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
       return
     }
     onSay(`“${said}”`)
-    guestsRef.current = detectGuests(said) ?? guestsRef.current
+    if (detailRef.current?.theme !== 'HONEYMOON') guestsRef.current = detectGuests(said) ?? guestsRef.current
     setBusy(true)
     try {
       switch (stepRef.current) {
@@ -279,7 +296,20 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
         case 'extras':
         case 'more': {
           const drinks = detectDrinks(said, detailRef.current?.drinkOptions ?? [])
-          if (drinks.length) {
+          const options = detectOptions(said)
+          const newLevel = detectLevel(said)
+          const newGuests = detectGuests(said)
+          let changed = false
+          if (newLevel && newLevel !== levelRef.current && detailRef.current?.availableTourLevels.includes(newLevel)) {
+            levelRef.current = newLevel; changed = true
+          }
+          if (newGuests && detailRef.current?.theme !== 'HONEYMOON') { guestsRef.current = newGuests; changed = true }
+          if (Object.keys(options).length || changed) {
+            optionsRef.current = { ...optionsRef.current, ...options }
+            if (drinks.length) drinksRef.current = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
+            pendingDrinksRef.current = drinksRef.current
+            await say(`네, ${name}. ${bookingSummary()}, 이렇게 바꿨습니다. 맞으세요?`, 'confirmExtras')
+          } else if (drinks.length) {
             pendingDrinksRef.current = drinks
             const merged = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
             const before = drinksRef.current
@@ -293,13 +323,13 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
           } else if (stepRef.current === 'extras' && (isYes(said) || isNo(said))) {
             await say('추가로 필요하신 것 있으세요?', 'more')
           } else {
-            await say('식사 때 곁들일 음료는 커피와 샴페인을 추가할 수 있어요. 필요 없으시면 없다고 말씀해 주세요.', 'more')
+            await say('스타일과 인원도 바꿀 수 있고, 호텔은 3성·4성·5성급, 식사는 도시락·현지식·고급 레스토랑, 교통은 2인 고급차량·10인 승합차로 바꿀 수 있고, 커피와 샴페인을 추가할 수 있어요. 필요 없으시면 없다고 말씀해 주세요.', 'more')
           }
           break
         }
         case 'confirmExtras':
           if (isNo(said) && !isYes(said)) {
-            await say('다시 말씀해 주세요. 어떤 음료를 몇 개 추가할까요?', 'more')
+            await say('다시 말씀해 주세요. 무엇을 바꾸거나 추가할까요?', 'more')
           } else {
             drinksRef.current = pendingDrinksRef.current
             await say('추가로 필요하신 것 있으세요?', 'more')

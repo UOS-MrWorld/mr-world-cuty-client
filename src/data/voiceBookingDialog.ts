@@ -1,4 +1,4 @@
-import type { ApiHotelGrade, ApiMealType, ApiTheme, ApiTourLevel } from '../types/api'
+import type { ApiHotelGrade, ApiMealType, ApiTheme, ApiTourLevel, ApiTransport } from '../types/api'
 import type { DrinkOptionResponse, TourDetailResponse, TourSummaryResponse } from '../types/tourApi'
 
 // 음성 예약 대화 흐름(시스템이 질문하고 고객이 답하는 방식)에서 쓰는 순수 함수 모음.
@@ -78,9 +78,11 @@ export const wantsRecommendation = (text: string) => /추천|골라|아무거나
 
 // 추천 후보: 모집 중이고 목표 날짜 이후 출발하는 투어 중 날짜가 가까운 순.
 // 테마를 정했으면 그 테마 상품 2개, 테마가 없으면 서로 다른 테마 2개
-export function recommendTours(tours: TourSummaryResponse[], preferred: ApiTheme | null, targetDate: string | null) {
+export function recommendTours(tours: TourSummaryResponse[], preferred: ApiTheme | null, targetDate: string | null, maxPrice: number | null = null, keyword: string | null = null) {
   const target = targetDate ?? isoDate(new Date())
-  const recruiting = tours.filter(tour => tour.tourStatus === 'RECRUITING')
+  let recruiting = tours.filter(tour => tour.tourStatus === 'RECRUITING')
+  if (maxPrice) recruiting = recruiting.filter(tour => tour.basePrice <= maxPrice)
+  if (keyword && recruiting.some(tour => tour.tourName.includes(keyword))) recruiting = recruiting.filter(tour => tour.tourName.includes(keyword))
   const open = recruiting.filter(tour => tour.startDate >= target).sort((a, b) => a.startDate.localeCompare(b.startDate))
   const pool = open.length ? open : recruiting
   if (preferred) {
@@ -163,4 +165,50 @@ export function formatKoreanDate(iso: string) {
 export function bestLevel(detail: TourDetailResponse): ApiTourLevel {
   const order: ApiTourLevel[] = ['PREMIUM', 'GRAND', 'CLASSIC']
   return order.find(level => detail.availableTourLevels.includes(level)) ?? 'CLASSIC'
+}
+
+export const hotelLabels: Record<ApiHotelGrade, string> = { THREE_STAR: '3성급 호텔', FOUR_STAR: '4성급 호텔', FIVE_STAR: '5성급 호텔' }
+export const mealLabels: Record<ApiMealType, string> = { LUNCH_BOX: '도시락', LOCAL_RESTAURANT: '현지식 레스토랑', FINE_DINING: '고급 레스토랑' }
+export const transportLabels: Record<ApiTransport, string> = { PREMIUM_CAR_2: '2인 고급차량', PREMIUM_VAN_10: '10인 승합차' }
+
+export interface OptionChange {
+  hotelGrade?: ApiHotelGrade
+  mealType?: ApiMealType
+  transport?: ApiTransport
+}
+
+// "호텔은 4성급으로", "식사는 현지식으로", "승합차로 바꿔줘" → 옵션 변경
+export function detectOptions(text: string): OptionChange {
+  const t = text.replace(/\s+/g, '')
+  const change: OptionChange = {}
+  if (/(5|오|다섯)성|5등급|최고급호텔/.test(t)) change.hotelGrade = 'FIVE_STAR'
+  else if (/(4|사|네)성|4등급/.test(t)) change.hotelGrade = 'FOUR_STAR'
+  else if (/(3|삼|세)성|3등급/.test(t)) change.hotelGrade = 'THREE_STAR'
+  if (/도시락/.test(t)) change.mealType = 'LUNCH_BOX'
+  else if (/현지식|현지음식|현지식당|로컬/.test(t)) change.mealType = 'LOCAL_RESTAURANT'
+  else if (/고급레스토랑|파인다이닝|스테이크|코스요리/.test(t)) change.mealType = 'FINE_DINING'
+  if (/승합차|밴|10인|열명|큰차/.test(t)) change.transport = 'PREMIUM_VAN_10'
+  else if (/2인차|2인고급|고급차|전용차|세단|승용차/.test(t)) change.transport = 'PREMIUM_CAR_2'
+  return change
+}
+
+// "100만원 이하", "200만 원 안으로" → 1000000
+export function detectBudget(text: string): number | null {
+  const t = text.replace(/\s+/g, '').replace(/,/g, '')
+  const m = t.match(/(\d+)(만|천만)?원/)
+  if (!m || !/이하|이내|안으로|아래|까지|넘지|예산/.test(t)) return null
+  const n = Number(m[1])
+  return m[2] === '천만' ? n * 10_000_000 : m[2] === '만' ? n * 10_000 : n
+}
+
+// 상품명에 들어 있는 지역·키워드("제주", "발리")를 찾는다
+export function detectKeyword(text: string, tours: TourSummaryResponse[]): string | null {
+  const t = text.replace(/\s+/g, '')
+  const skip = /허니문|효도|힐링|골프|트레킹|투어|여행|패키지|\d/
+  for (const tour of tours) {
+    for (const word of tour.tourName.split(/\s+/)) {
+      if (word.length >= 2 && !skip.test(word) && t.includes(word)) return word
+    }
+  }
+  return null
 }
