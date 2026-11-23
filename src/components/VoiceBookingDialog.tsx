@@ -76,7 +76,6 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
   const suggestedLevelRef = useRef<ApiTourLevel | null>(null)
   const drinksRef = useRef<DrinkPick[]>([])
   const optionsRef = useRef<OptionChange>({})
-  const pendingDrinksRef = useRef<DrinkPick[]>([])
   const mountedRef = useRef(true)
   const configureRef = useRef(onConfigure)
   configureRef.current = onConfigure
@@ -272,7 +271,25 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
       return
     }
     onSay(`“${said}”`)
-    if (detailRef.current?.theme !== 'HONEYMOON') guestsRef.current = detectGuests(said) ?? guestsRef.current
+    // 등급을 고른 뒤에는 어느 단계에서든 말한 옵션·음료·인원·등급을 바로 모은다(순서 상관없음)
+    const detail = detailRef.current
+    let changed = false
+    if (detail && levelRef.current) {
+      const options = detectOptions(said)
+      if (Object.keys(options).length) { optionsRef.current = { ...optionsRef.current, ...options }; changed = true }
+      const drinks = detectDrinks(said, detail.drinkOptions ?? [])
+      if (drinks.length) {
+        drinksRef.current = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
+        changed = true
+      }
+      const level = detectLevel(said)
+      if (level && level !== levelRef.current && detail.availableTourLevels.includes(level)) { levelRef.current = level; changed = true }
+    }
+    const guests = detectGuests(said)
+    if (guests && detail?.theme !== 'HONEYMOON' && guests !== guestsRef.current) {
+      guestsRef.current = guests
+      if (levelRef.current && stepRef.current !== 'guests') changed = true
+    }
     setBusy(true)
     try {
       switch (stepRef.current) {
@@ -308,6 +325,9 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
             await say(`이 상품은 ${levelLabels[level]} 스타일을 고를 수 없어요. ${detail.availableTourLevels.map(item => levelLabels[item]).join(', ')} 중에서 골라 주세요.`, 'level')
           } else {
             levelRef.current = level
+            optionsRef.current = { ...optionsRef.current, ...detectOptions(said) }
+            const drinks = detectDrinks(said, detail.drinkOptions ?? [])
+            if (drinks.length) drinksRef.current = drinks
             await afterLevel()
           }
           break
@@ -322,46 +342,17 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
           break
         }
         case 'extras':
-        case 'more': {
-          const drinks = detectDrinks(said, detailRef.current?.drinkOptions ?? [])
-          const options = detectOptions(said)
-          const newLevel = detectLevel(said)
-          const newGuests = detectGuests(said)
-          let changed = false
-          if (newLevel && newLevel !== levelRef.current && detailRef.current?.availableTourLevels.includes(newLevel)) {
-            levelRef.current = newLevel; changed = true
-          }
-          if (newGuests && detailRef.current?.theme !== 'HONEYMOON') { guestsRef.current = newGuests; changed = true }
-          if (Object.keys(options).length || changed) {
-            optionsRef.current = { ...optionsRef.current, ...options }
-            if (drinks.length) drinksRef.current = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
-            pendingDrinksRef.current = drinksRef.current
-            syncScreen()
-            await say(`네, ${name}. ${bookingSummary()}, 이렇게 바꿨습니다. 맞으세요?`, 'confirmExtras')
-          } else if (drinks.length) {
-            pendingDrinksRef.current = drinks
-            const merged = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
-            drinksRef.current = merged
-            const summary = bookingSummary()
-            pendingDrinksRef.current = merged
-            syncScreen()
-            await say(`네, ${name}. ${summary} 추가하셨습니다.`, 'confirmExtras')
-          } else if (stepRef.current === 'more' && isNo(said)) {
-            await book()
-          } else if (stepRef.current === 'extras' && (isYes(said) || isNo(said))) {
-            await say('추가로 필요하신 것 있으세요?', 'more')
-          } else {
-            await say('스타일과 인원도 바꿀 수 있고, 호텔은 3성·4성·5성급, 식사는 도시락·현지식·고급 레스토랑, 교통은 2인 고급차량·10인 승합차로 바꿀 수 있고, 커피와 샴페인을 추가할 수 있어요. 필요 없으시면 없다고 말씀해 주세요.', 'more')
-          }
-          break
-        }
+        case 'more':
         case 'confirmExtras':
-          if (isNo(said) && !isYes(said)) {
-            await say('다시 말씀해 주세요. 무엇을 바꾸거나 추가할까요?', 'more')
-          } else {
-            drinksRef.current = pendingDrinksRef.current
+          if (changed) {
             syncScreen()
-            await say('추가로 필요하신 것 있으세요?', 'more')
+            await say(`네, ${name}. ${bookingSummary()}, 이렇게 바꿨습니다. 추가로 필요하신 것 있으세요?`, 'more')
+          } else if (isNo(said) || /예약해|이대로|그대로|진행해|끝/.test(said)) {
+            await book()
+          } else if (isYes(said)) {
+            await say('추가로 필요하신 것 있으세요? 없으시면 없다고 말씀해 주세요.', 'more')
+          } else {
+            await say('스타일, 인원, 호텔 등급, 식사, 교통을 바꾸거나 커피와 샴페인을 추가할 수 있어요. 필요 없으시면 없다고 말씀해 주세요.', 'more')
           }
           break
         default:

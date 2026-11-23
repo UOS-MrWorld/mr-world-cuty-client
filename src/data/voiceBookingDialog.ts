@@ -181,9 +181,9 @@ export interface OptionChange {
 export function detectOptions(text: string): OptionChange {
   const t = text.replace(/\s+/g, '')
   const change: OptionChange = {}
-  if (/(5|오|다섯)성|5등급|최고급호텔/.test(t)) change.hotelGrade = 'FIVE_STAR'
-  else if (/(4|사|네)성|4등급/.test(t)) change.hotelGrade = 'FOUR_STAR'
-  else if (/(3|삼|세)성|3등급/.test(t)) change.hotelGrade = 'THREE_STAR'
+  if (/(5|오|다섯)(성|스타)|5등급|파이브스타|최고급호텔/.test(t)) change.hotelGrade = 'FIVE_STAR'
+  else if (/(4|사|네)(성|스타)|4등급|포스타/.test(t)) change.hotelGrade = 'FOUR_STAR'
+  else if (/(3|삼|세)(성|스타)|3등급|쓰리스타/.test(t)) change.hotelGrade = 'THREE_STAR'
   if (/도시락/.test(t)) change.mealType = 'LUNCH_BOX'
   else if (/현지식|현지음식|현지식당|로컬/.test(t)) change.mealType = 'LOCAL_RESTAURANT'
   else if (/고급레스토랑|파인다이닝|스테이크|코스요리/.test(t)) change.mealType = 'FINE_DINING'
