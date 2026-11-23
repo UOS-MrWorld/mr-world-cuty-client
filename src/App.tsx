@@ -525,12 +525,13 @@ function CutyApp() {
             변경 내용을 임시 저장할 수 없습니다. 새로고침하면 변경 내용이 사라질 수 있습니다.
           </p>
         )}
-        {((feedback.route === route && feedback.message) || voiceFeedback) && <div className="notification-stack">
-          {feedback.route === route && feedback.message && <div className="notice app-notification" role="status" onAnimationEnd={() => setFeedback({ route: '', message: '' })}><span>{feedback.message}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setFeedback({ route: '', message: '' })}>×</button></div>}
-          {voiceFeedback && <div className="notice voice-feedback app-notification" role="status" onAnimationEnd={() => setVoiceFeedback('')}><span>{voiceFeedback}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setVoiceFeedback('')}>×</button></div>}
-        </div>}
         {renderPage()}
       </main>
+      {/* main은 z-index 1 쌓임 맥락이라 그 안에 두면 헤더(z-index 30)에 가려진다. */}
+      {((feedback.route === route && feedback.message) || voiceFeedback) && <div className="notification-stack">
+        {feedback.route === route && feedback.message && <div className="notice app-notification" role="status" onAnimationEnd={() => setFeedback({ route: '', message: '' })}><span>{feedback.message}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setFeedback({ route: '', message: '' })}>×</button></div>}
+        {voiceFeedback && <div className="notice voice-feedback app-notification" role="status" onAnimationEnd={() => setVoiceFeedback('')}><span>{voiceFeedback}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setVoiceFeedback('')}>×</button></div>}
+      </div>}
 
       {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} /><p className="v2-footer-copy">© CUTY · Curate Your Travel</p></footer> : <footer className={`site-footer app-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}>
           <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink></div>
