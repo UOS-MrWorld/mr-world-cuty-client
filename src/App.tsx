@@ -131,6 +131,9 @@ function CutyApp() {
   const [feedback, setFeedback] = useState({ route: '', message: '' })
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [voiceBookingOpen, setVoiceBookingOpen] = useState(false)
+  const [voiceGuide, setVoiceGuide] = useState('')
+  const [voiceListening, setVoiceListening] = useState(false)
+  const [voiceListenSignal, setVoiceListenSignal] = useState(0)
   const [voicePendingAction, setVoicePendingAction] = useState<string | null>(null)
   const [voiceFeedback, setVoiceFeedback] = useState('')
   const [sessionWarning, setSessionWarning] = useState(false)
@@ -260,6 +263,20 @@ function CutyApp() {
     }
     await logout()
     navigate('/login')
+  }
+
+  // 마이크 버튼 = 음성 예약 시작(진행 중이면 다시 듣기)
+  function startVoiceBooking() {
+    setVoiceOpen(false)
+    if (voiceBookingOpen) setVoiceListenSignal(value => value + 1)
+    else setVoiceBookingOpen(true)
+  }
+
+  function stopVoiceBooking() {
+    window.speechSynthesis?.cancel()
+    setVoiceBookingOpen(false)
+    setVoiceListening(false)
+    setVoiceGuide('')
   }
 
   function closeVoice() {
@@ -530,18 +547,18 @@ function CutyApp() {
         {renderPage()}
       </main>
       {/* main은 z-index 1 쌓임 맥락이라 그 안에 두면 헤더(z-index 30)에 가려진다. */}
-      {((feedback.route === route && feedback.message) || voiceFeedback) && <div className="notification-stack">
+      {((feedback.route === route && feedback.message) || voiceFeedback || voiceGuide) && <div className="notification-stack">
+        {voiceGuide && <div className="notice voice-feedback app-notification voice-guide" role="status" aria-live="polite"><span>{voiceGuide}</span><button className="notification-close" type="button" aria-label="음성 예약 끝내기" onClick={stopVoiceBooking}>×</button></div>}
         {feedback.route === route && feedback.message && <div className="notice app-notification" role="status" onAnimationEnd={() => setFeedback({ route: '', message: '' })}><span>{feedback.message}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setFeedback({ route: '', message: '' })}>×</button></div>}
         {voiceFeedback && <div className="notice voice-feedback app-notification" role="status" onAnimationEnd={() => setVoiceFeedback('')}><span>{voiceFeedback}</span><button className="notification-close" type="button" aria-label="알림 닫기" onClick={() => setVoiceFeedback('')}>×</button></div>}
       </div>}
 
-      {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} /><button type="button" className="voice-booking-cta" onClick={() => { setVoiceOpen(false); setVoiceBookingOpen(true) }}>🎙 음성 예약</button><p className="v2-footer-copy">© CUTY · Curate Your Travel</p></footer> : <footer className={`site-footer app-footer v2-footer${voiceOpen ? ' is-voice-open' : ''}`}>
+      {canUseVoice && !authOnly && (isLanding ? <footer className={`home-footer v2-footer${voiceOpen || voiceListening ? ' is-voice-open' : ''}`}><VoiceFooterCta buttonRef={voiceTriggerRef} onClick={startVoiceBooking} /><p className="v2-footer-copy">© CUTY · Curate Your Travel</p></footer> : <footer className={`site-footer app-footer v2-footer${voiceOpen || voiceListening ? ' is-voice-open' : ''}`}>
           <div className="footer-top"><AppLink className="brand" href="/" aria-label="CUTY 홈"><BrandMark /></AppLink></div>
-          <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={() => setVoiceOpen(true)} />
-          <button type="button" className="voice-booking-cta" onClick={() => { setVoiceOpen(false); setVoiceBookingOpen(true) }}>🎙 음성 예약</button>
+          <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={startVoiceBooking} />
           <p className="v2-footer-copy">© CUTY · Curate Your Travel</p>
       </footer>)}
-      {canUseVoice && voiceBookingOpen && authSession && <VoiceBookingDialog customerName={authSession.memberName} onClose={() => setVoiceBookingOpen(false)} onDone={path => { setVoiceBookingOpen(false); navigate(path) }} />}
+      {canUseVoice && voiceBookingOpen && authSession && <VoiceBookingDialog customerName={authSession.memberName} listenSignal={voiceListenSignal} onSay={setVoiceGuide} onNavigate={path => navigate(path)} onListeningChange={setVoiceListening} onClose={stopVoiceBooking} />}
       {canUseVoice && voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display="floating" onClose={closeVoice} />}
       {showHomeWelcome && <div className="home-welcome-transition" role="status" aria-live="polite"><p>새로운 목적지로 출발해보아요</p></div>}
       {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={closeLoginTravelHistory}>

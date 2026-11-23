@@ -76,18 +76,24 @@ export const isYes = (text: string) => /^(네|예|응|어|그래|좋아|좋습�
 export const isNo = (text: string) => /없어|없습니다|없어요|아니|됐어|괜찮아요\s*$|그만|충분/.test(text)
 export const wantsRecommendation = (text: string) => /추천|골라|아무거나|모르겠|좋은\s*거|멋진|괜찮은/.test(text)
 
-// 추천 후보: 모집 중이고 목표 날짜 이후 출발하는 투어 중 날짜가 가까운 순. 우선 테마 1개 + 다른 테마 1개
+// 추천 후보: 모집 중이고 목표 날짜 이후 출발하는 투어 중 날짜가 가까운 순.
+// 테마를 정했으면 그 테마 상품 2개, 테마가 없으면 서로 다른 테마 2개
 export function recommendTours(tours: TourSummaryResponse[], preferred: ApiTheme | null, targetDate: string | null) {
   const target = targetDate ?? isoDate(new Date())
-  const open = tours
-    .filter(tour => tour.tourStatus === 'RECRUITING' && tour.startDate >= target)
-    .sort((a, b) => a.startDate.localeCompare(b.startDate))
-  const pool = open.length ? open : tours.filter(tour => tour.tourStatus === 'RECRUITING')
-  const first = pool.find(tour => !preferred || tour.theme === preferred) ?? pool[0]
+  const recruiting = tours.filter(tour => tour.tourStatus === 'RECRUITING')
+  const open = recruiting.filter(tour => tour.startDate >= target).sort((a, b) => a.startDate.localeCompare(b.startDate))
+  const pool = open.length ? open : recruiting
+  if (preferred) {
+    const same = pool.filter(tour => tour.theme === preferred).slice(0, 2)
+    if (same.length) return same
+  }
+  const first = pool[0]
   if (!first) return []
   const second = pool.find(tour => tour.tourId !== first.tourId && tour.theme !== first.theme)
   return second ? [first, second] : [first]
 }
+
+export const anyTime = (text: string) => /상관\s*없|아무\s*때|언제든|빨리|가까운|제일\s*빠른|최대한/.test(text)
 
 // 고객 답변에서 후보 중 어떤 투어를 골랐는지 찾는다
 export function matchTour(text: string, candidates: TourSummaryResponse[]): TourSummaryResponse | null {
