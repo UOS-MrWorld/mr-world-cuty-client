@@ -181,9 +181,8 @@ export interface OptionChange {
 export function detectOptions(text: string): OptionChange {
   const t = text.replace(/\s+/g, '')
   const change: OptionChange = {}
-  if (/(5|오|다섯)(성|스타)|5등급|파이브스타|최고급호텔/.test(t)) change.hotelGrade = 'FIVE_STAR'
-  else if (/(4|사|네)(성|스타)|4등급|포스타/.test(t)) change.hotelGrade = 'FOUR_STAR'
-  else if (/(3|삼|세)(성|스타)|3등급|쓰리스타/.test(t)) change.hotelGrade = 'THREE_STAR'
+  const hotel = detectHotel(t)
+  if (hotel) change.hotelGrade = hotel
   if (/도시락/.test(t)) change.mealType = 'LUNCH_BOX'
   else if (/현지식|현지음식|현지식당|로컬/.test(t)) change.mealType = 'LOCAL_RESTAURANT'
   else if (/고급레스토랑|파인다이닝|스테이크|코스요리/.test(t)) change.mealType = 'FINE_DINING'
@@ -211,4 +210,24 @@ export function detectKeyword(text: string, tours: TourSummaryResponse[]): strin
     }
   }
   return null
+}
+
+const hotelNumbers: [RegExp, ApiHotelGrade][] = [
+  [/^(5|오|다섯|파이브)$/, 'FIVE_STAR'],
+  [/^(4|사|네|포)$/, 'FOUR_STAR'],
+  [/^(3|삼|세|쓰리)$/, 'THREE_STAR'],
+]
+
+// "3등급 호텔", "삼 등급", "4급", "호텔 등급은 3으로", "5스타", "제일 좋은 호텔" 등
+function detectHotel(t: string): ApiHotelGrade | undefined {
+  const num = '(5|4|3|오|사|삼|다섯|네|세|파이브|포|쓰리)'
+  const m = t.match(new RegExp(`${num}(성급|성|등급|급|스타)`))
+    ?? (/(호텔|숙소)/.test(t) ? t.match(new RegExp(`(?:호텔|숙소)(?:등급)?(?:은|는|을|를|도|이|가)?${num}`)) : null)
+  if (m) {
+    const word = m[1]
+    for (const [pattern, grade] of hotelNumbers) if (pattern.test(word)) return grade
+  }
+  if (/(최고급|제일좋은|가장좋은|좋은)(호텔|숙소)/.test(t)) return 'FIVE_STAR'
+  if (/(제일싼|가장싼|저렴한|싼)(호텔|숙소)/.test(t)) return 'THREE_STAR'
+  return undefined
 }

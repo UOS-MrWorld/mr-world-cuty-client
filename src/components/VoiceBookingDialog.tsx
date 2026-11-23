@@ -18,6 +18,24 @@ type Step = 'start' | 'theme' | 'date' | 'chooseTour' | 'level' | 'guests' | 'ex
 
 const themePath: Record<ApiTheme, string> = { HONEYMOON: 'romance', HEALING: 'healing', GOLF: 'golf', TREKKING: 'outdoor' }
 
+// 자연스러운 한국어 목소리를 우선 사용한다.
+// Edge: Microsoft SunHi(Natural, 여성) → 다른 Natural/Online 목소리 → Chrome: Google 한국의 → 그 밖의 한국어 목소리
+const voicePriority = [/SunHi/i, /Natural|Online/i, /Google/i, /Yuna|Heami/i]
+function pickVoice(voices: SpeechSynthesisVoice[]) {
+  const korean = voices.filter(voice => voice.lang.toLowerCase().startsWith('ko'))
+  for (const pattern of voicePriority) {
+    const found = korean.find(voice => pattern.test(voice.name))
+    if (found) return found
+  }
+  return korean[0]
+}
+
+// Chrome은 목소리 목록을 늦게 불러오므로 미리 한 번 요청해 둔다
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  window.speechSynthesis.getVoices()
+  window.speechSynthesis.addEventListener?.('voiceschanged', () => window.speechSynthesis.getVoices())
+}
+
 function speak(text: string) {
   return new Promise<void>(resolve => {
     const synth = window.speechSynthesis
@@ -28,8 +46,9 @@ function speak(text: string) {
     synth.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'ko-KR'
-    utterance.rate = 1.2
-    const voice = synth.getVoices().find(item => item.lang.startsWith('ko'))
+    utterance.rate = 1.15
+    utterance.pitch = 1.05
+    const voice = pickVoice(synth.getVoices())
     if (voice) utterance.voice = voice
     // 일부 브라우저는 onend가 오지 않으므로 글자 수 기준으로 끝을 보장한다.
     const fallback = window.setTimeout(resolve, 1000 + text.length * 160)
@@ -246,25 +265,26 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     stepRef.current = 'booking'
     setBusy(true)
     try {
-      await createBooking({
+      const response = await createBooking({
         tourId: detail.tourId,
         tourLevel: level,
         guestCount: guestsRef.current ?? (detail.theme === 'HONEYMOON' ? 2 : 1),
         ...currentOptions(),
         drinkOptions: drinksRef.current.map(drink => ({ optionId: drink.optionId, quantity: drink.quantity })),
       })
-      onNavigate('/my-trips')
-      await say(`${formatKoreanDate(detail.startDate)}에 선택하신 대로 예약되었습니다. 감사합니다.`, 'done', false)
+      // 예약은 결제 전(PENDING)으로 장바구니에 저장되고, 결제는 고객이 결제 화면에서 직접 한다
+      onNavigate(`/tours/${detail.tourId}/checkout?booking=${response.data.bookingId}`)
+      await say(`${formatKoreanDate(detail.startDate)} 출발, 선택하신 내용으로 장바구니에 담았습니다. 결제 화면에서 카드 번호를 입력해 직접 결제해 주세요. 감사합니다.`, 'done', false)
       window.setTimeout(() => { if (mountedRef.current) onClose() }, 6000)
     } catch (error) {
       const message = error instanceof Error ? error.message : '예약하지 못했어요.'
-      await say(`죄송해요, 예약하지 못했어요. ${message}`, 'done', false)
+      await say(`죄송해요, 장바구니에 담지 못했어요. ${message}`, 'done', false)
     } finally {
       if (mountedRef.current) setBusy(false)
     }
   }
 
-  async function handle(text: string) {
+  async function handle(text: string, commands: VoiceResponse['commands'] = []) {
     const said = text.trim()
     if (!said) {
       await say('잘 못 들었어요. 다시 말씀해 주세요.', stepRef.current)
@@ -275,7 +295,15 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     const detail = detailRef.current
     let changed = false
     if (detail && levelRef.current) {
+      // 정규식으로 못 찾은 옵션은 음성 서버(LLM)가 해석한 configure 명령에서 가져온다
       const options = detectOptions(said)
+      for (const command of commands) {
+        if (command.action !== 'configure') continue
+        const p = command.params
+        if (!options.hotelGrade && typeof p.hotelGrade === 'string') options.hotelGrade = p.hotelGrade as OptionChange['hotelGrade']
+        if (!options.mealType && typeof p.mealType === 'string') options.mealType = p.mealType as OptionChange['mealType']
+        if (!options.transport && typeof p.transport === 'string') options.transport = p.transport as OptionChange['transport']
+      }
       if (Object.keys(options).length) { optionsRef.current = { ...optionsRef.current, ...options }; changed = true }
       const drinks = detectDrinks(said, detail.drinkOptions ?? [])
       if (drinks.length) {
@@ -367,7 +395,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
 
   function onVoice(response: VoiceResponse) {
     setListening(false)
-    void handle(response.recognizedText)
+    void handle(response.recognizedText, response.commands)
   }
 
   const context: VoiceScreenContext = {
