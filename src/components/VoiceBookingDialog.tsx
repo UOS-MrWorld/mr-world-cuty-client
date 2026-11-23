@@ -51,11 +51,12 @@ function detectGuests(text: string): number | null {
   return value && value >= 1 && value <= 10 ? value : null
 }
 
-export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNavigate, onListeningChange, onClose }: {
+export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNavigate, onConfigure, onListeningChange, onClose }: {
   customerName: string
   listenSignal: number
   onSay: (text: string) => void
   onNavigate: (path: string) => void
+  onConfigure: (tourId: number, params: Record<string, unknown>) => boolean
   onListeningChange: (listening: boolean) => void
   onClose: () => void
 }) {
@@ -77,6 +78,8 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
   const optionsRef = useRef<OptionChange>({})
   const pendingDrinksRef = useRef<DrinkPick[]>([])
   const mountedRef = useRef(true)
+  const configureRef = useRef(onConfigure)
+  configureRef.current = onConfigure
   const name = `${customerName} 고객님`
 
   async function say(text: string, next: Step, listenAfter = true) {
@@ -133,6 +136,30 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
       mealType: optionsRef.current.mealType ?? levelDefaults[level].mealType,
       transport: optionsRef.current.transport ?? detail.defaultTransport,
     }
+  }
+
+  // 등급·인원·옵션이 정해질 때마다 여행 구성 화면으로 넘어가 같은 내용을 보여준다
+  function syncScreen() {
+    const detail = detailRef.current
+    const level = levelRef.current
+    if (!detail || !level) return
+    onNavigate(`/tours/${detail.tourId}/configure`)
+    const params = {
+      tourLevel: level,
+      ...currentOptions(),
+      ...(guestsRef.current ? { guestCount: guestsRef.current } : {}),
+      drinkOptions: (detail.drinkOptions ?? []).map(option => ({
+        optionId: option.optionId,
+        quantity: drinksRef.current.find(drink => drink.optionId === option.optionId)?.quantity ?? 0,
+      })),
+    }
+    let tries = 0
+    const apply = () => {
+      if (!mountedRef.current) return
+      if (configureRef.current(detail.tourId, params) || ++tries > 20) return
+      window.setTimeout(apply, 250)
+    }
+    window.setTimeout(apply, 100)
   }
 
   function bookingSummary() {
@@ -199,6 +226,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
       await say('몇 분이 함께 가시나요?', 'guests')
       return
     }
+    syncScreen()
     await say(`네, ${name}. ${bookingSummary()}, 이렇게 예약하셨습니다. 옵션 변경이나 추가를 원하시면 말씀해 주세요.`, 'extras')
   }
 
@@ -308,6 +336,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
             optionsRef.current = { ...optionsRef.current, ...options }
             if (drinks.length) drinksRef.current = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
             pendingDrinksRef.current = drinksRef.current
+            syncScreen()
             await say(`네, ${name}. ${bookingSummary()}, 이렇게 바꿨습니다. 맞으세요?`, 'confirmExtras')
           } else if (drinks.length) {
             pendingDrinksRef.current = drinks
@@ -332,6 +361,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
             await say('다시 말씀해 주세요. 무엇을 바꾸거나 추가할까요?', 'more')
           } else {
             drinksRef.current = pendingDrinksRef.current
+            syncScreen()
             await say('추가로 필요하신 것 있으세요?', 'more')
           }
           break

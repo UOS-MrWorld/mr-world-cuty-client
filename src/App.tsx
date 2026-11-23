@@ -272,6 +272,14 @@ function CutyApp() {
     else setVoiceBookingOpen(true)
   }
 
+  // 음성 예약에서 정한 등급·인원·옵션을 여행 구성 화면에 반영한다
+  function applyVoiceBookingOptions(tourId: number, params: Record<string, unknown>) {
+    if (!tour || !draft || tour.id !== String(tourId)) return false
+    updateDraft(applyVoiceConfiguration(tour, draft, params))
+    if (screen !== 'configure') navigate(`/tours/${tour.id}/configure`)
+    return true
+  }
+
   function stopVoiceBooking() {
     window.speechSynthesis?.cancel()
     setVoiceBookingOpen(false)
@@ -558,7 +566,7 @@ function CutyApp() {
           <VoiceFooterCta buttonRef={voiceTriggerRef} onClick={startVoiceBooking} />
           <p className="v2-footer-copy">© CUTY · Curate Your Travel</p>
       </footer>)}
-      {canUseVoice && voiceBookingOpen && authSession && <VoiceBookingDialog customerName={authSession.memberName} listenSignal={voiceListenSignal} onSay={setVoiceGuide} onNavigate={path => navigate(path)} onListeningChange={setVoiceListening} onClose={stopVoiceBooking} />}
+      {canUseVoice && voiceBookingOpen && authSession && <VoiceBookingDialog customerName={authSession.memberName} listenSignal={voiceListenSignal} onSay={setVoiceGuide} onNavigate={path => navigate(path)} onConfigure={applyVoiceBookingOptions} onListeningChange={setVoiceListening} onClose={stopVoiceBooking} />}
       {canUseVoice && voiceOpen && <VoiceSearchPanel context={voiceContext} onResponse={handleVoiceResponse} display="floating" onClose={closeVoice} />}
       {showHomeWelcome && <div className="home-welcome-transition" role="status" aria-live="polite"><p>새로운 목적지로 출발해보아요</p></div>}
       {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={closeLoginTravelHistory}>
