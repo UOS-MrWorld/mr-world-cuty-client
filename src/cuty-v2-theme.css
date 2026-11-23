@@ -1241,7 +1241,7 @@ body { word-break: keep-all; }
 .app-main .v2-status:is(.v2-status-PENDING, .v2-status-RECRUITING) { color: var(--v2-progress); }
 .app-main .v2-status:is(.v2-status-CANCELLED) { color: var(--v2-waiting); }
 
-.v2-booking-card.trip-history-card { grid-template-columns: 160px minmax(0, 1fr); }
+.app-main .surface-card.v2-booking-card.trip-history-card { grid-template-columns: 160px minmax(0, 1fr); }
 .v2-booking-card.trip-history-card .history-thumbnail { width: 160px; height: 120px; border-radius: 14px; object-fit: cover; }
 .v2-booking-card.trip-history-card > div { display: grid; gap: 4px; }
 .v2-booking-card.trip-history-card > div > * { margin: 0; }
@@ -1557,5 +1557,7 @@ body { word-break: keep-all; }
 .notice.voice-feedback.app-notification .notification-close:hover { background: rgb(255 255 255 / .16); }
 .notice.voice-feedback.app-notification .notification-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (max-width: 760px) {
+  .app-main .surface-card.v2-booking-card.trip-history-card { grid-template-columns: 96px minmax(0, 1fr); column-gap: 16px; }
+  .v2-booking-card.trip-history-card .history-thumbnail { width: 96px; height: 72px; border-radius: 13px; }
   .notice.voice-feedback.app-notification { min-height: 56px; padding: 14px 16px 14px 18px; font-size: 15px; }
 }
