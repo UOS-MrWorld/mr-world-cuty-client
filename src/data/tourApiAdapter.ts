@@ -1,4 +1,4 @@
-import { tours } from './travel'
+import { getTourImage } from './tourImages'
 import type { ApiTheme } from '../types/api'
 import type { TourDetailResponse, TourSummaryResponse } from '../types/tourApi'
 import type { ThemeId, Tour } from '../types/travel'
@@ -28,10 +28,6 @@ export const apiThemeByLocalTheme: Record<Exclude<ThemeId, 'all'>, ApiTheme> = {
   outdoor: 'TREKKING',
 }
 
-const fallbackByTheme = Object.fromEntries(
-  tours.map(tour => [tour.theme, { image: tour.image, imageAlt: `${tour.theme} 테마 기본 이미지` }]),
-) as Record<Exclude<ThemeId, 'all'>, Pick<Tour, 'image' | 'imageAlt'>>
-
 function tripDuration(startDate: string, endDate: string) {
   const start = new Date(`${startDate}T00:00:00Z`).getTime()
   const end = new Date(`${endDate}T00:00:00Z`).getTime()
@@ -42,7 +38,7 @@ function tripDuration(startDate: string, endDate: string) {
 
 export function toDisplayTour(response: TourSummaryResponse | TourDetailResponse): Tour {
   const theme = localThemeByApiTheme[response.theme]
-  const fallback = fallbackByTheme[theme]
+  const { image, imageAlt } = getTourImage(response.tourName, theme)
   return {
     id: String(response.tourId),
     source: 'api',
@@ -52,8 +48,8 @@ export function toDisplayTour(response: TourSummaryResponse | TourDetailResponse
     description: '여행지와 상세 포함 사항은 상품 상세에서 확인해 주세요.',
     duration: tripDuration(response.startDate, response.endDate),
     price: response.basePrice,
-    image: fallback.image,
-    imageAlt: fallback.imageAlt,
+    image,
+    imageAlt,
     tag: response.theme,
     startDate: response.startDate,
     endDate: response.endDate,
