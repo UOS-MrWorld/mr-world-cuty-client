@@ -45,3 +45,18 @@ export function getTourImage(tourName: string, theme: TourTheme): TourImage {
   const matched = imagesByThemeKeyword[theme].find(entry => entry.keywords.some(keyword => tourName.includes(keyword)))
   return matched ? { image: matched.image, imageAlt: matched.imageAlt } : imagesByTheme[theme]
 }
+
+const themeKeywords: [TourTheme, string[]][] = [
+  ['golf', ['골프']],
+  ['outdoor', ['트레킹', '종주', '산행']],
+  ['healing', ['힐링', '효도']],
+  ['romance', ['허니문']],
+]
+
+const defaultTourImage: TourImage = { image: '/background.webp', imageAlt: '잔잔한 물결의 여행 기본 이미지' }
+
+/** 테마 정보 없이 상품명만 있을 때(이전 여행 목록 등) 사용 */
+export function getTourImageByName(tourName: string): TourImage {
+  const theme = themeKeywords.find(([, keywords]) => keywords.some(keyword => tourName.includes(keyword)))?.[0]
+  return theme ? getTourImage(tourName, theme) : defaultTourImage
+}

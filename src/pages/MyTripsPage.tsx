@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon'
 import { formatPrice } from '../data/travel'
 import { useAuth } from '../hooks/useAuth'
 import { navigate, useRoute } from '../hooks/useRoute'
+import { getTourImageByName } from '../data/tourImages'
 import type { BookingSummaryResponse, TravelHistoryResponse } from '../types/bookingApi'
 import type { MemberInfoResponse } from '../types/memberApi'
 
@@ -83,7 +84,7 @@ function ApiTripsPanel({ tab }: { tab: 'cart' | 'bookings' | 'history' }) {
 
   return <div className="draft-list">
     {bookings.map(booking => <article className="surface-card api-booking-card v2-booking-card" key={`booking-${booking.bookingId}`}><div><span className={`status-pill v2-status v2-status-${booking.bookingStatus}`}>{bookingStatusLabels[booking.bookingStatus]}</span><h2>{booking.tourName}</h2><p className="muted">출발일 {booking.startDate}</p><strong>예약 금액 {formatPrice(booking.totalPrice)}원</strong><p className="summary-note">할인율 {booking.discountRate}% · 예약번호 {booking.bookingId}</p></div><div className="action-row"><AppLink className="button secondary" href={booking.bookingStatus === 'PENDING' ? `/tours/${booking.tourId}/checkout?booking=${booking.bookingId}` : `/tours/${booking.tourId}/preview?booking=${booking.bookingId}`}>{booking.bookingStatus === 'PENDING' ? '결제 계속하기' : '예약 상세'} <Icon name="arrow" size={17} /></AppLink>{booking.bookingStatus === 'PENDING' && <button className="button secondary" type="button" disabled={cancellingId === booking.bookingId} onClick={() => void cancelPendingBooking(booking)}>{cancellingId === booking.bookingId ? '빼는 중…' : '장바구니에서 빼기'}</button>}</div></article>)}
-    {tab === 'history' && history.map(item => <article className="surface-card trip-history-card v2-booking-card" key={`history-${item.bookingId}`}><img className="history-thumbnail" src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><span className={`status-pill v2-status v2-status-${item.tourStatus}`}>{tourStatusLabels[item.tourStatus]}</span><h2>{item.tourName}</h2><p className="muted">{item.startDate} ~ {item.endDate} · {apiTourLevelLabels[item.tourLevel]}</p><strong>결제 금액 {formatPrice(item.paidAmount)}원</strong><p className="summary-note">예약번호 {item.bookingId}</p></div></article>)}
+    {tab === 'history' && history.map(item => <article className="surface-card trip-history-card v2-booking-card" key={`history-${item.bookingId}`}><img className="history-thumbnail" src={getTourImageByName(item.tourName).image} alt={getTourImageByName(item.tourName).imageAlt} /><div><span className={`status-pill v2-status v2-status-${item.tourStatus}`}>{tourStatusLabels[item.tourStatus]}</span><h2>{item.tourName}</h2><p className="muted">{item.startDate} ~ {item.endDate} · {apiTourLevelLabels[item.tourLevel]}</p><strong>결제 금액 {formatPrice(item.paidAmount)}원</strong><p className="summary-note">예약번호 {item.bookingId}</p></div></article>)}
   </div>
 }
 

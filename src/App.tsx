@@ -30,6 +30,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import type { GlobeMood } from './types/landing'
 import type { VoiceResponse, VoiceScreenContext, VoiceTourContext } from './types/voiceApi'
 import type { TravelHistoryResponse } from './types/bookingApi'
+import { getTourImageByName } from './data/tourImages'
 const SnowGlobe = lazy(() => import('./components/SnowGlobe'))
 const StaffPage = lazy(() => import('./pages/StaffPage'))
 
@@ -571,7 +572,7 @@ function CutyApp() {
       {showHomeWelcome && <div className="home-welcome-transition" role="status" aria-live="polite"><p>새로운 목적지로 출발해보아요</p></div>}
       {loginTravelHistory && <PreviewDialog title="이전 여행을 다시 만나보세요" onClose={closeLoginTravelHistory}>
         <p className="login-history-intro">완료된 여행 목록입니다. 전체 내역은 내 여행에서 확인할 수 있어요.</p>
-        <div className="login-history-list">{loginTravelHistory.map(item => <article key={item.bookingId}><img src="/background.webp" alt="잔잔한 물결의 여행 기본 이미지" /><div><strong>{item.tourName}</strong><span>{item.startDate} ~ {item.endDate}</span><small>결제 금액 {item.paidAmount.toLocaleString('ko-KR')}원</small></div></article>)}</div>
+        <div className="login-history-list">{loginTravelHistory.map(item => { const { image, imageAlt } = getTourImageByName(item.tourName); return <article key={item.bookingId}><img src={image} alt={imageAlt} /><div><strong>{item.tourName}</strong><span>{item.startDate} ~ {item.endDate}</span><small>결제 금액 {item.paidAmount.toLocaleString('ko-KR')}원</small></div></article> })}</div>
         <div className="action-row"><button className="button secondary" type="button" onClick={closeLoginTravelHistory}>닫기</button><button className="button primary" type="button" onClick={() => { setLoginTravelHistory(null); navigate('/my-trips?tab=history') }}>이전 여행 전체 보기</button></div>
       </PreviewDialog>}
       {sessionWarning && <PreviewDialog title="세션을 연장하시겠습니까?" onClose={() => setSessionWarning(false)}>
