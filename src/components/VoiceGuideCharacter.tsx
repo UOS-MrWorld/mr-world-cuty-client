@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -61,7 +61,7 @@ function makeBlushTexture() {
   return texture
 }
 
-// 얼굴: 구를 깎아서 아래로 갈수록 좁아지는 V라인 + 볼살이 살짝 남는 형태로 만든다(한 덩어리라 매끈함)
+// 얼굴: 동글동글한 얼굴(아래쪽만 아주 살짝 좁아짐), 한 덩어리라 매끈함
 function makeFaceGeometry() {
   const geometry = new THREE.SphereGeometry(0.6, 64, 64)
   const pos = geometry.attributes.position
@@ -69,13 +69,13 @@ function makeFaceGeometry() {
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i)
     const t = Math.max(0, -v.y / 0.6) // 0(가운데) → 1(턱 끝)
-    let sx = 0.9 * (1 - 0.42 * Math.pow(t, 1.6))
+    let sx = 0.92 * (1 - 0.16 * Math.pow(t, 2))
     // 볼살: 눈 아래~입 높이에서 앞·옆으로 살짝 부풀림
     const cheek = Math.exp(-Math.pow((v.y + 0.2) / 0.13, 2)) * (v.z > 0 ? 1 : 0.3)
-    sx += cheek * 0.06
-    const sz = 0.9 * (1 - 0.18 * Math.pow(t, 2)) + cheek * 0.03
+    sx += cheek * 0.03
+    const sz = 0.9 * (1 - 0.08 * Math.pow(t, 2)) + cheek * 0.02
     // 턱 끝을 살짝 앞으로
-    const chinForward = Math.pow(t, 3) * 0.08
+    const chinForward = Math.pow(t, 3) * 0.03
     pos.setXYZ(i, v.x * sx, v.y * 0.93, v.z * sz + chinForward)
   }
   geometry.computeVertexNormals()
@@ -143,7 +143,18 @@ function Eye({ x }: { x: number }) {
   </group>
 }
 
-function Character({ speaking, listening }: { speaking: boolean; listening: boolean }) {
+// 마우스를 올리면 나오는 >< 눈
+function HappyEye({ x }: { x: number }) {
+  const side = Math.sign(x) // 왼쪽 눈(-)은 '>', 오른쪽 눈(+)은 '<'
+  return <group position={[x, -0.07, 0.53]} rotation={[0, side * 0.3, 0]}>
+    {[1, -1].map(k => <mesh key={k} position={[-side * 0.02, k * 0.04, 0]} rotation={[0, 0, -k * side * 0.55]}>
+      <capsuleGeometry args={[0.02, 0.11, 6, 10]} />
+      <Toon color={c.eyeLine} />
+    </mesh>)}
+  </group>
+}
+
+function Character({ speaking, listening, happy }: { speaking: boolean; listening: boolean; happy: boolean }) {
   const root = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const hairMap = useMemo(makeHairTexture, [])
@@ -173,7 +184,7 @@ function Character({ speaking, listening }: { speaking: boolean; listening: bool
       mouth.current.visible = speaking
       mouth.current.scale.set(1, 0.45 + Math.abs(Math.sin(t * 15)) * 0.9, 1)
     }
-    if (smile.current) smile.current.visible = !speaking
+    if (smile.current) smile.current.visible = !speaking && !happy
     if (eyes.current) eyes.current.scale.y = (t % 3.6) > 3.48 ? 0.12 : 1
     const glow = listening ? 1.8 + Math.sin(t * 6) * 0.7 : 0.2
     if (glowL.current) glowL.current.emissiveIntensity = glow
@@ -338,10 +349,14 @@ function Character({ speaking, listening }: { speaking: boolean; listening: bool
       </mesh>
 
       {/* 눈·눈썹 */}
-      <group ref={eyes}>
+      <group ref={eyes} visible={!happy}>
         <Eye x={-0.21} />
         <Eye x={0.21} />
       </group>
+      {happy && <>
+        <HappyEye x={-0.21} />
+        <HappyEye x={0.21} />
+      </>}
       {[-0.21, 0.21].map(x => <mesh key={x} position={[x, 0.07, 0.535]} rotation={[0, x > 0 ? 0.3 : -0.3, Math.PI * 0.225 + (x > 0 ? -0.12 : 0.12)]}>
         <torusGeometry args={[0.1, 0.008, 6, 20, Math.PI * 0.55]} />
         <Toon color={c.hairDeep} />
@@ -349,8 +364,19 @@ function Character({ speaking, listening }: { speaking: boolean; listening: bool
       {/* 볼 홍조: 원형 그라데이션 */}
       {[-0.26, 0.26].map(x => <mesh key={x} position={[x, -0.2, 0.49]} rotation={[0, x > 0 ? 0.5 : -0.5, 0]}>
         <planeGeometry args={[0.24, 0.15]} />
-        <meshBasicMaterial map={blushMap} transparent depthWrite={false} />
+        <meshBasicMaterial map={blushMap} transparent depthWrite={false} opacity={happy ? 1 : 0.75} />
       </mesh>)}
+      {/* >< 표정일 때 입: 반달 모양(위는 평평, 아래는 둥근 활짝 웃는 입) */}
+      {happy && !speaking && <group position={[0, -0.235, 0.535]}>
+        <mesh scale={[1, 1.15, 0.35]}>
+          <sphereGeometry args={[0.075, 24, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
+          <Toon color="#b8325c" side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.05, 0.014]} scale={[1, 0.6, 0.3]}>
+          <sphereGeometry args={[0.045, 16, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
+          <Toon color="#ff8aa6" side={THREE.DoubleSide} />
+        </mesh>
+      </group>}
       {/* 입: 평소엔 웃는 입, 말할 땐 벌린 입 */}
       <mesh ref={smile} position={[0, -0.25, 0.52]} rotation={[0, 0, Math.PI]}>
         <torusGeometry args={[0.04, 0.009, 8, 16, Math.PI]} />
@@ -403,12 +429,28 @@ function Character({ speaking, listening }: { speaking: boolean; listening: bool
 }
 
 export default function VoiceGuideCharacter({ speaking, listening }: { speaking: boolean; listening: boolean }) {
-  return <div className="voice-guide-character" aria-hidden="true">
+  const box = useRef<HTMLDivElement>(null)
+  const [happy, setHappy] = useState(false)
+
+  // 캐릭터는 클릭을 아래 화면으로 통과시키므로(pointer-events: none) 마우스 위치로 직접 올림 여부를 판단한다
+  useEffect(() => {
+    function onMove(event: PointerEvent) {
+      const rect = box.current?.getBoundingClientRect()
+      if (!rect) return
+      const inside = event.clientX >= rect.left + rect.width * 0.15 && event.clientX <= rect.right - rect.width * 0.15
+        && event.clientY >= rect.top && event.clientY <= rect.bottom
+      setHappy(prev => (prev === inside ? prev : inside))
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => window.removeEventListener('pointermove', onMove)
+  }, [])
+
+  return <div ref={box} className="voice-guide-character" aria-hidden="true">
     <Canvas camera={{ position: [0, 0, 4.7], fov: 38 }} dpr={[1, 2]} gl={{ alpha: true, antialias: true }}>
       <ambientLight intensity={1.35} />
       <directionalLight position={[1.5, 2.5, 5]} intensity={1.7} />
       <directionalLight position={[-3, 1, -2]} intensity={0.6} color="#ffd6ea" />
-      <Character speaking={speaking} listening={listening} />
+      <Character speaking={speaking} listening={listening} happy={happy} />
     </Canvas>
   </div>
 }
