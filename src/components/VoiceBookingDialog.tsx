@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { createBooking } from '../api/booking'
 import { getTour, getTours } from '../api/tour'
 import {
@@ -10,6 +10,9 @@ import type { ApiTheme, ApiTourLevel } from '../types/api'
 import type { TourDetailResponse, TourSummaryResponse } from '../types/tourApi'
 import type { VoiceResponse, VoiceScreenContext } from '../types/voiceApi'
 import { VoiceSearchPanel } from './VoiceSearchPanel'
+
+// 3D 안내 캐릭터는 three.js를 쓰므로 음성 예약을 시작할 때만 불러온다
+const VoiceGuideCharacter = lazy(() => import('./VoiceGuideCharacter'))
 
 // 음성 예약 대화: 마이크 버튼을 누르면 시스템이 질문하고(화면 상단 안내 문구 + TTS) 고객이 음성으로 답하면서 예약까지 진행한다.
 // TTS는 브라우저 내장 Web Speech API(speechSynthesis, ko-KR)를 사용한다.
@@ -27,8 +30,9 @@ const voicePriority = VOCALOID_STYLE
   ? [/Google/i, /Yuna/i, /SunHi/i, /Natural|Online/i, /Heami/i]
   : [/SunHi/i, /Natural|Online/i, /Google/i, /Yuna|Heami/i]
 // 마디별 음 높이(0~2)와 속도. 높낮이를 번갈아 줘서 기계음 멜로디처럼 들리게 한다.
-const melody = [2, 1.75, 1.95, 1.6, 2, 1.85]
-const vocaloidRate = 1.2
+// 얇고 높게: 낮은 음은 쓰지 않고 최고음(2) 근처에서만 살짝 오르내린다. 속도를 올리면 더 가늘게 들린다.
+const melody = [2, 1.9, 2, 1.85, 2, 1.95]
+const vocaloidRate = 1.3
 
 function pickVoice(voices: SpeechSynthesisVoice[]) {
   const korean = voices.filter(voice => voice.lang.toLowerCase().startsWith('ko'))
@@ -103,6 +107,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
 }) {
   const [listening, setListening] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
   const [turn, setTurn] = useState(0)
   const stepRef = useRef<Step>('start')
   const toursRef = useRef<TourSummaryResponse[]>([])
@@ -126,7 +131,9 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
   async function say(text: string, next: Step, listenAfter = true) {
     stepRef.current = next
     onSay(text)
+    setSpeaking(true)
     await speak(text)
+    if (mountedRef.current) setSpeaking(false)
     if (!mountedRef.current) return
     // 안내 도중 고객이 마이크를 눌러 이미 듣고 있으면 마이크를 다시 켜지 않는다(녹음이 끊기지 않게)
     if (interruptedRef.current) {
@@ -435,9 +442,14 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     drinkOptions: (detailRef.current?.drinkOptions ?? []).map(option => ({ optionId: option.optionId, name: option.drinkName })),
     pendingAction: null,
   }
-  if (!listening || busy || stepRef.current === 'booking' || stepRef.current === 'done') return null
+  const micVisible = listening && !busy && stepRef.current !== 'booking' && stepRef.current !== 'done'
   // 질문은 화면 상단 안내 문구로 이미 보여주므로 마이크 상태 문구는 숨긴다
-  return <div className="voice-booking-listening">
-    <VoiceSearchPanel key={turn} context={context} onResponse={onVoice} display="floating" onClose={() => setListening(false)} />
-  </div>
+  return <>
+    <Suspense fallback={null}>
+      <VoiceGuideCharacter speaking={speaking} listening={micVisible} />
+    </Suspense>
+    {micVisible && <div className="voice-booking-listening">
+      <VoiceSearchPanel key={turn} context={context} onResponse={onVoice} display="floating" onClose={() => setListening(false)} />
+    </div>}
+  </>
 }
