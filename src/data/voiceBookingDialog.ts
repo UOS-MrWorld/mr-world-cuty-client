@@ -123,6 +123,8 @@ export interface DrinkPick {
   optionId: number
   name: string
   quantity: number
+  // set: 그 수량으로, add: 기존 수량에 더하기("하나 더"), remove: 빼기
+  mode?: 'set' | 'add' | 'remove'
 }
 
 const drinkAliases: { pattern: RegExp; code: string; label: string; unit: string }[] = [
@@ -137,17 +139,43 @@ export function drinkLabel(name: string) {
 }
 
 // "커피 1포트, 샴페인 한 병" → [{COFFEE,1},{CHAMPAGNE,1}]
+const removeWords = /빼|제거|취소|없애|빼고|안\s*넣|안\s*할|필요\s*없|됐어|말고|그만/
+const numberWords = '(\\d+|한|하나|두|둘|세|셋|네|넷|다섯|여섯|일곱|여덟|아홉|열)'
+
+// "커피 1포트, 샴페인 한 병" → 수량 지정, "커피 하나 더" → 추가, "커피는 빼 주세요" → 제거
+// 음료 이름이 나온 곳부터 다음 음료 이름 전까지를 그 음료에 대한 말로 본다
 export function detectDrinks(text: string, options: DrinkOptionResponse[]): DrinkPick[] {
-  const picks: DrinkPick[] = []
+  const mentions: { index: number; alias: typeof drinkAliases[number]; option: DrinkOptionResponse }[] = []
   for (const alias of drinkAliases) {
     const option = options.find(item => item.drinkName.toUpperCase() === alias.code || alias.pattern.test(item.drinkName))
     if (!option) continue
-    const match = text.match(new RegExp(`(${alias.pattern.source})\\s*(\\d+|한|하나|두|둘|세|셋|네|넷|다섯|여섯|일곱|여덟|아홉|열)?`))
-    if (!match) continue
-    const quantity = match[2] ? toNumber(match[2]) ?? 1 : 1
-    picks.push({ optionId: option.optionId, name: option.drinkName, quantity: Math.min(quantity, 100) })
+    const found = text.search(alias.pattern)
+    if (found >= 0) mentions.push({ index: found, alias, option })
   }
-  return picks
+  mentions.sort((a, b) => a.index - b.index)
+  return mentions.map((mention, i) => {
+    const end = mentions[i + 1]?.index ?? text.length
+    const segment = text.slice(mention.index, end)
+    const number = segment.match(new RegExp(`${numberWords}\\s*(포트|병|잔|개|팟|주전자)?`))
+    const quantity = number ? Math.min(toNumber(number[1]) ?? 1, 100) : 1
+    if (removeWords.test(segment) || /^0$/.test(number?.[1] ?? '')) {
+      return { optionId: mention.option.optionId, name: mention.option.drinkName, quantity: 0, mode: 'remove' as const }
+    }
+    const mode = /더|추가로\s*하나|하나\s*더|늘려/.test(segment) && !/로\s*(바꿔|해|변경)/.test(segment) ? 'add' as const : 'set' as const
+    return { optionId: mention.option.optionId, name: mention.option.drinkName, quantity, mode }
+  })
+}
+
+// 기존 음료 목록에 새로 말한 음료를 반영한다(수량 0이면 목록에서 뺀다)
+export function mergeDrinks(current: DrinkPick[], picks: DrinkPick[]): DrinkPick[] {
+  const next = current.map(drink => ({ ...drink }))
+  for (const pick of picks) {
+    const existing = next.find(drink => drink.optionId === pick.optionId)
+    const quantity = pick.mode === 'remove' ? 0 : pick.mode === 'add' ? (existing?.quantity ?? 0) + pick.quantity : pick.quantity
+    if (existing) existing.quantity = Math.min(quantity, 100)
+    else if (quantity > 0) next.push({ optionId: pick.optionId, name: pick.name, quantity: Math.min(quantity, 100) })
+  }
+  return next.filter(drink => drink.quantity > 0)
 }
 
 export function drinkText(drinks: DrinkPick[]) {

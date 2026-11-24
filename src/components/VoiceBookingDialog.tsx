@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createBooking } from '../api/booking'
 import { getTour, getTours } from '../api/tour'
 import {
-  anyTime, bestLevel, detectBudget, detectDate, detectKeyword, detectOptions, hotelLabels, mealLabels, transportLabels, detectDrinks, detectLevel, detectTheme, drinkText, formatKoreanDate, isNo, isYes,
+  anyTime, bestLevel, detectBudget, detectDate, detectKeyword, detectOptions, hotelLabels, mealLabels, transportLabels, detectDrinks, mergeDrinks, detectLevel, detectTheme, drinkText, formatKoreanDate, isNo, isYes,
   levelDefaults, levelLabels, matchTour, recommendTours, themeLabels, wantsRecommendation,
 } from '../data/voiceBookingDialog'
 import type { DrinkPick, OptionChange } from '../data/voiceBookingDialog'
@@ -20,7 +20,16 @@ const themePath: Record<ApiTheme, string> = { HONEYMOON: 'romance', HEALING: 'he
 
 // 자연스러운 한국어 목소리를 우선 사용한다.
 // Edge: Microsoft SunHi(Natural, 여성) → 다른 Natural/Online 목소리 → Chrome: Google 한국의 → 그 밖의 한국어 목소리
-const voicePriority = [/SunHi/i, /Natural|Online/i, /Google/i, /Yuna|Heami/i]
+// 보컬로이드 느낌 목소리: 높은 음(pitch 최대치 근처) + 조금 빠른 속도 + 마디마다 음 높이를 바꿔 노래하듯 읽는다.
+// pitch가 잘 적용되는 Chrome의 Google 한국어 목소리를 먼저 쓰고, 없으면 다른 한국어 목소리를 쓴다.
+const VOCALOID_STYLE = true
+const voicePriority = VOCALOID_STYLE
+  ? [/Google/i, /Yuna/i, /SunHi/i, /Natural|Online/i, /Heami/i]
+  : [/SunHi/i, /Natural|Online/i, /Google/i, /Yuna|Heami/i]
+// 마디별 음 높이(0~2)와 속도. 높낮이를 번갈아 줘서 기계음 멜로디처럼 들리게 한다.
+const melody = [2, 1.75, 1.95, 1.6, 2, 1.85]
+const vocaloidRate = 1.2
+
 function pickVoice(voices: SpeechSynthesisVoice[]) {
   const korean = voices.filter(voice => voice.lang.toLowerCase().startsWith('ko'))
   for (const pattern of voicePriority) {
@@ -36,6 +45,12 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
   window.speechSynthesis.addEventListener?.('voiceschanged', () => window.speechSynthesis.getVoices())
 }
 
+// 문장을 쉼표·마침표·물음표 단위 마디로 나눈다
+function splitPhrases(text: string) {
+  const parts = text.split(/(?<=[,.?!])\s+/).map(part => part.trim()).filter(Boolean)
+  return parts.length ? parts : [text]
+}
+
 function speak(text: string) {
   return new Promise<void>(resolve => {
     const synth = window.speechSynthesis
@@ -44,21 +59,28 @@ function speak(text: string) {
       return
     }
     synth.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'ko-KR'
-    utterance.rate = 1.15
-    utterance.pitch = 1.05
     const voice = pickVoice(synth.getVoices())
-    if (voice) utterance.voice = voice
+    const phrases = VOCALOID_STYLE ? splitPhrases(text) : [text]
+    let finished = false
     // 일부 브라우저는 onend가 오지 않으므로 글자 수 기준으로 끝을 보장한다.
-    const fallback = window.setTimeout(resolve, 1000 + text.length * 160)
-    const done = () => {
+    const fallback = window.setTimeout(() => done(), 1000 + text.length * 150 + phrases.length * 200)
+    function done() {
+      if (finished) return
+      finished = true
       window.clearTimeout(fallback)
       resolve()
     }
-    utterance.onend = done
-    utterance.onerror = done
-    synth.speak(utterance)
+    phrases.forEach((phrase, index) => {
+      const utterance = new SpeechSynthesisUtterance(phrase)
+      utterance.lang = 'ko-KR'
+      if (voice) utterance.voice = voice
+      utterance.rate = VOCALOID_STYLE ? vocaloidRate : 1.15
+      utterance.pitch = VOCALOID_STYLE ? melody[index % melody.length] : 1.05
+      // 마지막 마디가 끝나거나, 중간에 취소(cancel)되면 끝난 것으로 본다
+      if (index === phrases.length - 1) utterance.onend = done
+      utterance.onerror = done
+      synth.speak(utterance)
+    })
   })
 }
 
@@ -96,6 +118,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
   const drinksRef = useRef<DrinkPick[]>([])
   const optionsRef = useRef<OptionChange>({})
   const mountedRef = useRef(true)
+  const interruptedRef = useRef(false)
   const configureRef = useRef(onConfigure)
   configureRef.current = onConfigure
   const name = `${customerName} 고객님`
@@ -105,6 +128,11 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     onSay(text)
     await speak(text)
     if (!mountedRef.current) return
+    // 안내 도중 고객이 마이크를 눌러 이미 듣고 있으면 마이크를 다시 켜지 않는다(녹음이 끊기지 않게)
+    if (interruptedRef.current) {
+      interruptedRef.current = false
+      return
+    }
     if (listenAfter) {
       setTurn(value => value + 1)
       setListening(true)
@@ -127,7 +155,8 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
 
   // 고객이 마이크 버튼을 다시 누르면 다시 듣는다
   useEffect(() => {
-    if (listenSignal > 0 && stepRef.current !== 'done') {
+    if (listenSignal > 0 && stepRef.current !== 'done' && stepRef.current !== 'booking') {
+      interruptedRef.current = true
       window.speechSynthesis?.cancel()
       setTurn(value => value + 1)
       setListening(true)
@@ -245,7 +274,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
       return
     }
     syncScreen()
-    await say(`네, ${name}. ${bookingSummary()}, 이렇게 예약하셨습니다. 옵션 변경이나 추가를 원하시면 말씀해 주세요.`, 'extras')
+    await say(`네, ${name}. ${bookingSummary()}, 이렇게 선택하셨습니다. 옵션 변경이나 추가를 원하시면 말씀해 주세요.`, 'extras')
   }
 
   async function chooseTour(tour: TourSummaryResponse) {
@@ -263,6 +292,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     const level = levelRef.current
     if (!detail || !level) return
     stepRef.current = 'booking'
+    setListening(false)
     setBusy(true)
     try {
       const response = await createBooking({
@@ -307,7 +337,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
       if (Object.keys(options).length) { optionsRef.current = { ...optionsRef.current, ...options }; changed = true }
       const drinks = detectDrinks(said, detail.drinkOptions ?? [])
       if (drinks.length) {
-        drinksRef.current = [...drinksRef.current.filter(item => !drinks.some(d => d.optionId === item.optionId)), ...drinks]
+        drinksRef.current = mergeDrinks(drinksRef.current, drinks)
         changed = true
       }
       const level = detectLevel(said)
@@ -355,7 +385,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
             levelRef.current = level
             optionsRef.current = { ...optionsRef.current, ...detectOptions(said) }
             const drinks = detectDrinks(said, detail.drinkOptions ?? [])
-            if (drinks.length) drinksRef.current = drinks
+            if (drinks.length) drinksRef.current = mergeDrinks(drinksRef.current, drinks)
             await afterLevel()
           }
           break
@@ -380,7 +410,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
           } else if (isYes(said)) {
             await say('추가로 필요하신 것 있으세요? 없으시면 없다고 말씀해 주세요.', 'more')
           } else {
-            await say('스타일, 인원, 호텔 등급, 식사, 교통을 바꾸거나 커피와 샴페인을 추가할 수 있어요. 필요 없으시면 없다고 말씀해 주세요.', 'more')
+            await say('스타일, 인원, 호텔 등급, 식사, 교통을 바꾸거나 커피와 샴페인을 추가하거나 뺄 수 있어요. 필요 없으시면 없다고 말씀해 주세요.', 'more')
           }
           break
         default:
@@ -405,7 +435,7 @@ export function VoiceBookingDialog({ customerName, listenSignal, onSay, onNaviga
     drinkOptions: (detailRef.current?.drinkOptions ?? []).map(option => ({ optionId: option.optionId, name: option.drinkName })),
     pendingAction: null,
   }
-  if (!listening || busy) return null
+  if (!listening || busy || stepRef.current === 'booking' || stepRef.current === 'done') return null
   // 질문은 화면 상단 안내 문구로 이미 보여주므로 마이크 상태 문구는 숨긴다
   return <div className="voice-booking-listening">
     <VoiceSearchPanel key={turn} context={context} onResponse={onVoice} display="floating" onClose={() => setListening(false)} />
